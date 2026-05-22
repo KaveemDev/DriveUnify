@@ -22,6 +22,11 @@ export const useAuth = () => {
 
         dispatch(setUser(userData));
 
+        // Ensure user document exists (important for redirect sign-ins)
+        createUserDocument(userData.uid, userData).catch(err => 
+          console.warn('[DriveUnify] Failed to update user document:', err)
+        );
+
         try {
           // Load connected account metadata from Firestore (no live token stored there)
           const accounts = await getConnectedAccounts(firebaseUser.uid);
@@ -68,6 +73,7 @@ export const useAuth = () => {
     dispatch(setLoading(true));
     try {
       const userData = await signInWithGoogle();
+      if (!userData) return; // User is being redirected
       await createUserDocument(userData.uid, {
         email: userData.email,
         displayName: userData.displayName,

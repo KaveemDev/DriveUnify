@@ -26,8 +26,7 @@ setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 // Allowed origins: localhost for dev, add your production domain here.
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:4173',
+  'https://drive-unify.vercel.app'
   // Add your production domain, e.g.: 'https://drivehub.example.com'
 ];
 

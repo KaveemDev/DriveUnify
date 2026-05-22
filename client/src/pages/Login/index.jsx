@@ -27,7 +27,9 @@ const Login = () => {
     try {
       await signIn();
     } catch (err) {
-      if (!err.message?.includes('popup')) {
+      if (err.code === 'auth/popup-blocked' || err.message?.includes('popup-blocked')) {
+        setLocalError('Your browser blocked the sign-in popup. Please allow popups for this site (check the address bar) and try again.');
+      } else if (!err.message?.includes('popup-closed-by-user')) {
         setLocalError(err.message || 'Sign in failed. Please try again.');
       }
     }
