@@ -1,0 +1,37 @@
+// Firestore Security Rules for DriveUnify
+// Deploy with: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Users ──────────────────────────────────────────────────
+    // Users can only read/write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // ── Connected Accounts (metadata only — no tokens) ──────
+      // Users can only read/write their own connected account metadata
+      match /connected_accounts/{accountId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // ── Drive Tokens (server-only) ─────────────────────────────
+    // CRITICAL: Refresh tokens are stored here and must NEVER be
+    // accessible from the client. Only Firebase Admin SDK (Cloud Functions)
+    // can read/write these. All client access is explicitly denied.
+    match /drive_tokens/{userId} {
+      allow read, write: if false;
+
+      match /accounts/{accountId} {
+        allow read, write: if false;
+      }
+    }
+
+    // ── Deny everything else ──────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
