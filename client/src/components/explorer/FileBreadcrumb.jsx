@@ -14,7 +14,7 @@ export const FileBreadcrumb = ({ onNavigateRoot }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1, }}>
       <Breadcrumbs separator={<ChevronRight size={14} />} aria-label="breadcrumb">
         <Button
           onClick={handleRoot}
@@ -24,7 +24,9 @@ export const FileBreadcrumb = ({ onNavigateRoot }) => {
             color: !currentFolder ? 'text.primary' : 'text.secondary',
             textTransform: 'none',
             bgcolor: !currentFolder ? 'action.selected' : 'transparent',
-            borderRadius: 2
+            borderRadius: 0.5,
+            paddingX: 1,
+            paddingY: 0.5,
           }}
         >
           All Files
@@ -46,7 +48,7 @@ export const FileBreadcrumb = ({ onNavigateRoot }) => {
             color="primary"
             variant="outlined"
             size="small"
-            sx={{ borderRadius: 2 }}
+            sx={{ borderRadius: 0.5, paddingX: 1, paddingY: 0.5 }}
           />
         )}
       </Breadcrumbs>

@@ -53,8 +53,38 @@
   }
 }
 
-/* ── CSS Variables ─────────────────────────────────────────── */
+/* ── CSS Variables — Light mode defaults ──────────────────── */
 :root {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --sidebar-width: 260px;
+  --header-height: 56px;
+  --radius-card: 12px;
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+
+  /* Light mode surface colors */
+  --color-bg-base: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #f1f5f9;
+  --color-bg-overlay: #e2e8f0;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.15);
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  /* Light mode glass */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.07);
+
+  /* Light mode skeleton */
+  --skeleton-base: rgba(226, 232, 240, 0.8);
+  --skeleton-shine: rgba(241, 245, 249, 0.9);
+}
+
+/* ── Dark mode variables ───────────────────────────────────── */
+.dark {
   --color-bg-base: #020617;
   --color-bg-surface: #0f172a;
   --color-bg-elevated: #1e293b;
@@ -64,13 +94,14 @@
   --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #64748b;
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --sidebar-width: 260px;
-  --header-height: 60px;
-  --radius-card: 12px;
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
+
+  /* Dark mode glass */
+  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Dark mode skeleton */
+  --skeleton-base: rgba(30, 41, 59, 0.8);
+  --skeleton-shine: rgba(51, 65, 85, 0.8);
 }
 
 /* ── Base Styles ───────────────────────────────────────────── */
@@ -80,28 +111,28 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--color-bg-base);
-  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  /* Background and color managed by MUI CssBaseline */
 }
 
 /* ── Custom Utility Classes ────────────────────────────────── */
 @layer components {
-  /* Glassmorphism card */
+  /* Glassmorphism card — theme aware */
   .glass {
-    background: rgba(30, 41, 59, 0.6);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
   }
 
   .glass-lighter {
-    background: rgba(51, 65, 85, 0.4);
+    background: var(--glass-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid var(--glass-border);
+    opacity: 0.8;
   }
 
   /* Custom thin scrollbar */
@@ -153,13 +184,13 @@ body {
     box-shadow: 0 0 0 2px var(--color-primary);
   }
 
-  /* Skeleton loading animation */
+  /* Skeleton loading animation — theme aware */
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(30, 41, 59, 0.8) 25%,
-      rgba(51, 65, 85, 0.8) 50%,
-      rgba(30, 41, 59, 0.8) 75%
+      var(--skeleton-base) 25%,
+      var(--skeleton-shine) 50%,
+      var(--skeleton-base) 75%
     );
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;

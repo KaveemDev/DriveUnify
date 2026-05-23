@@ -6,10 +6,10 @@ const ColorModeContext = createContext({ toggleColorMode: () => {} });
 export const useColorMode = () => useContext(ColorModeContext);
 
 export const ThemeContextProvider = ({ children }) => {
-  // Default to light mode as requested
+  // Default to dark mode
   const [mode, setMode] = useState(() => {
     const savedMode = localStorage.getItem('themeMode');
-    return savedMode || 'light';
+    return savedMode || 'dark';
   });
 
   const toggleColorMode = () => {
