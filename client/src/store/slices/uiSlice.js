@@ -10,6 +10,8 @@ const uiSlice = createSlice({
     notifications: [],
     offlineBanner: false,
     isSearchFocused: false,
+    transferModalOpen: false,
+    transferFile: null,
   },
   reducers: {
     toggleSidebar(state) {
@@ -47,6 +49,12 @@ const uiSlice = createSlice({
     setSearchFocused(state, action) {
       state.isSearchFocused = action.payload;
     },
+    setTransferModalOpen(state, action) {
+      state.transferModalOpen = action.payload;
+    },
+    setTransferFile(state, action) {
+      state.transferFile = action.payload;
+    },
   },
 });
 
@@ -55,6 +63,7 @@ export const {
   setConnectModalOpen, setPreviewFile,
   setTheme, addNotification, removeNotification, clearNotifications,
   setOfflineBanner, setSearchFocused,
+  setTransferModalOpen, setTransferFile,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

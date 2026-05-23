@@ -27,21 +27,7 @@ const About = () => {
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-8 mt-16">Backed by the best</h2>
-        <p className="text-slate-400 mb-12">
-          DriveUnify is a venture-backed startup, supported by leading investors who share our vision for a unified digital ecosystem.
-        </p>
         
-        {/* Placeholder for team or investors */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-           {[1,2,3,4].map(i => (
-             <div key={i} className="aspect-square rounded-xl bg-slate-800/50 border border-slate-700/50 flex flex-col items-center justify-center p-4">
-                <div className="w-16 h-16 rounded-full bg-slate-700 mb-4 skeleton"></div>
-                <div className="h-4 w-20 bg-slate-700 rounded skeleton mb-2"></div>
-                <div className="h-3 w-16 bg-slate-700/50 rounded skeleton"></div>
-             </div>
-           ))}
-        </div>
       </div>
     </div>
   );

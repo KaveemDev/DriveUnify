@@ -133,6 +133,46 @@ export const listFiles = (accessToken, {
   });
 };
 
+/**
+ * List only subfolders of a given folder.
+ * Used by the destination folder picker in TransferModal.
+ */
+export const listFoldersInFolder = (accessToken, folderId = 'root', accountEmail = 'default') => {
+  return withRateLimit(accountEmail, () => {
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      fields: 'files(id,name)',
+      orderBy: 'name',
+      pageSize: '200',
+    });
+    return driveRequest(accessToken, `${DRIVE_API_BASE}/files?${params}`);
+  });
+};
+
+/**
+ * List ALL items (files + folders) inside a folder, handling pagination.
+ * Each page is independently rate-limited. Used for recursive folder copy.
+ */
+export const listFolderContents = async (accessToken, folderId, accountEmail = 'default') => {
+  const allItems = [];
+  let pageToken = null;
+  do {
+    const result = await withRateLimit(accountEmail, () => {
+      const params = new URLSearchParams({
+        q: `'${folderId}' in parents and trashed=false`,
+        fields: 'nextPageToken,files(id,name,mimeType,size)',
+        pageSize: '200',
+        ...(pageToken && { pageToken }),
+      });
+      return driveRequest(accessToken, `${DRIVE_API_BASE}/files?${params}`);
+    });
+    if (result?.files) allItems.push(...result.files);
+    pageToken = result?.nextPageToken || null;
+  } while (pageToken);
+  return allItems;
+};
+
+
 export const getFile = (accessToken, fileId, accountEmail = 'default') => {
   return withRateLimit(accountEmail, () =>
     driveRequest(accessToken, `${DRIVE_API_BASE}/files/${fileId}?fields=${DEFAULT_FILE_FIELDS}`)
@@ -208,3 +248,126 @@ export const getDownloadUrl = (fileId) =>
 
 export const getThumbnailUrl = (file) =>
   file.thumbnailLink || file.iconLink || null;
+
+// ── Cross-Drive Transfer API ──────────────────────────────────
+
+/**
+ * Grant a user permission on a file (used for temporary share trick).
+ * Returns the created permission ID.
+ */
+export const addPermission = (accessToken, fileId, emailAddress, role = 'reader', accountEmail = 'default') => {
+  return withRateLimit(accountEmail, () =>
+    driveRequest(accessToken, `${DRIVE_API_BASE}/files/${fileId}/permissions?sendNotificationEmail=false&supportsAllDrives=true`, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'user', role, emailAddress }),
+    })
+  );
+};
+
+/**
+ * Remove a specific permission from a file (cleanup after temp share).
+ */
+export const deletePermission = (accessToken, fileId, permissionId, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, () =>
+    driveRequest(accessToken, `${DRIVE_API_BASE}/files/${fileId}/permissions/${permissionId}?supportsAllDrives=true`, {
+      method: 'DELETE',
+    })
+  );
+};
+
+/**
+ * Server-side copy of a file using Drive files.copy API.
+ * The destAccessToken must belong to an account that has read access to fileId.
+ * Google copies the file on their servers — no bytes touch the browser.
+ */
+export const copyFileToDrive = (destAccessToken, fileId, destFileName, destParentId = 'root', accountEmail = 'default') => {
+  return withRateLimit(accountEmail, () =>
+    driveRequest(destAccessToken, `${DRIVE_API_BASE}/files/${fileId}/copy?supportsAllDrives=true`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: destFileName,
+        parents: [destParentId],
+      }),
+    })
+  );
+};
+
+/**
+ * Download a file as a Blob using the source account's token.
+ * Used for binary files (the blob stays in browser RAM, never touches disk).
+ */
+export const downloadFileBlob = async (accessToken, fileId, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, async () => {
+    const res = await fetch(
+      `${DRIVE_API_BASE}/files/${fileId}?alt=media&supportsAllDrives=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `Download failed: HTTP ${res.status}`);
+    }
+    return res.blob();
+  });
+};
+
+/**
+ * Upload a Blob to Drive using multipart upload (metadata + file in one request).
+ * Used for binary files after downloading via downloadFileBlob.
+ */
+export const uploadMultipartToDrive = async (destAccessToken, blob, fileName, mimeType, destParentId = 'root', onProgress, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, () => new Promise((resolve, reject) => {
+    const metadata = JSON.stringify({ name: fileName, parents: [destParentId] });
+    const boundary = `boundary_${Date.now()}`;
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const body = [
+        delimiter,
+        `Content-Type: application/json; charset=UTF-8\r\n\r\n`,
+        metadata,
+        delimiter,
+        `Content-Type: ${mimeType}\r\n\r\n`,
+      ];
+
+      // Build the multipart body as a Blob to preserve binary data
+      const bodyBlob = new Blob([
+        delimiter,
+        `Content-Type: application/json; charset=UTF-8\r\n\r\n`,
+        metadata,
+        delimiter,
+        `Content-Type: ${mimeType}\r\n\r\n`,
+        blob,
+        closeDelimiter,
+      ]);
+
+      // Use XMLHttpRequest to track upload progress
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${DRIVE_UPLOAD_BASE}/files?uploadType=multipart&supportsAllDrives=true`);
+      xhr.setRequestHeader('Authorization', `Bearer ${destAccessToken}`);
+      xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`);
+
+      if (onProgress) {
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+      }
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch { resolve({}); }
+        } else {
+          let msg = `Upload failed: HTTP ${xhr.status}`;
+          try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch { /* ignore */ }
+          reject(new Error(msg));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(bodyBlob);
+    };
+    reader.onerror = () => reject(new Error('Failed to read file blob'));
+    reader.readAsArrayBuffer(blob); // just to trigger, we actually use blob directly
+  }));
+};

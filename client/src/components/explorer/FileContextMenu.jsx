@@ -1,7 +1,7 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider, Typography } from '@mui/material';
 import {
   Download, Pencil, Star, StarOff, Trash2,
-  Trash, ExternalLink, Copy, Eye,
+  Trash, ExternalLink, Copy, Eye, CopyPlus,
 } from 'lucide-react';
 import { isFolder, isGoogleAppsFile } from '../../utils/helpers';
 import { copyToClipboard, openInGoogleDrive } from '../../utils/helpers';
@@ -18,6 +18,8 @@ export const FileContextMenu = ({
   onPermanentDelete,
   onToggleStar,
   onDownload,
+  onCopyToDrive,
+  connectedAccounts = [],
 }) => {
   if (!file) return null;
 
@@ -71,6 +73,16 @@ export const FileContextMenu = ({
         }}>
           <ListItemIcon><Copy size={16} /></ListItemIcon>
           <ListItemText>Copy link</ListItemText>
+        </MenuItem>
+      )}
+
+      <Divider sx={{ my: 0.5 }} />
+
+      {/* Copy to Drive — only show when 2+ accounts are connected */}
+      {connectedAccounts.length >= 2 && (
+        <MenuItem onClick={() => { onCopyToDrive?.(file); onClose?.(); }} sx={{ color: 'primary.main' }}>
+          <ListItemIcon sx={{ color: 'primary.main' }}><CopyPlus size={16} /></ListItemIcon>
+          <ListItemText>Copy to Drive →</ListItemText>
         </MenuItem>
       )}
 

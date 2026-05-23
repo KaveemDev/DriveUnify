@@ -8,6 +8,7 @@ import { FileBreadcrumb } from '../../components/explorer/FileBreadcrumb';
 import { FileContextMenu } from '../../components/explorer/FileContextMenu';
 import { RenameModal } from '../../components/modals/RenameModal';
 import { FilePreviewModal } from '../../components/modals/FilePreviewModal';
+import { TransferModal } from '../../components/modals/TransferModal';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { UploadZone } from '../../components/upload/UploadZone';
 import { setConnectModalOpen } from '../../store/slices/uiSlice';
@@ -51,6 +52,7 @@ const Dashboard = () => {
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, file: null, permanent: false });
   const [previewFile, setPreviewFile] = useState(null);
   const [sortAnchor, setSortAnchor] = useState(null);
+  const [transferModal, setTransferModal] = useState({ open: false, file: null });
 
   useEffect(() => {
     if (connectedAccounts.length > 0) {
@@ -81,6 +83,7 @@ const Dashboard = () => {
   const handleDelete = (file) => setDeleteConfirm({ open: true, file, permanent: false });
   const handlePermanentDelete = (file) => setDeleteConfirm({ open: true, file, permanent: true });
   const handleRename = (file) => setRenameModal({ open: true, file });
+  const handleCopyToDrive = useCallback((file) => setTransferModal({ open: true, file }), []);
 
   const confirmDelete = async () => {
     const { file, permanent } = deleteConfirm;
@@ -175,6 +178,8 @@ const Dashboard = () => {
           onDelete={handleDelete}
           onPermanentDelete={handlePermanentDelete}
           onToggleStar={toggleStar}
+          onCopyToDrive={handleCopyToDrive}
+          connectedAccounts={connectedAccounts}
           onDownload={(f) => {
             const account = connectedAccounts.find(a => a.email === f.accountEmail);
             if (!account) return;
@@ -205,6 +210,12 @@ const Dashboard = () => {
         {previewFile && (
           <FilePreviewModal file={previewFile} files={filteredFiles.filter(f => !isFolder(f))} onClose={() => setPreviewFile(null)} onNavigate={setPreviewFile} />
         )}
+
+        <TransferModal
+          open={transferModal.open}
+          onOpenChange={(o) => setTransferModal(prev => ({ ...prev, open: o }))}
+          file={transferModal.file}
+        />
       </Box>
     </UploadZone>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Cloud, Search, FolderOpen, Share2 } from 'lucide-react';
+import { ArrowRight, Cloud, Search, FolderOpen, Share2, CopyPlus, Zap } from 'lucide-react';
 import { AnimatedButton, GlassCard, SectionHeading, GradientText } from '../../components/ui';
 
 const Landing = () => {
@@ -16,6 +16,17 @@ const Landing = () => {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
+
+            {/* New feature badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-sm font-medium mb-6"
+            >
+              <Zap size={13} className="text-indigo-400" />
+              New — Copy files between drives without downloading
+            </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -90,7 +101,11 @@ const Landing = () => {
                     <div className="h-7 w-32 bg-slate-700/50 rounded skeleton" />
                     <div className="flex gap-2">
                       <div className="h-7 w-24 bg-slate-700/30 rounded skeleton" />
-                      <div className="h-7 w-20 bg-blue-600/40 rounded skeleton" />
+                      {/* Highlighted "Copy to Drive" button */}
+                      <div className="h-7 w-28 bg-indigo-600/50 rounded skeleton flex items-center justify-center gap-1.5 px-3">
+                        <CopyPlus size={11} className="text-indigo-300" />
+                        <span className="text-[9px] text-indigo-300 font-medium">Copy to Drive</span>
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -162,7 +177,99 @@ const Landing = () => {
               <p className="text-slate-400">Upload files directly to any of your connected accounts and download anything with one click.</p>
             </GlassCard>
 
-            <GlassCard delay={0.25} className="md:col-span-2 lg:col-span-3">
+            {/* ── Copy to Drive — Hero Feature Card ── */}
+            <GlassCard delay={0.23} className="md:col-span-2 lg:col-span-3 relative overflow-hidden">
+              {/* Gradient accent */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/8 via-transparent to-purple-500/6 pointer-events-none rounded-inherit" />
+              <div className="absolute top-3 right-4">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-indigo-400 bg-indigo-500/15 border border-indigo-500/25 px-2.5 py-1 rounded-full">
+                  ✦ New Feature
+                </span>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center relative z-10">
+                {/* Left: copy */}
+                <div className="flex-1">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-5">
+                    <CopyPlus size={28} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Copy to Drive — No Download Needed</h3>
+                  <p className="text-slate-400 max-w-lg leading-relaxed">
+                    Transfer files and entire folders between your Google accounts instantly.{' '}
+                    <span className="text-slate-200 font-medium">Google Apps files</span> (Docs, Sheets, Slides) are copied entirely on Google's servers — zero bytes touch your device. Binary files transfer through browser RAM only, with no local save.
+                  </p>
+                  <ul className="mt-5 space-y-2">
+                    {[
+                      { icon: '⚡', text: 'Google Docs/Sheets/Slides — server-side copy, nothing downloaded' },
+                      { icon: '📦', text: 'PDFs, images, and files — in-memory transfer, no disk write' },
+                      { icon: '📁', text: 'Entire folders — recursive deep copy with live progress' },
+                      { icon: '🗂️', text: 'Choose destination subfolder with built-in folder browser' },
+                    ].map(({ icon, text }) => (
+                      <li key={text} className="flex items-start gap-2.5 text-sm text-slate-400">
+                        <span className="text-base leading-none mt-0.5">{icon}</span>
+                        <span>{text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Right: animated demo card */}
+                <div className="flex-1 w-full max-w-sm lg:max-w-none">
+                  <div className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-5 space-y-4">
+                    {/* File row */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/40">
+                      <div className="w-9 h-9 rounded-lg bg-indigo-500/25 flex items-center justify-center flex-shrink-0">
+                        <span className="text-base">📄</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-medium truncate">Q4-Report.docx</p>
+                        <p className="text-xs text-slate-500">2.4 MB · work@gmail.com</p>
+                      </div>
+                      <div className="text-xs text-indigo-400 font-medium bg-indigo-500/15 px-2 py-1 rounded-lg border border-indigo-500/25 whitespace-nowrap">
+                        Copy to Drive →
+                      </div>
+                    </div>
+
+                    {/* Arrow + accounts */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/30">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/40 flex items-center justify-center text-[10px] font-bold text-blue-200">W</div>
+                        <span className="text-xs text-slate-400 truncate">work@gmail.com</span>
+                      </div>
+                      <ArrowRight size={14} className="text-indigo-400 flex-shrink-0" />
+                      <div className="flex-1 flex items-center gap-2 p-2.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30">
+                        <div className="w-6 h-6 rounded-full bg-emerald-500/40 flex items-center justify-center text-[10px] font-bold text-emerald-200">P</div>
+                        <span className="text-xs text-slate-300 truncate">personal@gmail.com</span>
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div>
+                      <div className="flex justify-between text-xs text-slate-400 mb-1.5">
+                        <span>Copying on Google's servers…</span>
+                        <span className="text-emerald-400">No download</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: '10%' }}
+                          animate={{ width: '100%' }}
+                          transition={{ duration: 2.5, ease: 'easeOut', repeat: Infinity, repeatDelay: 0.8 }}
+                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Success */}
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-emerald-400 text-base">✓</span>
+                      <p className="text-xs text-emerald-300 font-medium">Copy successful — file is in personal@gmail.com's Drive</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard delay={0.28} className="md:col-span-2 lg:col-span-3">
               <div className="flex flex-col md:flex-row gap-8 items-center">
                 <div className="flex-1">
                   <h3 className="text-2xl font-semibold text-white mb-4">Drag & Drop Uploads</h3>
@@ -206,7 +313,7 @@ const Landing = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 pointer-events-none" />
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-5">Start managing smarter</h2>
             <p className="text-lg text-slate-400 mb-9 max-w-lg mx-auto">
-              Connect your Google Drive accounts and experience the clarity of having everything in one place.
+              Connect your Google Drive accounts and experience the clarity of having everything in one place — including seamless cross-drive file transfers.
             </p>
             <AnimatedButton to="/login" size="lg" icon={ArrowRight}>
               Sign in with Google
