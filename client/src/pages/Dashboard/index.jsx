@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import { getFile } from '../../api/googleDriveApi';
 import { Cloud, Plus, RefreshCw, SortAsc, SortDesc } from 'lucide-react';
 import { EmptyState } from '../../components/common/EmptyState';
 import { FileGrid } from '../../components/explorer/FileGrid';
@@ -37,6 +40,7 @@ const SkeletonGrid = () => (
 
 const Dashboard = () => {
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     connectedAccounts, loading, viewMode, sortBy, sortDir,
   } = useSelector(s => s.drive);
@@ -59,6 +63,38 @@ const Dashboard = () => {
       fetchFilesForAllAccounts();
     }
   }, [connectedAccounts.length]);
+
+  useEffect(() => {
+    const shareId = searchParams.get('share');
+    if (shareId && connectedAccounts.length > 0) {
+      const fetchSharedFile = async () => {
+        let foundFile = null;
+        for (const account of connectedAccounts) {
+          try {
+            const file = await getFile(account.accessToken, shareId, account.email);
+            if (file) {
+              foundFile = file;
+              foundFile.accountEmail = account.email;
+              break;
+            }
+          } catch (err) {
+            // Ignore error and try next account
+          }
+        }
+        
+        if (foundFile) {
+          setPreviewFile(foundFile);
+        } else {
+          toast.error('You do not have access to this shared file');
+        }
+        
+        searchParams.delete('share');
+        setSearchParams(searchParams);
+      };
+      
+      fetchSharedFile();
+    }
+  }, [searchParams, connectedAccounts, setSearchParams]);
 
   const handleFileClick = useCallback((file) => {
     if (isFolder(file)) {

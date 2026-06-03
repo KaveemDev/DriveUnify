@@ -65,16 +65,15 @@ export const FileContextMenu = ({
         <ListItemText>Open in Drive</ListItemText>
       </MenuItem>
 
-      {file.shared && (
-        <MenuItem onClick={() => {
-          copyToClipboard(file.webViewLink || '');
-          toast.success('Link copied');
-          onClose?.();
-        }}>
-          <ListItemIcon><Copy size={16} /></ListItemIcon>
-          <ListItemText>Copy link</ListItemText>
-        </MenuItem>
-      )}
+      <MenuItem onClick={() => {
+        const shareLink = `${window.location.origin}/dashboard?share=${file.id}`;
+        copyToClipboard(shareLink);
+        toast.success('Share link copied');
+        onClose?.();
+      }}>
+        <ListItemIcon><Copy size={16} /></ListItemIcon>
+        <ListItemText>Copy share link</ListItemText>
+      </MenuItem>
 
       <Divider sx={{ my: 0.5 }} />
 
