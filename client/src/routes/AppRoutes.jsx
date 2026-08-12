@@ -9,6 +9,7 @@ import { MarketingLayout } from '../layouts/MarketingLayout';
 const Login = lazy(() => import('../pages/Login'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Settings = lazy(() => import('../pages/Settings'));
+const Support = lazy(() => import('../pages/Support'));
 const OAuthCallback = lazy(() => import('../pages/OAuthCallback'));
 
 // ── Lazy-loaded Public Pages ──────────────────────────────────
@@ -83,6 +84,16 @@ export const AppRoutes = () => (
           <ProtectedRoute>
             <DashboardLayout>
               <Settings />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/support"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <Support />
             </DashboardLayout>
           </ProtectedRoute>
         }

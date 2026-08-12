@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Star } from 'lucide-react';
-import { Box, Card, CardActionArea, CardMedia, Typography, Checkbox, IconButton, useTheme } from '@mui/material';
+import { MoreHorizontal, Star, Folder } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { FileIcon } from './FileIcon';
 import { formatFileSize, formatRelativeDate } from '../../utils/formatters';
@@ -8,129 +7,107 @@ import { getAccountColor } from '../../config/constants';
 import { isFolder } from '../../utils/helpers';
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+  hidden: { opacity: 0, y: 14 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22 } }
 };
 
 export const FileCard = ({
-  file,
-  selected,
-  onSelect,
-  onClick,
-  onContextMenu,
-  onMenuClick,
+  file, selected, onSelect, onClick, onContextMenu, onMenuClick,
 }) => {
-  const theme = useTheme();
   const [imgError, setImgError] = useState(false);
-  const isDir = isFolder(file);
+  const [hovered, setHovered]   = useState(false);
+  const isDir       = isFolder(file);
   const hasThumbnail = file.thumbnailLink && !imgError;
+  const acctColor   = getAccountColor(file.accountEmail);
 
   return (
-    <motion.div variants={itemVariants} whileHover={{ y: -4 }} layout>
-      <Card
-        variant="outlined"
-        sx={{
+    <motion.div variants={itemVariants} layout>
+      <div
+        className="recmod-card"
+        style={{
+          border: selected
+            ? '1.5px solid var(--color-accent)'
+            : '1px solid var(--color-border)',
+          background: selected ? 'var(--color-bg-elevated)' : 'var(--color-bg-surface)',
           position: 'relative',
-          borderColor: selected ? 'primary.main' : 'divider',
-          borderWidth: selected ? 2 : 1,
-          bgcolor: selected ? 'action.selected' : 'background.paper',
-          transition: 'all 0.2s',
-          overflow: 'visible'
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={(e) => {
+          if (e.ctrlKey || e.metaKey) onSelect?.(file);
+          else onClick?.(file);
         }}
         onContextMenu={(e) => { e.preventDefault(); onContextMenu?.(e, file); }}
       >
-        <CardActionArea 
-          onClick={(e) => {
-            if (e.ctrlKey || e.metaKey) { onSelect?.(file); } 
-            else { onClick?.(file); }
-          }}
-          onDoubleClick={() => isDir && onClick?.(file)}
-          sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
-        >
-          {/* Thumbnail / Icon Area */}
-          <Box sx={{ 
-            height: isDir ? 100 : 140, 
-            bgcolor: 'action.hover', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            position: 'relative'
+        {/* File type icon */}
+        <div style={{
+          width: 34, height: 34, borderRadius: 7,
+          background: 'var(--color-bg-overlay)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          overflow: 'hidden',
+        }}>
+          {hasThumbnail ? (
+            <img
+              src={file.thumbnailLink} alt={file.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 7 }}
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <FileIcon category={file.category} size={20} />
+          )}
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: '0.8rem', fontWeight: 500,
+            color: 'var(--color-text-primary)', lineHeight: 1.3,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }} title={file.name}>
+            {file.name}
+          </div>
+          <div style={{
+            fontSize: '0.7rem', color: 'var(--color-text-muted)',
+            display: 'flex', gap: 4, alignItems: 'center', marginTop: 1,
           }}>
-            {hasThumbnail ? (
-              <CardMedia
-                component="img"
-                image={file.thumbnailLink}
-                alt={file.name}
-                sx={{ height: '100%', width: '100%', objectFit: 'cover' }}
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <FileIcon category={file.category} size={isDir ? 48 : 56} />
-            )}
-            
-            {/* Star badge */}
-            {file.starred && (
-              <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-                <Star size={16} fill={theme.palette.warning.main} color={theme.palette.warning.main} />
-              </Box>
-            )}
-          </Box>
+            {!isDir && <span>{formatFileSize(file.size)}</span>}
+            {!isDir && <span>·</span>}
+            <span style={{ textTransform: 'lowercase' }}>{file.category || (isDir ? 'folder' : 'file')}</span>
+          </div>
+        </div>
 
-          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="body2" fontWeight={500} noWrap title={file.name}>
-              {file.name}
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="caption" color="text.secondary">
-                {!isDir ? formatFileSize(file.size) : '—'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formatRelativeDate(file.modifiedTime)}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getAccountColor(file.accountEmail) }} />
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {file.accountEmail.split('@')[0]}
-              </Typography>
-            </Box>
-          </Box>
-        </CardActionArea>
+        {/* Star */}
+        {file.starred && (
+          <Star size={12} fill="#f59e0b" color="#f59e0b" style={{ flexShrink: 0 }} />
+        )}
 
-        {/* Floating actions */}
-        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
-          <Checkbox 
-            checked={selected} 
-            onChange={(e) => { e.stopPropagation(); onSelect?.(file); }}
-            onClick={(e) => e.stopPropagation()}
-            size="small"
-            sx={{ 
-              p: 0.5, 
-              bgcolor: selected ? 'background.paper' : 'transparent',
-              opacity: selected ? 1 : 0,
-              '.MuiCard-root:hover &': { opacity: 1 },
-              '&.Mui-checked': { color: 'primary.main', bgcolor: 'background.paper' }
+        {/* Three-dot menu */}
+        {hovered && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onMenuClick?.(e, file); }}
+            style={{
+              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              width: 22, height: 22, borderRadius: 5,
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-surface)', cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          />
-        </Box>
+          >
+            <MoreHorizontal size={13} />
+          </button>
+        )}
 
-        <IconButton
-          size="small"
-          onClick={(e) => { e.stopPropagation(); onMenuClick?.(e, file); }}
-          sx={{ 
-            position: 'absolute', 
-            bottom: 8, 
-            right: 8, 
-            zIndex: 1,
-            opacity: 0,
-            bgcolor: 'background.paper',
-            boxShadow: 1,
-            '.MuiCard-root:hover &': { opacity: 1 }
+        {/* Account dot */}
+        <div
+          title={file.accountEmail}
+          style={{
+            position: 'absolute', right: hovered ? 36 : 8, bottom: 7,
+            width: 6, height: 6, borderRadius: '50%',
+            background: acctColor, transition: 'right 130ms',
           }}
-        >
-          <MoreHorizontal size={16} />
-        </IconButton>
-      </Card>
+        />
+      </div>
     </motion.div>
   );
 };

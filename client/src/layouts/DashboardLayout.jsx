@@ -1,38 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Menu, Search, LayoutGrid, List, WifiOff, Upload, Settings, LogOut, Bell, Cloud, X
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, WifiOff, Upload, Bell, MoreHorizontal, X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { ConnectDriveModal } from '../components/modals/ConnectDriveModal';
 import { UploadQueue } from '../components/upload/UploadQueue';
 import { setSidebarOpen, setConnectModalOpen } from '../store/slices/uiSlice';
-import { setSearchQuery, setViewMode } from '../store/slices/driveSlice';
+import { setSearchQuery } from '../store/slices/driveSlice';
 import { useAuth } from '../hooks/useAuth';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
-import { VIEW_MODES } from '../config/constants';
 import { useUpload } from '../hooks/useUpload';
 
 export const DashboardLayout = ({ children }) => {
   const dispatch = useDispatch();
   const { sidebarOpen, connectModalOpen, offlineBanner } = useSelector(s => s.ui);
-  const { viewMode, searchQuery, connectedAccounts } = useSelector(s => s.drive);
-  const { user, signOut } = useAuth();
-  
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { connectedAccounts, searchQuery } = useSelector(s => s.drive);
+
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { uploadFiles } = useUpload();
 
   useOnlineStatus();
 
-  // On mobile, close sidebar by default
+  // Default: open on desktop, closed on mobile
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
-        dispatch(setSidebarOpen(false));
-      }
+      dispatch(setSidebarOpen(window.innerWidth >= 768));
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -43,14 +35,11 @@ export const DashboardLayout = ({ children }) => {
   useEffect(() => {
     const handler = (e) => {
       if (
-        e.key === 'u' &&
-        !e.ctrlKey && !e.metaKey &&
+        e.key === 'u' && !e.ctrlKey && !e.metaKey &&
         document.activeElement.tagName !== 'INPUT' &&
         document.activeElement.tagName !== 'TEXTAREA'
       ) {
-        if (connectedAccounts.length > 0) {
-          triggerFileUpload();
-        }
+        if (connectedAccounts.length > 0) triggerFileUpload();
       }
     };
     window.addEventListener('keydown', handler);
@@ -63,9 +52,8 @@ export const DashboardLayout = ({ children }) => {
       input.type = 'file';
       input.multiple = true;
       input.onchange = (ev) => {
-        if (ev.target.files?.length) {
+        if (ev.target.files?.length)
           uploadFiles(Array.from(ev.target.files), connectedAccounts[0].email);
-        }
       };
       input.click();
     } else {
@@ -73,201 +61,201 @@ export const DashboardLayout = ({ children }) => {
     }
   };
 
-  const handleSignOut = async () => {
-    setUserMenuOpen(false);
-    await signOut();
-  };
-
   return (
-    <div className="flex h-screen overflow-hidden bg-white dark:bg-[#020617] text-slate-900 dark:text-slate-100 font-sans">
-      {/* ── Mobile Sidebar Overlay ── */}
+    <div style={{
+      display: 'flex', height: '100vh', overflow: 'hidden',
+      background: 'var(--color-bg-base)',
+      color: 'var(--color-text-primary)',
+      fontFamily: '"Inter", system-ui, sans-serif',
+    }}>
+
+      {/* ── Mobile backdrop ── */}
       <AnimatePresence>
         {sidebarOpen && (
-          <>
-            {/* Backdrop — mobile only */}
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => dispatch(setSidebarOpen(false))}
-              className="fixed inset-0 z-30 bg-black/50 md:hidden"
-            />
-            {/* Sidebar */}
-            <motion.div
-              key="sidebar"
-              initial={{ x: -260 }}
-              animate={{ x: 0 }}
-              exit={{ x: -260 }}
-              transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
-              className="fixed md:relative inset-y-0 left-0 z-40 md:z-auto w-[260px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/90 backdrop-blur-xl"
-            >
-              <Sidebar />
-            </motion.div>
-          </>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => dispatch(setSidebarOpen(false))}
+            style={{ position: 'fixed', inset: 0, zIndex: 30, background: 'rgba(0,0,0,0.4)' }}
+            className="md:hidden"
+          />
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Offline banner */}
+      {/* ── Sidebar — desktop: static, mobile: overlay ── */}
+      {/* Desktop */}
+      {sidebarOpen && (
+        <div className="hidden md:flex flex-shrink-0" style={{ zIndex: 'auto' }}>
+          <Sidebar />
+        </div>
+      )}
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            key="sidebar-mobile"
+            initial={{ x: -260 }} animate={{ x: 0 }} exit={{ x: -260 }}
+            transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+            style={{ position: 'fixed', inset: '0 auto 0 0', zIndex: 40 }}
+            className="md:hidden"
+          >
+            <Sidebar />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+
+        {/* ── Offline Banner ── */}
         <AnimatePresence>
           {offlineBanner && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-orange-50 dark:bg-orange-500/10 border-b border-orange-200 dark:border-orange-500/20 text-orange-700 dark:text-orange-400 py-2 px-4 flex items-center justify-center gap-2 flex-shrink-0"
+              initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+              style={{
+                background: 'rgba(249,115,22,0.08)', borderBottom: '1px solid rgba(249,115,22,0.2)',
+                color: '#f97316', padding: '7px 16px', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                fontSize: '0.8rem', fontWeight: 500,
+              }}
             >
-              <WifiOff size={16} />
-              <span className="text-sm font-medium">You are offline — changes will sync when reconnected</span>
+              <WifiOff size={14} />
+              You are offline — changes will sync when reconnected
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Top Navigation */}
-        <header className="flex-shrink-0 h-14 px-3 md:px-5 flex items-center gap-2 md:gap-3 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-20">
+        {/* ── Header ── */}
+        <header style={{
+          flexShrink: 0,
+          height: 'var(--header-height)',
+          padding: '0 16px',
+          display: 'flex', alignItems: 'center', gap: 8,
+          borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-bg-surface)',
+          zIndex: 20,
+        }}>
           {/* Hamburger */}
           <button
             onClick={() => dispatch(setSidebarOpen(!sidebarOpen))}
-            className="flex-shrink-0 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Toggle sidebar"
+            title="Toggle sidebar"
+            style={{
+              width: 30, height: 30, borderRadius: 6,
+              border: '1px solid var(--color-border)', background: 'transparent',
+              cursor: 'pointer', color: 'var(--color-text-secondary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, transition: 'background 130ms',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-overlay)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <Menu size={20} />
+            <Menu size={15} />
           </button>
 
-          {/* Logo — shown when sidebar is closed on desktop */}
-          {!sidebarOpen && (
-            <Link to="/dashboard" className="hidden md:flex items-center gap-2 flex-shrink-0 mr-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white">
-                <Cloud size={16} />
+          {/* Mobile search overlay */}
+          {mobileSearchOpen && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 50, display: 'flex',
+              alignItems: 'center', padding: '0 16px', gap: 10,
+              background: 'var(--color-bg-surface)',
+            }}>
+              <button onClick={() => setMobileSearchOpen(false)} style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+              }}>
+                <X size={18} />
+              </button>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Search size={14} style={{
+                  position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                  color: 'var(--color-text-muted)', pointerEvents: 'none',
+                }} />
+                <input
+                  autoFocus type="text" placeholder="Search files…"
+                  value={searchQuery}
+                  onChange={e => dispatch(setSearchQuery(e.target.value))}
+                  style={{
+                    width: '100%', padding: '7px 10px 7px 32px',
+                    borderRadius: 7, border: '1px solid var(--color-border)',
+                    background: 'var(--color-bg-elevated)',
+                    color: 'var(--color-text-primary)', fontSize: '0.85rem', outline: 'none',
+                  }}
+                />
               </div>
-              <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white">DriveUnify</span>
-            </Link>
+            </div>
           )}
 
-          {/* Search — desktop: full bar, mobile: hidden unless toggled */}
-          <div className={`${mobileSearchOpen ? 'flex absolute inset-x-0 top-0 h-14 bg-white dark:bg-slate-900 px-4 z-50 items-center' : 'hidden md:flex'} flex-1`}>
-            {mobileSearchOpen && (
-              <button onClick={() => setMobileSearchOpen(false)} className="mr-3 text-slate-500">
-                <X size={20} />
-              </button>
-            )}
-            <div className="relative flex-1 max-w-xl">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search files and folders…"
-                value={searchQuery}
-                onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                autoFocus={mobileSearchOpen}
-                className="w-full bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Spacer when search is inline on desktop */}
-          <div className="flex-1 md:hidden" />
+          <div style={{ flex: 1 }} />
 
           {/* Right actions */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Mobile search toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {/* Mobile search icon */}
             <button
+              className="md:hidden"
               onClick={() => setMobileSearchOpen(true)}
-              className="md:hidden p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Search"
+              style={{
+                width: 30, height: 30, borderRadius: 6,
+                border: '1px solid var(--color-border)', background: 'transparent',
+                cursor: 'pointer', color: 'var(--color-text-secondary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
             >
-              <Search size={20} />
+              <Search size={15} />
             </button>
 
-            {/* View mode toggle — hidden on xs */}
-            <div className="hidden sm:flex bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 items-center gap-0.5">
-              <button
-                onClick={() => dispatch(setViewMode(VIEW_MODES.GRID))}
-                className={`p-1.5 rounded-md transition-colors ${viewMode === VIEW_MODES.GRID ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-                aria-label="Grid view"
-              >
-                <LayoutGrid size={15} />
-              </button>
-              <button
-                onClick={() => dispatch(setViewMode(VIEW_MODES.LIST))}
-                className={`p-1.5 rounded-md transition-colors ${viewMode === VIEW_MODES.LIST ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-                aria-label="List view"
-              >
-                <List size={15} />
-              </button>
-            </div>
-
-            {/* Upload button */}
+            {/* Upload */}
             <button
               onClick={triggerFileUpload}
-              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors shadow-sm"
-              aria-label="Upload files"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 7,
+                background: 'var(--color-accent)', color: 'var(--color-accent-fg)',
+                border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+                transition: 'opacity 150ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
-              <Upload size={15} />
+              <Upload size={13} />
               <span className="hidden sm:inline">Upload</span>
             </button>
 
-            {/* User avatar */}
-            <div className="relative ml-1">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="w-8 h-8 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 transition-colors flex-shrink-0"
-                aria-label="User menu"
-              >
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                    {user?.displayName?.[0] || user?.email?.[0] || '?'}
-                  </div>
-                )}
-              </button>
+            {/* Bell */}
+            <button style={{
+              width: 30, height: 30, borderRadius: 6,
+              border: '1px solid var(--color-border)', background: 'transparent',
+              cursor: 'pointer', color: 'var(--color-text-secondary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 130ms',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-overlay)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <Bell size={15} />
+            </button>
 
-              <AnimatePresence>
-                {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden"
-                    >
-                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                        <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{user?.displayName || 'User'}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{user?.email}</p>
-                      </div>
-                      <div className="p-1.5">
-                        <Link
-                          to="/settings"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          <Settings size={15} /> Settings
-                        </Link>
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors mt-0.5"
-                        >
-                          <LogOut size={15} /> Sign out
-                        </button>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* More */}
+            <button style={{
+              width: 30, height: 30, borderRadius: 6,
+              border: '1px solid var(--color-border)', background: 'transparent',
+              cursor: 'pointer', color: 'var(--color-text-secondary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 130ms',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-overlay)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <MoreHorizontal size={15} />
+            </button>
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
+        {/* ── Main Content ── */}
+        <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }} className="scrollbar-thin">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="h-full"
+            transition={{ duration: 0.25 }}
+            style={{ height: '100%' }}
           >
             {children}
           </motion.div>

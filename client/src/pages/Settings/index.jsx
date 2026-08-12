@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   User, HardDrive, Settings as SettingsIcon, AlertTriangle,
-  RefreshCw, Plus, LogOut, Shield, CreditCard, Bell, Users,
-  ChevronRight, Cloud
+  RefreshCw, Plus, LogOut, Shield, Bell, Users,
+  ChevronRight, Cloud, LayoutGrid, List, Check, CreditCard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDrive } from '../../hooks/useDrive';
@@ -14,18 +14,151 @@ import { setConnectModalOpen } from '../../store/slices/uiSlice';
 import { setViewMode, setSortBy } from '../../store/slices/driveSlice';
 import { VIEW_MODES, SORT_OPTIONS } from '../../config/constants';
 import { getAccountColor } from '../../config/constants';
-import { AnimatedButton } from '../../components/ui';
 
-const Section = ({ title, icon: Icon, children }) => (
-  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 overflow-hidden">
-    <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80">
-      <Icon size={16} className="text-slate-500 dark:text-slate-400" />
-      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{title}</span>
-    </div>
-    <div className="p-5">{children}</div>
+/* ── Shared section wrapper ── */
+const Section = ({ title, description, children }) => (
+  <div style={{
+    borderRadius: 10,
+    border: '1px solid var(--color-border)',
+    background: 'var(--color-bg-surface)',
+    overflow: 'hidden',
+    marginBottom: 12,
+  }}>
+    {(title || description) && (
+      <div style={{
+        padding: '14px 20px',
+        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--color-bg-elevated)',
+      }}>
+        {title && (
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            {title}
+          </div>
+        )}
+        {description && (
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
+            {description}
+          </div>
+        )}
+      </div>
+    )}
+    <div style={{ padding: '16px 20px' }}>{children}</div>
   </div>
 );
 
+/* ── Divider ── */
+const Divider = () => (
+  <div style={{ height: 1, background: 'var(--color-border)', margin: '14px 0' }} />
+);
+
+/* ── Setting row ── */
+const SettingRow = ({ label, description, children }) => (
+  <div style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: 16, flexWrap: 'wrap',
+  }}>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: '0.83rem', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+        {label}
+      </div>
+      {description && (
+        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
+          {description}
+        </div>
+      )}
+    </div>
+    <div style={{ flexShrink: 0 }}>{children}</div>
+  </div>
+);
+
+/* ── Segmented control ── */
+const SegmentedControl = ({ options, value, onChange }) => (
+  <div style={{
+    display: 'flex', background: 'var(--color-bg-elevated)',
+    border: '1px solid var(--color-border)', borderRadius: 7, padding: 2, gap: 2,
+  }}>
+    {options.map(opt => (
+      <button
+        key={opt.value}
+        onClick={() => onChange(opt.value)}
+        style={{
+          padding: '4px 12px', borderRadius: 5, border: 'none', cursor: 'pointer',
+          fontSize: '0.78rem', fontWeight: 500,
+          background: value === opt.value ? 'var(--color-bg-surface)' : 'transparent',
+          color: value === opt.value ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+          boxShadow: value === opt.value ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+          transition: 'all 130ms',
+          display: 'flex', alignItems: 'center', gap: 5,
+        }}
+      >
+        {opt.icon && <opt.icon size={13} />}
+        {opt.label}
+      </button>
+    ))}
+  </div>
+);
+
+/* ── Field label+input combo ── */
+const Field = ({ label, children }) => (
+  <div>
+    <label style={{
+      display: 'block', fontSize: '0.72rem', fontWeight: 600,
+      color: 'var(--color-text-muted)', textTransform: 'uppercase',
+      letterSpacing: '0.05em', marginBottom: 6,
+    }}>
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const TextInput = ({ value, onChange, disabled, type = 'text', placeholder }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={onChange}
+    disabled={disabled}
+    placeholder={placeholder}
+    style={{
+      width: '100%', padding: '8px 12px', borderRadius: 7,
+      border: '1px solid var(--color-border)',
+      background: disabled ? 'var(--color-bg-elevated)' : 'var(--color-bg-surface)',
+      color: disabled ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+      fontSize: '0.83rem', outline: 'none',
+      cursor: disabled ? 'not-allowed' : 'text',
+      transition: 'border-color 130ms',
+      boxSizing: 'border-box',
+    }}
+    onFocus={e => { if (!disabled) e.target.style.borderColor = 'var(--color-border-strong)'; }}
+    onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; }}
+  />
+);
+
+/* ── Coming soon placeholder ── */
+const ComingSoon = ({ label }) => (
+  <div style={{
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', padding: '40px 24px', textAlign: 'center', gap: 10,
+  }}>
+    <div style={{
+      width: 44, height: 44, borderRadius: 10,
+      background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <AlertTriangle size={20} style={{ color: 'var(--color-text-muted)' }} />
+    </div>
+    <div>
+      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 3 }}>
+        {label} — coming soon
+      </div>
+      <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+        This section is under active development.
+      </div>
+    </div>
+  </div>
+);
+
+/* ── Main Settings page ── */
 const Settings = () => {
   const dispatch = useDispatch();
   const { user, signOut } = useAuth();
@@ -35,235 +168,349 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'connected', label: 'Connected Apps', icon: HardDrive },
-    { id: 'team', label: 'Team', icon: Users },
+    { id: 'profile',      label: 'Profile',        icon: User },
+    { id: 'preferences',  label: 'Preferences',    icon: SettingsIcon },
+    { id: 'connected',    label: 'Connected Apps', icon: HardDrive },
+    { id: 'security',     label: 'Security',       icon: Shield },
+    { id: 'notifications',label: 'Notifications',  icon: Bell },
+    { id: 'billing',      label: 'Billing',        icon: CreditCard },
+    { id: 'team',         label: 'Team',           icon: Users },
   ];
 
-  return (
-    <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Settings</h1>
+  const btnStyle = (variant = 'default') => ({
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '7px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
+    fontSize: '0.8rem', fontWeight: 600, transition: 'opacity 150ms',
+    ...(variant === 'primary' ? {
+      background: 'var(--color-accent)', color: 'var(--color-accent-fg)',
+    } : variant === 'danger' ? {
+      background: 'transparent', color: '#ef4444',
+      border: '1px solid rgba(239,68,68,0.3)',
+    } : {
+      background: 'var(--color-bg-elevated)',
+      color: 'var(--color-text-primary)',
+      border: '1px solid var(--color-border)',
+    }),
+  });
 
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar tabs */}
-        <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible md:w-52 flex-shrink-0 pb-2 md:pb-0">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 md:w-full ${
-                  isActive
-                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon size={17} />
-                <span>{tab.label}</span>
-                {isActive && <ChevronRight size={14} className="ml-auto opacity-40 hidden md:block" />}
-              </button>
-            );
-          })}
+  return (
+    <div style={{ maxWidth: 820, margin: '0 auto', padding: '24px 16px 48px' }}>
+      {/* Page title */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{
+          margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 700,
+          color: 'var(--color-text-primary)', letterSpacing: '-0.02em',
+        }}>Settings</h1>
+        <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
+          Manage your account, preferences, and connected drives.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+        {/* ── Sidebar nav ── */}
+        <nav
+          className="settings-nav"
+          style={{
+            width: 200, flexShrink: 0,
+            borderRadius: 10, border: '1px solid var(--color-border)',
+            background: 'var(--color-bg-surface)',
+            overflow: 'hidden', padding: '6px',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Mobile: horizontal scroll */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9,
+                    padding: '8px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    fontSize: '0.82rem', fontWeight: 500, textAlign: 'left', width: '100%',
+                    background: isActive ? 'var(--color-bg-elevated)' : 'transparent',
+                    color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                    transition: 'background 130ms, color 130ms',
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-bg-overlay)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <Icon size={15} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1 }}>{tab.label}</span>
+                  {isActive && <ChevronRight size={13} style={{ color: 'var(--color-text-muted)' }} />}
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
+        {/* ── Content ── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-              className="flex flex-col gap-4"
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16 }}
             >
+
+              {/* ── Profile ── */}
               {activeTab === 'profile' && (
                 <>
-                  <Section title="Profile" icon={User}>
-                    <div className="flex flex-col sm:flex-row gap-6 items-start">
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 flex-shrink-0">
+                  <Section title="Profile" description="Your name, avatar, and contact information.">
+                    {/* Avatar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                      <div style={{
+                        width: 64, height: 64, borderRadius: 12, overflow: 'hidden',
+                        border: '1px solid var(--color-border)', flexShrink: 0,
+                      }}>
                         {user?.photoURL ? (
-                          <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                          <img src={user.photoURL} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-                            {user?.displayName?.[0] || '?'}
+                          <div style={{
+                            width: '100%', height: '100%',
+                            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: '1.5rem', fontWeight: 700,
+                          }}>
+                            {user?.displayName?.[0] || user?.email?.[0] || '?'}
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 space-y-4 w-full">
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Display Name</label>
-                            <input
-                              type="text"
-                              defaultValue={user?.displayName}
-                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</label>
-                            <input
-                              type="email"
-                              defaultValue={user?.email}
-                              disabled
-                              className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                            />
-                          </div>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 2 }}>
+                          {user?.displayName || 'No name set'}
                         </div>
-                        <div className="flex justify-end">
-                          <AnimatedButton size="sm">Save Changes</AnimatedButton>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: 10 }}>
+                          {user?.email}
+                        </div>
+                        {/* Upload photo zone matching reference */}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '10px 14px', borderRadius: 8,
+                          border: '1px solid var(--color-border)',
+                          background: 'var(--color-bg-elevated)',
+                          cursor: 'pointer',
+                        }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%',
+                            background: 'var(--color-bg-overlay)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-secondary)' }}>
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--color-text-primary)', fontWeight: 500 }}>
+                              <span style={{ textDecoration: 'underline', fontWeight: 600 }}>Click to upload</span>
+                              {' '}or drag and drop
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                              SVG, PNG, JPG or GIF (max. 800×400px)
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </Section>
 
-                  <Section title="Preferences" icon={SettingsIcon}>
-                    <div className="space-y-5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Default View</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">How files are displayed</p>
-                        </div>
-                        <div className="flex bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5">
-                          <button
-                            onClick={() => dispatch(setViewMode(VIEW_MODES.GRID))}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === VIEW_MODES.GRID ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
-                          >
-                            Grid
-                          </button>
-                          <button
-                            onClick={() => dispatch(setViewMode(VIEW_MODES.LIST))}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === VIEW_MODES.LIST ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
-                          >
-                            List
-                          </button>
-                        </div>
-                      </div>
-                      <div className="h-px bg-slate-100 dark:bg-slate-800" />
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Default Sort</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">How files are ordered initially</p>
-                        </div>
-                        <select
-                          value={sortBy}
-                          onChange={(e) => dispatch(setSortBy(e.target.value))}
-                          className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors"
-                        >
-                          {SORT_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}
+                         className="grid-cols-1 sm:grid-cols-2">
+                      <Field label="Display Name">
+                        <TextInput value={user?.displayName || ''} onChange={() => {}} placeholder="Your name" />
+                      </Field>
+                      <Field label="Email">
+                        <TextInput value={user?.email || ''} disabled />
+                      </Field>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button style={btnStyle('primary')}>
+                        <Check size={13} /> Save changes
+                      </button>
                     </div>
                   </Section>
 
-                  <div className="flex items-center justify-between p-5 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10">
+                  {/* Danger zone */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 16, padding: '16px 20px', borderRadius: 10, flexWrap: 'wrap',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    background: 'rgba(239,68,68,0.04)',
+                  }}>
                     <div>
-                      <p className="font-semibold text-red-700 dark:text-red-400 text-sm">Sign Out</p>
-                      <p className="text-xs text-red-500 dark:text-red-500 mt-0.5">You will need to log in again</p>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ef4444', marginBottom: 2 }}>Sign out</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                        You will be redirected to the login page.
+                      </div>
                     </div>
-                    <button
-                      onClick={() => setSignOutConfirm(true)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700/60 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                    >
-                      <LogOut size={15} /> Sign Out
+                    <button onClick={() => setSignOutConfirm(true)} style={btnStyle('danger')}>
+                      <LogOut size={14} /> Sign out
                     </button>
                   </div>
                 </>
               )}
 
+              {/* ── Preferences ── */}
+              {activeTab === 'preferences' && (
+                <Section title="Preferences" description="Customize how DriveUnify looks and behaves.">
+                  <SettingRow
+                    label="Default View"
+                    description="How files are displayed when you open a folder."
+                  >
+                    <SegmentedControl
+                      value={viewMode}
+                      onChange={v => dispatch(setViewMode(v))}
+                      options={[
+                        { value: VIEW_MODES.LIST,  label: 'List',  icon: List },
+                        { value: VIEW_MODES.GRID,  label: 'Grid',  icon: LayoutGrid },
+                      ]}
+                    />
+                  </SettingRow>
+
+                  <Divider />
+
+                  <SettingRow
+                    label="Default Sort"
+                    description="Initial ordering of files in the file table."
+                  >
+                    <select
+                      value={sortBy}
+                      onChange={e => dispatch(setSortBy(e.target.value))}
+                      style={{
+                        padding: '6px 10px', borderRadius: 7,
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-bg-elevated)',
+                        color: 'var(--color-text-primary)',
+                        fontSize: '0.82rem', outline: 'none', cursor: 'pointer',
+                      }}
+                    >
+                      {SORT_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </SettingRow>
+                </Section>
+              )}
+
+              {/* ── Connected Apps ── */}
               {activeTab === 'connected' && (
-                <Section title="Connected Drives" icon={HardDrive}>
-                  <div className="space-y-4">
-                    <div className="flex justify-end">
+                <Section title="Connected Drives" description="Manage your linked Google Drive accounts.">
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+                    <button
+                      onClick={() => dispatch(setConnectModalOpen(true))}
+                      style={btnStyle('default')}
+                    >
+                      <Plus size={14} /> Add account
+                    </button>
+                  </div>
+
+                  {connectedAccounts.length === 0 ? (
+                    <div style={{
+                      textAlign: 'center', padding: '32px 24px',
+                      border: '1.5px dashed var(--color-border)', borderRadius: 9,
+                    }}>
+                      <HardDrive size={28} style={{ color: 'var(--color-text-muted)', margin: '0 auto 8px', opacity: 0.5 }} />
+                      <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
+                        No drives connected yet
+                      </div>
                       <button
                         onClick={() => dispatch(setConnectModalOpen(true))}
-                        className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                        style={{ ...btnStyle('primary'), margin: '0 auto' }}
                       >
-                        <Plus size={15} /> Add another account
+                        Connect Google Drive
                       </button>
                     </div>
-
-                    {connectedAccounts.length === 0 ? (
-                      <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-                        <HardDrive size={36} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-                        <p className="text-slate-500 dark:text-slate-400 text-sm">No drives connected yet.</p>
-                        <button
-                          onClick={() => dispatch(setConnectModalOpen(true))}
-                          className="mt-3 text-sm text-blue-500 hover:underline"
-                        >
-                          Connect your first drive
-                        </button>
-                      </div>
-                    ) : (
-                      connectedAccounts.map(account => (
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {connectedAccounts.map(account => (
                         <div
                           key={account.email}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40"
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '12px 14px', borderRadius: 8,
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-bg-elevated)',
+                            flexWrap: 'wrap',
+                          }}
                         >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                              style={{ backgroundColor: getAccountColor(account.email) }}
-                            >
-                              <Cloud size={18} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-900 dark:text-white">{account.email}</p>
-                              {account.storage && (
-                                <div className="flex items-center gap-2 mt-1">
-                                  <div className="w-28 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-blue-500 rounded-full"
-                                      style={{ width: `${Math.min((account.storage.used / account.storage.limit) * 100, 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                                    {formatFileSize(account.storage.used)} / {formatFileSize(account.storage.limit)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                          {/* Icon */}
+                          <div style={{
+                            width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                            background: getAccountColor(account.email),
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff',
+                          }}>
+                            <Cloud size={16} />
                           </div>
-                          <div className="flex items-center gap-2">
+                          {/* Info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.83rem', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                              {account.email}
+                            </div>
+                            {account.storage && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                <div style={{
+                                  flex: 1, maxWidth: 120, height: 3, borderRadius: 99,
+                                  background: 'var(--color-border-strong)', overflow: 'hidden',
+                                }}>
+                                  <div style={{
+                                    width: `${Math.min((account.storage.used / account.storage.limit) * 100, 100)}%`,
+                                    height: '100%', borderRadius: 99,
+                                    background: getAccountColor(account.email),
+                                    transition: 'width 0.5s',
+                                  }} />
+                                </div>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                                  {formatFileSize(account.storage.used)} / {formatFileSize(account.storage.limit)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Actions */}
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                             <button
                               onClick={() => refreshAccount(account.email)}
                               title="Refresh"
-                              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                              style={{
+                                width: 30, height: 30, borderRadius: 6, border: '1px solid var(--color-border)',
+                                background: 'transparent', cursor: 'pointer',
+                                color: 'var(--color-text-secondary)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
                             >
-                              <RefreshCw size={15} />
+                              <RefreshCw size={13} />
                             </button>
                             <button
                               onClick={() => disconnectAccount(account.email)}
-                              className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              style={{
+                                padding: '4px 10px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 500,
+                                border: '1px solid rgba(239,68,68,0.25)',
+                                background: 'transparent', color: '#ef4444', cursor: 'pointer',
+                              }}
                             >
                               Disconnect
                             </button>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </Section>
               )}
 
+              {/* ── Other tabs → coming soon ── */}
               {['security', 'notifications', 'billing', 'team'].includes(activeTab) && (
-                <Section title={tabs.find(t => t.id === activeTab)?.label} icon={tabs.find(t => t.id === activeTab)?.icon || AlertTriangle}>
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                      <AlertTriangle size={28} className="text-slate-400" />
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-400 font-medium">Coming soon</p>
-                    <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">This section is under active development.</p>
-                  </div>
+                <Section title={tabs.find(t => t.id === activeTab)?.label}>
+                  <ComingSoon label={tabs.find(t => t.id === activeTab)?.label} />
                 </Section>
               )}
+
             </motion.div>
           </AnimatePresence>
         </div>

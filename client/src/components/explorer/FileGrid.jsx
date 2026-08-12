@@ -1,38 +1,30 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { FileCard } from './FileCard';
 import { toggleFileSelection } from '../../store/slices/driveSlice';
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
+  show:   { opacity: 1, transition: { staggerChildren: 0.04 } }
 };
 
 export const FileGrid = ({
-  files,
-  onFileClick,
-  onContextMenu,
-  onMenuClick,
+  files, onFileClick, onContextMenu, onMenuClick,
 }) => {
   const dispatch = useDispatch();
   const { selectedFiles } = useSelector(s => s.drive);
 
   return (
-    <Box sx={{ overflowY: 'auto', height: '100%', px: 2, pb: 4 }}>
-      <Box 
-        component={motion.div}
+    <div style={{ overflowY: 'auto', height: '100%', padding: '12px 16px 24px' }} className="scrollbar-thin">
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        sx={{
+        style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: 2,
-          pt: 1
+          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gap: 10,
+          paddingTop: 4,
         }}
       >
         {files.map(file => (
@@ -46,7 +38,7 @@ export const FileGrid = ({
             onMenuClick={onMenuClick}
           />
         ))}
-      </Box>
-    </Box>
+      </motion.div>
+    </div>
   );
 };
