@@ -1,9 +1,12 @@
-import { useAuth } from './hooks/useAuth';
+import { useAuthInit } from './hooks/useAuth';
 import { AppRoutes } from './routes/AppRoutes';
 
 const App = () => {
-  // Initialize auth listener globally
-  useAuth();
+  const isOAuthCallback = typeof window !== 'undefined' && window.location.pathname.startsWith('/oauth/callback');
+
+  // Initialize auth listener globally ONLY for app routes, NEVER inside OAuth popup callback!
+  useAuthInit(!isOAuthCallback);
+
   return <AppRoutes />;
 };
 

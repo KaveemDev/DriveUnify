@@ -26,8 +26,14 @@ setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 // Allowed origins: localhost for dev, add your production domain here.
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
-  'https://drive-unify.vercel.app'
-  // Add your production domain, e.g.: 'https://drivehub.example.com'
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5175',
+  'https://drive-unify.vercel.app',
+  /^https?:\/\/localhost:[0-9]+$/,
+  /^https?:\/\/127\.0\.0\.1:[0-9]+$/
 ];
 
 // Google OAuth2 client – uses server-side client secret (safe here)

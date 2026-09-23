@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
@@ -50,12 +50,6 @@ if (validateEnv()) {
   auth = getAuth(app);
   db = getFirestore(app);
   functions = getFunctions(app, 'us-central1');
-
-  // Explicitly set localStorage persistence so the session survives page reloads
-  // and isn't cleared by browser session expiry (fixes "logged out after a day" bug)
-  setPersistence(auth, browserLocalPersistence).catch((err) => {
-    console.warn('[DriveUnify] Could not set auth persistence:', err);
-  });
 
   // Connect to local emulator in development
   if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true') {

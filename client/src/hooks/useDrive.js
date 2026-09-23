@@ -39,9 +39,13 @@ export const useDrive = () => {
           expired: false,
         }));
         if (user?.uid) {
-          await updateAccountTokens(user.uid, account.email, {
-            expiryDate: refreshed.expiryDate,
-          });
+          try {
+            await updateAccountTokens(user.uid, account.email, {
+              expiryDate: refreshed.expiryDate,
+            });
+          } catch (err) {
+            console.warn('[DriveUnify] Non-fatal: Direct token update failed:', err.message);
+          }
         }
       }
       return refreshed;
@@ -71,9 +75,13 @@ export const useDrive = () => {
 
       dispatch(addAccount(accountData));
 
-      // Save metadata (no token) to Firestore — CF already saved the refresh_token
+      // Save metadata (no token) to Firestore — CF already saved both token & metadata
       if (user?.uid) {
-        await addConnectedAccount(user.uid, accountData);
+        try {
+          await addConnectedAccount(user.uid, accountData);
+        } catch (err) {
+          console.warn('[DriveUnify] Note: CF already stored metadata. Direct Firestore write skipped:', err.message);
+        }
       }
 
       toast.success(`Connected ${oauthData.email}`);
@@ -105,7 +113,11 @@ export const useDrive = () => {
 
       // Also remove from client-readable Firestore metadata
       if (user?.uid) {
-        await removeConnectedAccount(user.uid, email);
+        try {
+          await removeConnectedAccount(user.uid, email);
+        } catch (err) {
+          console.warn('[DriveUnify] Direct Firestore removal skipped (handled by Cloud Function):', err.message);
+        }
       }
 
       toast.success(`Disconnected ${email}`);

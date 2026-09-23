@@ -15,7 +15,15 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import app from '../../config/firebase';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const REDIRECT_URI = import.meta.env.VITE_OAUTH_REDIRECT_URI || `${window.location.origin}/oauth/callback`;
+
+export const getOAuthRedirectUri = () => {
+  if (typeof window === 'undefined') return '';
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isLocal) {
+    return `${window.location.origin}/oauth/callback`;
+  }
+  return import.meta.env.VITE_OAUTH_REDIRECT_URI || `${window.location.origin}/oauth/callback`;
+};
 
 const GOOGLE_DRIVE_SCOPES = [
   'https://www.googleapis.com/auth/drive',
@@ -37,9 +45,10 @@ const getFns = () => {
 // ── Build Google OAuth authorization URL ──────────────────────
 
 const buildAuthUrl = () => {
+  const redirectUri = getOAuthRedirectUri();
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: GOOGLE_DRIVE_SCOPES.join(' '),
     access_type: 'offline',      // Required to get refresh_token
@@ -87,9 +96,13 @@ const openOAuthPopup = () => {
 
     // Poll for popup close (user closed it manually)
     const pollClosed = setInterval(() => {
-      if (popup.closed) {
-        cleanup();
-        reject(new Error('OAuth popup was closed'));
+      try {
+        if (popup.closed) {
+          cleanup();
+          reject(new Error('OAuth popup was closed'));
+        }
+      } catch {
+        // Cross-Origin-Opener-Policy can throw when inspecting popup.closed on external origin
       }
     }, 500);
 
@@ -116,8 +129,9 @@ export const requestDriveAccess = async () => {
   const code = await openOAuthPopup();
 
   // Step 2: Exchange code via Cloud Function (client_secret stays on server)
+  const redirectUri = getOAuthRedirectUri();
   const exchangeFn = httpsCallable(fns, 'exchangeGoogleCode');
-  const result = await exchangeFn({ code, redirectUri: REDIRECT_URI });
+  const result = await exchangeFn({ code, redirectUri });
 
   if (!result.data) throw new Error('No data returned from token exchange');
 
