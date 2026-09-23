@@ -85,8 +85,9 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
 
   return (
     <section
+      className="dashboard-analytics-section"
       style={{
-        padding: '14px 24px',
+        padding: '14px 20px',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-bg-surface)',
       }}
@@ -97,6 +98,8 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
           marginBottom: 12,
         }}
       >
@@ -118,26 +121,26 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
           <h2
             style={{
               margin: 0,
-              fontSize: '0.8125rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               color: 'var(--color-text-muted)',
             }}
           >
-            Storage & Content Analytics
+            Analytics & Storage
           </h2>
         </div>
-        <span style={{ fontSize: '0.73rem', color: 'var(--color-text-muted)' }}>
-          Real-time metrics across {connectedAccounts.length} active {connectedAccounts.length === 1 ? 'drive' : 'drives'}
+        <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+          {connectedAccounts.length} active {connectedAccounts.length === 1 ? 'drive' : 'drives'}
         </span>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* KPI Cards Grid: 2 columns on mobile, fluid on desktop */}
       <div
+        className="analytics-kpi-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: 10,
           marginBottom: 14,
         }}

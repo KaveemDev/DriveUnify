@@ -40,6 +40,7 @@ export const FileToolbar = ({
 
   return (
     <div
+      className="dashboard-filetoolbar-container"
       style={{
         padding: '12px 24px',
         borderBottom: '1px solid var(--color-border)',

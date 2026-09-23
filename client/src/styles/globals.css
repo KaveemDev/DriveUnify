@@ -398,8 +398,66 @@ body {
   }
 }
 
-/* ── Dashboard: mobile compact padding ───────────────────── */
+/* ── Dashboard & Mobile Optimization (Senior UI/UX 10y+ Polish) ─────── */
+@media (min-width: 640px) {
+  .quick-actions-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  }
+  .analytics-kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .storage-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  }
+}
+
 @media (max-width: 639px) {
+  /* Compact container paddings to preserve critical screen real estate */
+  .dashboard-header-container {
+    padding: 12px 14px 10px !important;
+    gap: 10px !important;
+  }
+  .dashboard-quickactions-section,
+  .dashboard-analytics-section,
+  .dashboard-storage-section,
+  .dashboard-recent-section,
+  .dashboard-filetoolbar-container {
+    padding: 11px 14px !important;
+  }
+
+  /* Quick Actions: 2-column balanced grid instead of 5 tall vertical blocks */
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .quick-action-card {
+    padding: 9px 10px !important;
+    gap: 8px !important;
+  }
+  .quick-action-card .hidden {
+    display: none !important;
+  }
+  .col-span-last-mobile {
+    grid-column: span 2;
+  }
+
+  /* Analytics KPIs: 2x2 compact grid */
+  .analytics-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .analytics-kpi-grid > div {
+    padding: 9px 11px !important;
+  }
+
+  /* Storage cards: single compact column or 1fr on mobile */
+  .storage-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Legacy card support */
   .qa-card { padding: 10px 12px; }
   .qa-card-icon { width: 32px; height: 32px; }
 }
+

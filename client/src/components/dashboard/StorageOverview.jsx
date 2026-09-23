@@ -16,8 +16,9 @@ export const StorageOverview = ({
 
   return (
     <section
+      className="dashboard-storage-section"
       style={{
-        padding: '16px 24px',
+        padding: '14px 20px',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-bg-surface)',
       }}
@@ -28,14 +29,16 @@ export const StorageOverview = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 10,
           marginBottom: 12,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '4px 10px' }}>
           <h2
             style={{
               margin: 0,
-              fontSize: '0.8125rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
@@ -46,7 +49,7 @@ export const StorageOverview = ({
           </h2>
           <span
             style={{
-              fontSize: '0.8125rem',
+              fontSize: '0.78rem',
               color: 'var(--color-text-secondary)',
               fontWeight: 500,
             }}
@@ -90,9 +93,9 @@ export const StorageOverview = ({
 
       {/* ── Provider Cards Row ── */}
       <div
+        className="storage-cards-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: 12,
         }}
       >

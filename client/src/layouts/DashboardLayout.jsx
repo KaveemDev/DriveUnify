@@ -135,42 +135,6 @@ export const DashboardLayout = ({ children }) => {
           )}
         </AnimatePresence>
 
-        {/* ── Slim Toggle Button when sidebar is closed ── */}
-        {!sidebarOpen && (
-          <button
-            onClick={() => dispatch(setSidebarOpen(true))}
-            title="Open sidebar"
-            style={{
-              position: 'absolute',
-              top: 14,
-              left: 14,
-              zIndex: 35,
-              width: 30,
-              height: 30,
-              borderRadius: 6,
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-bg-surface)',
-              color: 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-card)',
-              transition: 'background var(--transition-fast), color var(--transition-fast)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-bg-overlay)';
-              e.currentTarget.style.color = 'var(--color-text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--color-bg-surface)';
-              e.currentTarget.style.color = 'var(--color-text-secondary)';
-            }}
-          >
-            <Menu size={15} />
-          </button>
-        )}
-
         {/* ── Content View ── */}
         <main
           style={{

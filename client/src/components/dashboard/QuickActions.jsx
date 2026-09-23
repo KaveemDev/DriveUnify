@@ -76,18 +76,21 @@ export const QuickActions = ({
 
   return (
     <section
+      className="dashboard-quickactions-section"
       style={{
-        padding: '16px 24px',
+        padding: '14px 20px',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-bg-surface)',
       }}
     >
-      {/* Header */}
+      {/* Header & Filter Chips */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 10,
           marginBottom: 12,
         }}
       >
@@ -95,17 +98,29 @@ export const QuickActions = ({
           <h2
             style={{
               margin: 0,
-              fontSize: '0.8125rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               color: 'var(--color-text-muted)',
             }}
           >
-            Quick Actions & Operations
+            Quick Actions
           </h2>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+
+        {/* Filter shortcuts - horizontal scroll on mobile */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            overflowX: 'auto',
+            maxWidth: '100%',
+            paddingBottom: 2,
+          }}
+          className="scrollbar-thin"
+        >
           {quickFilterShortcuts.map((q) => {
             const Icon = q.icon;
             return (
@@ -116,14 +131,16 @@ export const QuickActions = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 5,
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 6,
                   border: '1px solid var(--color-border)',
                   background: 'var(--color-bg-elevated)',
                   color: 'var(--color-text-secondary)',
-                  fontSize: '0.72rem',
+                  fontSize: '0.73rem',
                   fontWeight: 500,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   transition: 'background var(--transition-fast), color var(--transition-fast)',
                 }}
                 onMouseEnter={(e) => {
@@ -143,16 +160,17 @@ export const QuickActions = ({
         </div>
       </div>
 
-      {/* Modern Prominent Cards Grid */}
+      {/* Modern Prominent Cards Grid: 2 columns on mobile, fluid on desktop */}
       <div
+        className="quick-actions-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
           gap: 10,
         }}
       >
-        {primaryActions.map((act) => {
+        {primaryActions.map((act, idx) => {
           const Icon = act.icon;
+          const isOddLast = idx === primaryActions.length - 1 && primaryActions.length % 2 !== 0;
           return (
             <div
               key={act.id}
@@ -160,17 +178,19 @@ export const QuickActions = ({
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && act.onClick?.()}
+              className={`quick-action-card ${isOddLast ? 'col-span-last-mobile' : ''}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
-                padding: '12px 14px',
-                borderRadius: 8,
+                gap: 11,
+                padding: '11px 13px',
+                borderRadius: 9,
                 border: '1px solid var(--color-border)',
                 background: 'var(--color-bg-elevated)',
                 cursor: 'pointer',
                 transition: 'all var(--transition-fast)',
                 position: 'relative',
+                minWidth: 0,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-border-strong)';
@@ -202,7 +222,7 @@ export const QuickActions = ({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: '0.8125rem',
+                    fontSize: '0.82rem',
                     fontWeight: 600,
                     color: 'var(--color-text-primary)',
                     display: 'flex',
@@ -215,6 +235,7 @@ export const QuickActions = ({
                   </span>
                   {act.shortcut && (
                     <kbd
+                      className="hidden sm:inline-block"
                       style={{
                         padding: '1px 4px',
                         borderRadius: 3,

@@ -30,6 +30,7 @@ export const RecentFiles = ({
 
   return (
     <section
+      className="dashboard-recent-section"
       style={{
         padding: '12px 24px',
         borderBottom: '1px solid var(--color-border)',
