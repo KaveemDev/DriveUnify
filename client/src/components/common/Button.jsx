@@ -1,18 +1,18 @@
 import { clsx } from 'clsx';
 
 const variants = {
-  primary: 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/25',
-  secondary: 'bg-slate-700 hover:bg-slate-600 text-slate-100 border border-slate-600',
-  ghost: 'hover:bg-slate-800 text-slate-300 hover:text-slate-100',
-  danger: 'bg-red-600 hover:bg-red-500 text-white',
-  outline: 'border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-slate-100 hover:bg-slate-800',
+  primary: 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm hover:shadow-blue-500/20 active:scale-[0.98]',
+  secondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700/60 active:scale-[0.98]',
+  ghost: 'hover:bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100',
+  danger: 'bg-red-600 hover:bg-red-500 text-white shadow-sm active:scale-[0.98]',
+  outline: 'border border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-500/10 active:scale-[0.98]',
 };
 
 const sizes = {
   xs: 'px-2.5 py-1 text-xs gap-1',
-  sm: 'px-3 py-1.5 text-sm gap-1.5',
-  md: 'px-4 py-2 text-sm gap-2',
-  lg: 'px-5 py-2.5 text-base gap-2',
+  sm: 'px-3 py-1.5 text-xs sm:text-sm gap-1.5 min-h-[36px]',
+  md: 'px-4 py-2 text-sm gap-2 min-h-[40px]',
+  lg: 'px-5 py-2.5 text-base gap-2 min-h-[44px]',
 };
 
 export const Button = ({

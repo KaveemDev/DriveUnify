@@ -124,7 +124,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
+        padding: 'clamp(8px, 2vw, 16px)',
         animation: 'fadeIn 0.15s ease',
       }}
       onClick={onClose}
@@ -133,7 +133,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
         style={{
           width: '100%',
           maxWidth: '1100px',
-          height: 'calc(100vh - 64px)',
+          height: 'min(calc(100dvh - 16px), calc(100vh - 48px))',
           borderRadius: 12,
           border: '1px solid var(--color-border)',
           background: 'var(--color-bg-surface, #111113)',
