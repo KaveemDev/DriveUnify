@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 import { setUser, setLoading, setInitialized, setError, logout } from '../store/slices/authSlice';
 import { setConnectedAccounts, updateAccount, setLoading as setDriveLoading } from '../store/slices/driveSlice';
 import { signInWithGoogle, signOutUser, onAuthStateChange, checkRedirectResult } from '../services/firebase/auth';
-import { createUserDocument, getConnectedAccounts } from '../services/firebase/firestore';
+import { createUserDocument, getConnectedAccounts, getLocalConnectedAccounts } from '../services/firebase/firestore';
 import { silentRefreshAccount } from '../services/google-drive/auth';
 
 /**
@@ -44,17 +45,20 @@ export const useAuthInit = (enabled = true) => {
           console.warn('[DriveUnify] Failed to update user document:', err)
         );
 
+        // Instantly hydrate accounts from localStorage cache (ensures zero empty-state flash on refresh)
+        const cachedAccounts = getLocalConnectedAccounts(firebaseUser.uid);
+        if (cachedAccounts.length > 0) {
+          dispatch(setConnectedAccounts(cachedAccounts));
+        }
+
         try {
           dispatch(setDriveLoading(true));
-          // Load connected account metadata from Firestore (no live token stored there)
+
+          // Load connected account metadata from Firestore (or fallback to local cache)
           const accounts = await getConnectedAccounts(firebaseUser.uid);
 
-          // Immediately populate the store so the UI can render placeholders
+          // Update store with latest accounts
           dispatch(setConnectedAccounts(accounts));
-
-          if (accounts.length === 0) {
-            dispatch(setDriveLoading(false));
-          }
 
           // Silently refresh tokens for all connected accounts via Cloud Functions.
           if (accounts.length > 0) {
@@ -77,6 +81,13 @@ export const useAuthInit = (enabled = true) => {
           }
         } catch (err) {
           console.warn('[DriveUnify] Could not load connected accounts:', err);
+          if (err.message?.includes('permission') || err.code === 'permission-denied') {
+            toast.error(
+              'Firestore permission denied. Please publish security rules in Firebase Console for cross-device sync.',
+              { id: 'firestore-rules-warning', duration: 8000 }
+            );
+          }
+        } finally {
           dispatch(setDriveLoading(false));
         }
       } else {

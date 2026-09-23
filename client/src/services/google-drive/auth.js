@@ -145,39 +145,47 @@ export const requestDriveAccess = async () => {
   };
 };
 
-// ── 2. Refresh an expired/expiring token silently ─────────────
-/**
- * Calls refreshGoogleToken Cloud Function with the user's Firebase auth.
- * Returns updated account data with fresh accessToken.
- * Never shows a popup — works even after weeks.
- */
+// In-flight refresh promises map to deduplicate simultaneous calls for the same email
+const _inFlightRefreshes = new Map();
+
 export const refreshDriveToken = async (account) => {
   const fns = getFns();
   if (!fns) throw new Error('Firebase not initialized.');
 
-  try {
-    const refreshFn = httpsCallable(fns, 'refreshGoogleToken');
-    const result = await refreshFn({ email: account.email });
-
-    if (!result.data?.accessToken) {
-      throw new Error('No access token in refresh response');
-    }
-
-    return {
-      ...account,
-      accessToken: result.data.accessToken,
-      expiryDate: result.data.expiryDate,
-      needsReconnect: false,
-      expired: false,
-    };
-  } catch (err) {
-    console.warn(`[DriveUnify] Token refresh failed for ${account.email}:`, err.message);
-    // If the CF says token is invalid/revoked, mark account as needing reconnect
-    if (err.code === 'functions/unauthenticated' || err.code === 'functions/not-found') {
-      return { ...account, accessToken: null, needsReconnect: true, expired: true };
-    }
-    throw err;
+  if (_inFlightRefreshes.has(account.email)) {
+    return _inFlightRefreshes.get(account.email);
   }
+
+  const refreshPromise = (async () => {
+    try {
+      const refreshFn = httpsCallable(fns, 'refreshGoogleToken');
+      const result = await refreshFn({ email: account.email });
+
+      if (!result.data?.accessToken) {
+        throw new Error('No access token in refresh response');
+      }
+
+      return {
+        ...account,
+        accessToken: result.data.accessToken,
+        expiryDate: result.data.expiryDate,
+        needsReconnect: false,
+        expired: false,
+      };
+    } catch (err) {
+      console.warn(`[DriveUnify] Token refresh failed for ${account.email}:`, err.message);
+      // If the CF says token is invalid/revoked, mark account as needing reconnect
+      if (err.code === 'functions/unauthenticated' || err.code === 'functions/not-found') {
+        return { ...account, accessToken: null, needsReconnect: true, expired: true };
+      }
+      throw err;
+    }
+  })().finally(() => {
+    _inFlightRefreshes.delete(account.email);
+  });
+
+  _inFlightRefreshes.set(account.email, refreshPromise);
+  return refreshPromise;
 };
 
 // ── 3. Silent refresh on app load ─────────────────────────────
