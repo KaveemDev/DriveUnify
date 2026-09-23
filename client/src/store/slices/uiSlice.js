@@ -12,8 +12,12 @@ const uiSlice = createSlice({
     isSearchFocused: false,
     transferModalOpen: false,
     transferFile: null,
+    activeNav: 'home', // 'home' | 'files' | 'recent' | 'starred' | 'shared' | 'trash'
   },
   reducers: {
+    setActiveNav(state, action) {
+      state.activeNav = action.payload;
+    },
     toggleSidebar(state) {
       state.sidebarOpen = !state.sidebarOpen;
     },
@@ -59,6 +63,7 @@ const uiSlice = createSlice({
 });
 
 export const {
+  setActiveNav,
   toggleSidebar, setSidebarOpen,
   setConnectModalOpen, setPreviewFile,
   setTheme, addNotification, removeNotification, clearNotifications,

@@ -182,13 +182,18 @@ export const updateAccountTokens = async (uid, accountEmail, tokens) => {
   const accountId = sanitizeEmail(accountEmail);
   const accountRef = doc(db, 'users', uid, 'connected_accounts', accountId);
 
-  // Only persist safe metadata — never the access token
+  // Only persist safe metadata — never the access token, and strip undefined fields
   // eslint-disable-next-line no-unused-vars
   const { accessToken, ...safeTokens } = tokens;
+  const cleanTokens = {};
+  for (const [k, v] of Object.entries(safeTokens)) {
+    if (v !== undefined) cleanTokens[k] = v;
+  }
+  if (Object.keys(cleanTokens).length === 0) return;
 
   await withTimeout(
     updateDoc(accountRef, {
-      ...safeTokens,
+      ...cleanTokens,
       updatedAt: serverTimestamp(),
     }),
     'updateAccountTokens'

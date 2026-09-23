@@ -4,12 +4,25 @@ import { setCurrentFolder } from '../../store/slices/driveSlice';
 import { getAccountColor } from '../../config/constants';
 
 export const FileBreadcrumb = ({ onNavigateRoot }) => {
-  const dispatch     = useDispatch();
+  const dispatch = useDispatch();
   const { currentFolder } = useSelector(s => s.drive);
+  const { activeNav } = useSelector(s => s.ui);
 
   const handleRoot = () => {
     dispatch(setCurrentFolder(null));
     onNavigateRoot?.();
+  };
+
+  const getRootLabel = () => {
+    switch (activeNav) {
+      case 'files': return 'My Files';
+      case 'recent': return 'Recent Files';
+      case 'starred': return 'Starred';
+      case 'shared': return 'Shared with Me';
+      case 'trash': return 'Trash';
+      case 'home':
+      default: return 'All Files';
+    }
   };
 
   return (
@@ -32,7 +45,7 @@ export const FileBreadcrumb = ({ onNavigateRoot }) => {
         onMouseLeave={e => { if (currentFolder) e.currentTarget.style.background = 'transparent'; }}
       >
         <Home size={12} />
-        All Files
+        {getRootLabel()}
       </button>
 
       {currentFolder && (

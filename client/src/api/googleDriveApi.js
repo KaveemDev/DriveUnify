@@ -219,6 +219,15 @@ export const deleteFile = (accessToken, fileId, accountEmail = 'default') => {
   );
 };
 
+export const restoreFile = (accessToken, fileId, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, () =>
+    driveRequest(accessToken, `${DRIVE_API_BASE}/files/${fileId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ trashed: false }),
+    })
+  );
+};
+
 export const permanentlyDeleteFile = (accessToken, fileId, accountEmail = 'default') => {
   return withRateLimit(accountEmail, () =>
     driveRequest(accessToken, `${DRIVE_API_BASE}/files/${fileId}`, { method: 'DELETE' })

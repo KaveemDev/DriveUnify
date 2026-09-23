@@ -1,274 +1,464 @@
-import { useState } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Home, LayoutGrid, Files, FileText, Table2, FolderOpen, Users,
-  LayoutTemplate, BarChart2, LineChart, Lock, Pen, Settings,
-  HelpCircle, ExternalLink, Plus, Cloud, Sun, Moon, ChevronLeft,
-  ChevronDown, ChevronRight
-} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import {
+  Home, Folder, Clock, Star, Users, Trash2,
+  Plus, Settings, HelpCircle, ChevronLeft, Sun, Moon,
+  Cloud, LogOut
+} from 'lucide-react';
 import { AccountItem } from './AccountItem';
-import { StorageBar } from './StorageBar';
-import { setSidebarOpen, setConnectModalOpen } from '../../store/slices/uiSlice';
-import { setSelectedAccount } from '../../store/slices/driveSlice';
+import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../common/ProviderBadge';
+import { setSidebarOpen, setConnectModalOpen, setActiveNav } from '../../store/slices/uiSlice';
+import { setSelectedAccount, setCurrentFolder } from '../../store/slices/driveSlice';
 import { useDrive } from '../../hooks/useDrive';
 import { useColorMode } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
 
-/* ── helper ── */
-const NavItem = ({ icon: Icon, label, to, active, onClick, indent = false, badge, children, expandable }) => {
-  const [open, setOpen] = useState(true);
-  if (expandable) {
-    return (
-      <div>
-        <button
-          onClick={() => setOpen(o => !o)}
-          className={`sidebar-nav-item w-full ${active ? 'active' : ''}`}
-          style={{ paddingLeft: indent ? '28px' : undefined }}
-        >
-          {Icon && <Icon size={15} style={{ flexShrink: 0 }} />}
-          <span className="flex-1 truncate">{label}</span>
-          {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        </button>
-        {open && children}
-      </div>
-    );
-  }
-  const content = (
-    <>
-      {Icon && <Icon size={15} style={{ flexShrink: 0 }} />}
-      <span className="flex-1 truncate">{label}</span>
-      {badge != null && (
-        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{badge}</span>
-      )}
-    </>
-  );
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className={`sidebar-nav-item ${active ? 'active' : ''}`}
-        style={{ paddingLeft: indent ? '28px' : undefined }}
-        onClick={onClick}
-      >
-        {content}
-      </Link>
-    );
-  }
-  return (
-    <button
-      className={`sidebar-nav-item ${active ? 'active' : ''}`}
-      style={{ paddingLeft: indent ? '28px' : undefined }}
-      onClick={onClick}
-    >
-      {content}
-    </button>
-  );
-};
-
-const SubItem = ({ label, onClick, onAdd }) => (
-  <div className="flex items-center group" style={{ paddingLeft: '28px' }}>
-    <button
-      onClick={onClick}
-      className="sidebar-nav-item flex-1"
-      style={{ paddingLeft: '8px', fontSize: '0.78rem', fontWeight: 400 }}
-    >
-      <span className="truncate">{label}</span>
-    </button>
-    {onAdd && (
-      <button
-        onClick={onAdd}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
-        style={{ color: 'var(--color-text-muted)', flexShrink: 0, marginRight: '4px' }}
-        title={`Add ${label}`}
-      >
-        <Plus size={13} />
-      </button>
-    )}
-  </div>
-);
-
-const SectionLabel = ({ children }) => (
-  <div style={{
-    fontSize: '0.67rem', fontWeight: 600, letterSpacing: '0.06em',
-    color: 'var(--color-text-muted)', padding: '10px 8px 4px',
-    textTransform: 'uppercase'
-  }}>
-    {children}
-  </div>
-);
-
-export const Sidebar = () => {
+export const Sidebar = ({ onSelectView }) => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { connectedAccounts, files, selectedAccount } = useSelector(s => s.drive);
+  const { connectedAccounts, selectedAccount } = useSelector((s) => s.drive);
+  const { activeNav } = useSelector((s) => s.ui);
   const { disconnectAccount, refreshAccount, reconnectAccount } = useDrive();
   const { mode, toggleColorMode } = useColorMode();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
-  const isDashboard = location.pathname === '/dashboard' && !selectedAccount;
-  const isSettings  = location.pathname === '/settings';
-  const isSupport   = location.pathname === '/support';
+  const isSettings = location.pathname === '/settings';
+  const isSupport = location.pathname === '/support';
+
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home, to: '/dashboard' },
+    { id: 'files', label: 'My Files', icon: Folder, to: '/dashboard' },
+    { id: 'recent', label: 'Recent', icon: Clock, to: '/dashboard' },
+    { id: 'starred', label: 'Starred', icon: Star, to: '/dashboard' },
+    { id: 'shared', label: 'Shared', icon: Users, to: '/dashboard' },
+    { id: 'trash', label: 'Trash', icon: Trash2, to: '/dashboard' },
+  ];
+
+  const handleNavClick = (itemId) => {
+    dispatch(setSelectedAccount(null));
+    dispatch(setCurrentFolder(null));
+    dispatch(setActiveNav(itemId));
+    onSelectView?.(itemId);
+  };
 
   return (
-    <div className="flex flex-col h-full scrollbar-thin overflow-y-auto" style={{
-      background: 'var(--color-bg-sidebar)',
-      borderRight: '1px solid var(--color-border)',
-      width: 'var(--sidebar-width)',
-      minWidth: 'var(--sidebar-width)',
-    }}>
-
-      {/* ── User profile ── */}
-      <div style={{
-        padding: '12px 12px 10px',
-        borderBottom: '1px solid var(--color-border)',
-        display: 'flex', alignItems: 'center', gap: '10px',
-      }}>
-        {/* Avatar */}
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-          overflow: 'hidden', border: '1px solid var(--color-border)',
-          background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: '0.75rem', fontWeight: 600,
-        }}>
-          {user?.photoURL
-            ? <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : (user?.displayName?.[0] || user?.email?.[0] || 'U')
-          }
-        </div>
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: '0.8rem', fontWeight: 600,
-            color: 'var(--color-text-primary)', lineHeight: 1.2,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {user?.displayName || 'My Account'}
-          </div>
-          <div style={{
-            fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.2,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {user?.email || ''}
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-          <button
-            onClick={toggleColorMode}
-            title={mode === 'dark' ? 'Light mode' : 'Dark mode'}
+    <aside
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: 'var(--sidebar-width)',
+        minWidth: 'var(--sidebar-width)',
+        background: 'var(--color-bg-sidebar)',
+        borderRight: '1px solid var(--color-border)',
+        userSelect: 'none',
+      }}
+    >
+      {/* ── Top: Brand + Collapse ── */}
+      <div
+        style={{
+          height: 'var(--header-height)',
+          padding: '0 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid var(--color-border)',
+          flexShrink: 0,
+        }}
+      >
+        <Link
+          to="/dashboard"
+          onClick={() => handleNavClick('home')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+        >
+          <div
             style={{
-              width: 26, height: 26, borderRadius: 6, border: '1px solid var(--color-border)',
-              background: 'transparent', cursor: 'pointer',
-              color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 130ms'
+              width: 26,
+              height: 26,
+              borderRadius: 6,
+              background: 'var(--color-accent)',
+              color: 'var(--color-accent-fg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-overlay)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            {mode === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-          </button>
-          <button
-            onClick={() => dispatch(setSidebarOpen(false))}
-            title="Close sidebar"
+            <Cloud size={15} />
+          </div>
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--color-text-primary)' }}>
+            DriveUnify
+          </span>
+          <span
             style={{
-              width: 26, height: 26, borderRadius: 6, border: '1px solid var(--color-border)',
-              background: 'transparent', cursor: 'pointer',
-              color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 130ms'
+              fontSize: '0.625rem',
+              fontWeight: 500,
+              padding: '1px 5px',
+              borderRadius: 4,
+              background: 'var(--color-bg-elevated)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-muted)',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-overlay)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            className="md:hidden"
           >
-            <ChevronLeft size={13} />
-          </button>
-        </div>
+            v2.0
+          </span>
+        </Link>
+
+        {/* Collapse toggle (desktop / mobile) */}
+        <button
+          onClick={() => dispatch(setSidebarOpen(false))}
+          title="Collapse sidebar"
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 5,
+            border: '1px solid var(--color-border)',
+            background: 'transparent',
+            color: 'var(--color-text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background var(--transition-fast)',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-overlay)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <ChevronLeft size={14} />
+        </button>
       </div>
 
       {/* ── Primary Navigation ── */}
-      <div style={{ padding: '8px 8px 0' }}>
-        <NavItem icon={Home} label="Home" to="/dashboard" active={isDashboard}
-          onClick={() => dispatch(setSelectedAccount(null))} />
+      <div style={{ padding: '12px 10px 6px', display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === '/dashboard' && !selectedAccount && activeNav === item.id;
 
+          return (
+            <Link
+              key={item.id}
+              to={item.to}
+              onClick={() => handleNavClick(item.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                padding: '6px 10px',
+                borderRadius: 6,
+                border: 'none',
+                background: isActive ? 'var(--color-bg-elevated)' : 'transparent',
+                color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                fontSize: '0.8125rem',
+                fontWeight: isActive ? 600 : 500,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast), color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--color-bg-overlay)';
+                  e.currentTarget.style.color = 'var(--color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                }
+              }}
+            >
+              <Icon size={15} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.8 }} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
 
-      <div style={{ margin: '0 8px', height: '1px', background: 'var(--color-border)' }} />
+      <div style={{ margin: '8px 12px', height: 1, background: 'var(--color-border)' }} />
 
-      <div style={{ margin: '0 8px', height: '1px', background: 'var(--color-border)' }} />
+      {/* ── Connected Storage Section ── */}
+      <div
+        style={{
+          flex: 1,
+          padding: '0 10px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+        className="scrollbar-thin"
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '6px 8px 4px',
+            fontSize: '0.675rem',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          <span>Connected Storage</span>
+          <span style={{ fontSize: '0.65rem' }}>{connectedAccounts.length}</span>
+        </div>
 
-      {/* ── Connected Drives ── */}
-      <div style={{ flex: 1, padding: '4px 8px', overflowY: 'auto' }}>
-        <SectionLabel>Connected Drives</SectionLabel>
+        {/* Google Drive accounts */}
+        {connectedAccounts.map((account) => (
+          <AccountItem
+            key={account.email}
+            account={account}
+            onDisconnect={disconnectAccount}
+            onRefresh={refreshAccount}
+            onReconnect={reconnectAccount}
+          />
+        ))}
 
-        {connectedAccounts.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: '20px 8px',
-            color: 'var(--color-text-muted)', fontSize: '0.75rem',
-          }}>
-            <Cloud size={24} style={{ margin: '0 auto 6px', opacity: 0.4 }} />
-            No drives connected
-          </div>
-        ) : (
-          connectedAccounts.map(account => (
-            <AccountItem
-              key={account.email}
-              account={account}
-              onDisconnect={disconnectAccount}
-              onRefresh={refreshAccount}
-              onReconnect={reconnectAccount}
-            />
-          ))
-        )}
-
-        {/* Connect button */}
+        {/* Connect Google Drive Action */}
         <button
           onClick={() => dispatch(setConnectModalOpen(true))}
-          className="sidebar-nav-item w-full mt-1"
-          style={{ color: 'var(--color-text-muted)', gap: 6 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            width: '100%',
+            padding: '6px 8px',
+            borderRadius: 6,
+            border: '1px dashed var(--color-border)',
+            background: 'transparent',
+            color: 'var(--color-text-muted)',
+            fontSize: '0.78rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            marginTop: 4,
+            marginBottom: 10,
+            transition: 'background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-bg-overlay)';
+            e.currentTarget.style.borderColor = 'var(--color-border-strong)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.color = 'var(--color-text-muted)';
+          }}
         >
-          <div style={{
-            width: 18, height: 18, borderRadius: 4, border: '1.5px dashed var(--color-border-strong)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <Plus size={10} />
-          </div>
-          <span style={{ fontSize: '0.78rem' }}>Connect Drive</span>
+          <Plus size={13} />
+          <span>Connect Google Drive</span>
         </button>
-      </div>
 
-      {/* ── Storage Bar ── */}
-      <StorageBar />
+        {/* Multi-cloud Roadmap: OneDrive & Dropbox */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 8px 4px',
+            fontSize: '0.65rem',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-muted)',
+            opacity: 0.65,
+          }}
+        >
+          <span>Coming in v2.1</span>
+        </div>
 
-      {/* ── Bottom links ── */}
-      <div style={{
-        borderTop: '1px solid var(--color-border)',
-        padding: '6px 8px 8px',
-      }}>
-        <NavItem icon={HelpCircle}  label="Support"  to="/support"  active={isSupport} />
-        <NavItem icon={Settings}    label="Settings" to="/settings" active={isSettings} />
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 8px 2px',
-        }}>
-          <div style={{
-            width: 18, height: 18, borderRadius: 4,
-            background: 'var(--qa-icon-bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <Cloud size={11} color="var(--qa-icon-fg)" />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '5px 8px',
+            borderRadius: 6,
+            opacity: 0.45,
+            fontSize: '0.75rem',
+            color: 'var(--color-text-secondary)',
+            cursor: 'default',
+          }}
+          title="OneDrive integration coming in v2.1"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <OneDriveIcon size={14} />
+            <span>OneDrive</span>
           </div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            DriveUnify
+          <span style={{ fontSize: '0.58rem', padding: '1px 4px', borderRadius: 3, background: 'var(--color-bg-elevated)', color: 'var(--color-text-muted)' }}>
+            Soon
           </span>
-          <span style={{
-            marginLeft: 'auto', fontSize: '0.65rem',
-            color: 'var(--color-text-muted)', fontWeight: 500,
-          }}>v2.0</span>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '5px 8px',
+            borderRadius: 6,
+            opacity: 0.45,
+            fontSize: '0.75rem',
+            color: 'var(--color-text-secondary)',
+            cursor: 'default',
+          }}
+          title="Dropbox integration coming in v2.1"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <DropboxIcon size={14} />
+            <span>Dropbox</span>
+          </div>
+          <span style={{ fontSize: '0.58rem', padding: '1px 4px', borderRadius: 3, background: 'var(--color-bg-elevated)', color: 'var(--color-text-muted)' }}>
+            Soon
+          </span>
         </div>
       </div>
-    </div>
+
+      {/* ── Bottom Section: Settings, Support, Profile ── */}
+      <div
+        style={{
+          borderTop: '1px solid var(--color-border)',
+          padding: '8px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          flexShrink: 0,
+        }}
+      >
+        <Link
+          to="/support"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            padding: '5px 8px',
+            borderRadius: 6,
+            color: isSupport ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+            background: isSupport ? 'var(--color-bg-elevated)' : 'transparent',
+            fontSize: '0.78rem',
+            fontWeight: isSupport ? 600 : 500,
+            textDecoration: 'none',
+            transition: 'background var(--transition-fast)',
+          }}
+          onMouseEnter={(e) => !isSupport && (e.currentTarget.style.background = 'var(--color-bg-overlay)')}
+          onMouseLeave={(e) => !isSupport && (e.currentTarget.style.background = 'transparent')}
+        >
+          <HelpCircle size={14} />
+          <span>Help & Support</span>
+        </Link>
+
+        <Link
+          to="/settings"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            padding: '5px 8px',
+            borderRadius: 6,
+            color: isSettings ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+            background: isSettings ? 'var(--color-bg-elevated)' : 'transparent',
+            fontSize: '0.78rem',
+            fontWeight: isSettings ? 600 : 500,
+            textDecoration: 'none',
+            transition: 'background var(--transition-fast)',
+          }}
+          onMouseEnter={(e) => !isSettings && (e.currentTarget.style.background = 'var(--color-bg-overlay)')}
+          onMouseLeave={(e) => !isSettings && (e.currentTarget.style.background = 'transparent')}
+        >
+          <Settings size={14} />
+          <span>Settings</span>
+        </Link>
+
+        {/* User Profile strip */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            padding: '8px 6px 4px',
+            marginTop: 4,
+            borderTop: '1px solid var(--color-border-subtle)',
+          }}
+        >
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              flexShrink: 0,
+              overflow: 'hidden',
+            }}
+          >
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              (user?.displayName?.[0] || user?.email?.[0] || 'U').toUpperCase()
+            )}
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'var(--color-text-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {user?.displayName || 'My Account'}
+            </div>
+            <div
+              style={{
+                fontSize: '0.675rem',
+                color: 'var(--color-text-muted)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {user?.email || ''}
+            </div>
+          </div>
+
+          <button
+            onClick={toggleColorMode}
+            title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 5,
+              border: '1px solid var(--color-border)',
+              background: 'transparent',
+              color: 'var(--color-text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {mode === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
+          </button>
+        </div>
+      </div>
+    </aside>
   );
 };

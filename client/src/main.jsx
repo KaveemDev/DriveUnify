@@ -13,6 +13,10 @@ import { ThemeContextProvider } from './theme';
 // Initialize analytics (no-op if VITE_GA_MEASUREMENT_ID not set)
 initAnalytics();
 
+if (import.meta.env.DEV) {
+  window.__store = store;
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>

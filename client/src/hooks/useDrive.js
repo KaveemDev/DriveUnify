@@ -14,7 +14,7 @@ import {
   refreshDriveToken,
 } from '../services/google-drive/auth';
 import { fetchAllFilesForAccount, fetchFilesInFolder, fetchStorageInfo } from '../services/google-drive/files';
-import { renameFile, deleteFile, permanentlyDeleteFile, starFile } from '../api/googleDriveApi';
+import { renameFile, deleteFile, permanentlyDeleteFile, starFile, restoreFile } from '../api/googleDriveApi';
 import {
   addConnectedAccount,
   removeConnectedAccount,
@@ -30,18 +30,29 @@ export const useDrive = () => {
   const getFreshAccount = useCallback(async (account) => {
     try {
       const refreshed = await checkAndRefreshToken(account);
+      if (!refreshed || refreshed.needsReconnect || refreshed.expired || !refreshed.accessToken) {
+        dispatch(updateAccount({
+          email: account.email,
+          accessToken: null,
+          needsReconnect: true,
+          expired: true,
+        }));
+        return { ...account, accessToken: null, needsReconnect: true, expired: true };
+      }
+
       if (refreshed.accessToken !== account.accessToken) {
+        const expiryDate = refreshed.expiryDate || (Date.now() + 3600 * 1000);
         dispatch(updateAccount({
           email: account.email,
           accessToken: refreshed.accessToken,
-          expiryDate: refreshed.expiryDate,
+          expiryDate,
           needsReconnect: false,
           expired: false,
         }));
         if (user?.uid) {
           try {
             await updateAccountTokens(user.uid, account.email, {
-              expiryDate: refreshed.expiryDate,
+              expiryDate,
             });
           } catch (err) {
             console.warn('[DriveUnify] Non-fatal: Direct token update failed:', err.message);
@@ -50,9 +61,8 @@ export const useDrive = () => {
       }
       return refreshed;
     } catch (err) {
-      dispatch(updateAccount({ email: account.email, expired: true, needsReconnect: true }));
-      toast.error(`Re-connect required for ${account.email}`, { id: `expired-${account.email}` });
-      throw err;
+      dispatch(updateAccount({ email: account.email, accessToken: null, expired: true, needsReconnect: true }));
+      return { ...account, accessToken: null, expired: true, needsReconnect: true };
     }
   }, [dispatch, user?.uid]);
 
@@ -185,25 +195,23 @@ export const useDrive = () => {
     dispatch(setError(null));
 
     try {
-      // Skip accounts that need reconnection — no valid token
-      const validAccounts = connectedAccounts.filter(a => !a.needsReconnect && !a.expired);
-      const expiredAccounts = connectedAccounts.filter(a => a.needsReconnect || a.expired);
-
-      if (expiredAccounts.length > 0) {
-        expiredAccounts.forEach(a =>
-          toast.error(`Re-connect required for ${a.email}`, { id: `expired-${a.email}` })
-        );
-      }
-
-      if (validAccounts.length === 0) return;
-
-      // Refresh tokens that are expiring soon (< 5 min) via Cloud Function
-      const freshAccounts = await Promise.all(
-        validAccounts.map(account => getFreshAccount(account))
+      // Check and refresh tokens
+      const checkedAccounts = await Promise.all(
+        connectedAccounts.map(account => getFreshAccount(account))
       );
 
+      // Only attempt to fetch files for accounts with valid tokens
+      const validAccounts = checkedAccounts.filter(
+        a => !a.needsReconnect && !a.expired && a.accessToken
+      );
+
+      if (validAccounts.length === 0) {
+        dispatch(setLoading(false));
+        return;
+      }
+
       const results = await Promise.allSettled(
-        freshAccounts.map(account => fetchAllFilesForAccount(account))
+        validAccounts.map(account => fetchAllFilesForAccount(account))
       );
 
       const allFiles = [];
@@ -211,8 +219,7 @@ export const useDrive = () => {
         if (result.status === 'fulfilled') {
           allFiles.push(...result.value);
         } else {
-          console.error(`Failed to fetch files for ${freshAccounts[i].email}:`, result.reason);
-          toast.error(`Could not load files for ${freshAccounts[i].email}`);
+          console.warn(`[DriveUnify] Could not fetch files for ${validAccounts[i].email}:`, result.reason?.message);
         }
       });
 
@@ -220,20 +227,19 @@ export const useDrive = () => {
 
       // Fetch storage info in parallel
       const storageResults = await Promise.allSettled(
-        freshAccounts.map(account => fetchStorageInfo(account))
+        validAccounts.map(account => fetchStorageInfo(account))
       );
       storageResults.forEach((result, i) => {
         if (result.status === 'fulfilled') {
-          dispatch(updateAccount({ email: freshAccounts[i].email, storage: result.value }));
+          dispatch(updateAccount({ email: validAccounts[i].email, storage: result.value }));
         }
       });
     } catch (err) {
       dispatch(setError(err.message));
-      toast.error('Failed to load files');
     } finally {
       dispatch(setLoading(false));
     }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
+  }, [connectedAccounts, dispatch, getFreshAccount]);
 
   // ── Navigate to folder ────────────────────────────────────────
   const navigateToFolder = useCallback(async (folder, accountEmail) => {
@@ -343,11 +349,29 @@ export const useDrive = () => {
     }
   }, [dispatch, connectedAccounts, getFreshAccount]);
 
+  // ── Restore file from trash ───────────────────────────────────
+  const restoreFileAction = useCallback(async (file) => {
+    const account = connectedAccounts.find(a => a.email === file.accountEmail);
+    if (!account) return;
+
+    dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, trashed: false }));
+
+    try {
+      const freshAccount = await getFreshAccount(account);
+      await restoreFile(freshAccount.accessToken, file.id, file.accountEmail);
+      toast.success(`Restored "${file.name}"`);
+    } catch (err) {
+      dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, trashed: true }));
+      toast.error(`Failed to restore: ${err.message}`);
+    }
+  }, [dispatch, connectedAccounts, getFreshAccount]);
+
   return {
     connectedAccounts, files, loading, error, currentFolder,
     connectNewAccount, disconnectAccount, reconnectAccount,
     fetchFilesForAllAccounts, refreshAccount,
     navigateToFolder, navigateToRoot,
     renameFileAction, deleteFileAction, permanentlyDeleteFileAction, toggleStar,
+    restoreFileAction,
   };
 };
