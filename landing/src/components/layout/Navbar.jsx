@@ -2,11 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Cloud, Menu, X, ArrowRight } from 'lucide-react';
+import { Cloud, Menu, X, ArrowRight, LogOut, LayoutDashboard } from 'lucide-react';
+import { auth, googleProvider, signInWithPopup, signOut } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import {
+  getCrossDomainSession,
+  setCrossDomainSession,
+  clearCrossDomainSession,
+  getDashboardUrl,
+} from '@/lib/auth-sync';
 
 export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -16,8 +26,70 @@ export const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    // Initial check from cross-domain cookie
+    const saved = getCrossDomainSession();
+    if (saved) setUser(saved);
+
+    // Live Firebase Auth listener
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        const userData = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+        };
+        setUser(userData);
+        setCrossDomainSession(userData, idToken);
+      } else {
+        const session = getCrossDomainSession();
+        if (!session) {
+          setUser(null);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [pathname]);
+
+  const handleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result?.user) {
+        const idToken = await result.user.getIdToken();
+        const userData = {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+        };
+        setCrossDomainSession(userData, idToken);
+        setUser(userData);
+        // Navigate directly to dashboard
+        window.location.href = getDashboardUrl();
+      }
+    } catch (err) {
+      console.warn('Sign-in redirecting to dashboard login:', err);
+      window.location.href = `${getDashboardUrl()}/login`;
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error(e);
+    }
+    clearCrossDomainSession();
+    setUser(null);
+    setUserMenuOpen(false);
+  };
 
   const navLinks = [
     { name: 'Features', path: '/features' },
@@ -26,6 +98,8 @@ export const Navbar = () => {
     { name: 'Docs', path: '/docs' },
     { name: 'Blog', path: '/blog' },
   ];
+
+  const dashboardUrl = getDashboardUrl();
 
   return (
     <header
@@ -68,19 +142,69 @@ export const Navbar = () => {
 
           {/* Desktop Action */}
           <div className="hidden md:flex items-center gap-3">
-            <a
-              href="https://dashboard.driveunify.com/login"
-              className="text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 transition-colors"
-            >
-              Sign In
-            </a>
-            <a
-              href="https://dashboard.driveunify.com/login"
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
-            >
-              <span>Get Started</span>
-              <ArrowRight size={14} />
-            </a>
+            {user ? (
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={dashboardUrl}
+                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-md transition-all hover:-translate-y-0.5"
+                  >
+                    <LayoutDashboard size={15} />
+                    <span>Dashboard</span>
+                  </a>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-xs font-bold text-white hover:border-slate-500 transition-colors"
+                  >
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.displayName || 'User'} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{(user.displayName || user.email || 'U').slice(0, 2).toUpperCase()}</span>
+                    )}
+                  </button>
+                </div>
+
+                {/* User Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
+                    <div className="px-3 py-2 border-b border-slate-800 text-left">
+                      <p className="text-sm font-medium text-white truncate">{user.displayName || 'Signed in'}</p>
+                      <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                    </div>
+                    <a
+                      href={dashboardUrl}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors mt-1"
+                    >
+                      <LayoutDashboard size={15} />
+                      Open Dashboard
+                    </a>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                      <LogOut size={15} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={handleSignIn}
+                  className="text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 transition-colors cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <a
+                  href={`${dashboardUrl}/login`}
+                  className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight size={14} />
+                </a>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,18 +232,37 @@ export const Navbar = () => {
               ))}
             </nav>
             <div className="flex flex-col gap-2">
-              <a
-                href="https://dashboard.driveunify.com/login"
-                className="w-full text-center text-slate-300 hover:text-white py-2 text-sm font-medium"
-              >
-                Sign In
-              </a>
-              <a
-                href="https://dashboard.driveunify.com/login"
-                className="w-full text-center bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm"
-              >
-                Get Started Free
-              </a>
+              {user ? (
+                <>
+                  <a
+                    href={dashboardUrl}
+                    className="w-full text-center bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm"
+                  >
+                    Go to Dashboard
+                  </a>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-center text-slate-400 hover:text-white py-2 text-sm"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleSignIn}
+                    className="w-full text-center text-slate-300 hover:text-white py-2 text-sm font-medium"
+                  >
+                    Sign In
+                  </button>
+                  <a
+                    href={`${dashboardUrl}/login`}
+                    className="w-full text-center bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm"
+                  >
+                    Get Started Free
+                  </a>
+                </>
+              )}
             </div>
           </div>
         )}
