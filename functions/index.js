@@ -32,6 +32,9 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5174',
   'http://127.0.0.1:5175',
   'https://drive-unify.vercel.app',
+  'https://driveunify.com',
+  'https://dashboard.driveunify.com',
+  /^https?:\/\/(.+\.)?driveunify\.com$/,
   /^https?:\/\/localhost:[0-9]+$/,
   /^https?:\/\/127\.0\.0\.1:[0-9]+$/
 ];
@@ -54,6 +57,17 @@ const requireAuth = (context) => {
     throw new HttpsError('unauthenticated', 'You must be signed in.');
   }
   return context.auth.uid;
+};
+
+/**
+ * Returns true when Google says the refresh token itself is no longer usable
+ * (revoked, expired, password changed, etc.). Only these errors should force
+ * the user to reconnect — anything else (network, 5xx) is transient.
+ */
+const isInvalidGrantError = (err) => {
+  const code = err?.response?.data?.error || err?.code || '';
+  const msg = `${err?.message || ''}`.toLowerCase();
+  return code === 'invalid_grant' || code === 'unauthorized_client' || msg.includes('invalid_grant');
 };
 
 /** Fetch the user's Google profile using a fresh access_token */
@@ -93,25 +107,15 @@ exports.exchangeGoogleCode = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
   }
 
   const oauth2Client = getOAuth2Client();
-  // Override redirect URI with the one sent from the client
-  oauth2Client.redirectUri = redirectUri;
 
   let tokens;
   try {
-    const { tokens: t } = await oauth2Client.getToken(code);
+    // Pass the redirect URI explicitly — it must match the one used for the consent screen
+    const { tokens: t } = await oauth2Client.getToken({ code, redirect_uri: redirectUri });
     tokens = t;
   } catch (err) {
     console.error('[exchangeGoogleCode] Token exchange failed:', err.message);
     throw new HttpsError('internal', 'Failed to exchange authorization code with Google.');
-  }
-
-  if (!tokens.refresh_token) {
-    // This happens if the user already granted access before.
-    // We need to prompt=consent to always get a refresh_token.
-    throw new HttpsError(
-      'failed-precondition',
-      'No refresh_token received. Please disconnect any existing Google authorization and try again.'
-    );
   }
 
   // Fetch user profile
@@ -125,11 +129,24 @@ exports.exchangeGoogleCode = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
   const emailId = sanitizeEmail(profile.email);
   const expiryDate = tokens.expiry_date || (Date.now() + 3600 * 1000);
 
+  if (!tokens.refresh_token) {
+    // Google only omits the refresh_token when the user already granted offline access.
+    // If we still hold a valid one for this account, keep using it instead of failing.
+    const existing = await tokenRef(uid, emailId).get();
+    if (!existing.exists || !existing.data()?.refreshToken || existing.data()?.invalid) {
+      throw new HttpsError(
+        'failed-precondition',
+        'No refresh_token received. Remove DriveUnify from https://myaccount.google.com/permissions and try again.'
+      );
+    }
+  }
+
   // Store refresh_token in server-only Firestore path
   await tokenRef(uid, emailId).set({
     email: profile.email,
-    refreshToken: tokens.refresh_token,
+    ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
     scope: tokens.scope,
+    invalid: false,
     connectedAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
@@ -192,15 +209,20 @@ exports.refreshGoogleToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     newTokens = credentials;
   } catch (err) {
     console.error(`[refreshGoogleToken] Refresh failed for ${email}:`, err.message);
-    // Mark the stored token as invalid so the client shows "Re-connect"
-    await tokenRef(uid, emailId).update({ invalid: true });
-    throw new HttpsError('unauthenticated', `Token for ${email} is invalid or revoked. Please reconnect.`);
+    if (isInvalidGrantError(err)) {
+      // Refresh token was revoked/expired — the user must go through OAuth again
+      await tokenRef(uid, emailId).update({ invalid: true }).catch(() => {});
+      throw new HttpsError('unauthenticated', `Token for ${email} is invalid or revoked. Please reconnect.`);
+    }
+    // Network hiccup / Google 5xx — tell the client to retry, don't force a reconnect
+    throw new HttpsError('unavailable', `Could not refresh the token for ${email} right now. Please try again.`);
   }
 
   const expiryDate = newTokens.expiry_date || (Date.now() + 3600 * 1000);
 
-  // Update timestamp
+  // Update timestamp (and persist a rotated refresh token if Google issued one)
   await tokenRef(uid, emailId).update({
+    ...(newTokens.refresh_token ? { refreshToken: newTokens.refresh_token } : {}),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     invalid: false,
   });
