@@ -1,4 +1,4 @@
-import { DRIVE_API_BASE, DEFAULT_FILE_FIELDS, ITEMS_PER_PAGE } from '../config/constants';
+import { DRIVE_API_BASE, DRIVE_UPLOAD_BASE, DEFAULT_FILE_FIELDS, ITEMS_PER_PAGE } from '../config/constants.js';
 
 // ── In-memory rate limiter (10 req/s per account) ────────────
 const rateLimiters = {};
@@ -330,53 +330,182 @@ export const uploadMultipartToDrive = async (destAccessToken, blob, fileName, mi
     const delimiter = `\r\n--${boundary}\r\n`;
     const closeDelimiter = `\r\n--${boundary}--`;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const body = [
-        delimiter,
-        `Content-Type: application/json; charset=UTF-8\r\n\r\n`,
-        metadata,
-        delimiter,
-        `Content-Type: ${mimeType}\r\n\r\n`,
-      ];
+    const bodyBlob = new Blob([
+      delimiter,
+      `Content-Type: application/json; charset=UTF-8\r\n\r\n`,
+      metadata,
+      delimiter,
+      `Content-Type: ${mimeType}\r\n\r\n`,
+      blob,
+      closeDelimiter,
+    ]);
 
-      // Build the multipart body as a Blob to preserve binary data
-      const bodyBlob = new Blob([
-        delimiter,
-        `Content-Type: application/json; charset=UTF-8\r\n\r\n`,
-        metadata,
-        delimiter,
-        `Content-Type: ${mimeType}\r\n\r\n`,
-        blob,
-        closeDelimiter,
-      ]);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${DRIVE_UPLOAD_BASE}/files?uploadType=multipart&supportsAllDrives=true`);
+    xhr.setRequestHeader('Authorization', `Bearer ${destAccessToken}`);
+    xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`);
 
-      // Use XMLHttpRequest to track upload progress
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${DRIVE_UPLOAD_BASE}/files?uploadType=multipart&supportsAllDrives=true`);
-      xhr.setRequestHeader('Authorization', `Bearer ${destAccessToken}`);
-      xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`);
-
-      if (onProgress) {
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-        };
-      }
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try { resolve(JSON.parse(xhr.responseText)); }
-          catch { resolve({}); }
-        } else {
-          let msg = `Upload failed: HTTP ${xhr.status}`;
-          try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch { /* ignore */ }
-          reject(new Error(msg));
-        }
+    if (onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
       };
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.send(bodyBlob);
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch { resolve({}); }
+      } else {
+        let msg = `Upload failed: HTTP ${xhr.status}`;
+        try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch { /* ignore */ }
+        reject(new Error(msg));
+      }
     };
-    reader.onerror = () => reject(new Error('Failed to read file blob'));
-    reader.readAsArrayBuffer(blob); // just to trigger, we actually use blob directly
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(bodyBlob);
   }));
+};
+
+// ── Bounded Streaming & Resumable Transfer API ─────────────────
+
+/**
+ * Download a bounded byte range of a file from Drive (e.g. 8 MiB slice).
+ * Uses HTTP Range requests so only the requested chunk is loaded into RAM.
+ */
+export const downloadFileRange = async (accessToken, fileId, start, end, signal = null, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, async () => {
+    const res = await fetch(
+      `${DRIVE_API_BASE}/files/${fileId}?alt=media&supportsAllDrives=true`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Range: `bytes=${start}-${end}`,
+        },
+        signal,
+      }
+    );
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `Range download failed: HTTP ${res.status}`);
+    }
+
+    return res.blob();
+  });
+};
+
+/**
+ * Initiate a resumable upload session on Google Drive.
+ * Returns the session URI (Location header).
+ */
+export const initiateResumableUpload = async (destAccessToken, metadata, mimeType, totalSize, signal = null, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, async () => {
+    const res = await fetch(
+      `${DRIVE_UPLOAD_BASE}/files?uploadType=resumable&supportsAllDrives=true&fields=id,name,mimeType,size,md5Checksum,parents`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${destAccessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'X-Upload-Content-Type': mimeType || 'application/octet-stream',
+          'X-Upload-Content-Length': String(totalSize),
+        },
+        body: JSON.stringify(metadata),
+        signal,
+      }
+    );
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `Failed to initiate resumable upload: HTTP ${res.status}`);
+    }
+
+    const uploadUrl = res.headers.get('Location');
+    if (!uploadUrl) {
+      throw new Error('Resumable upload session initiated but no Location header was returned');
+    }
+    return uploadUrl;
+  });
+};
+
+/**
+ * Upload a single chunk to an active resumable upload session.
+ * Chunk size must be a multiple of 256 KiB (except the last chunk).
+ */
+export const uploadResumableChunk = async (uploadUrl, chunkBlob, offset, chunkEnd, totalSize, signal = null) => {
+  const res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Length': String(chunkBlob.size),
+      'Content-Range': `bytes ${offset}-${chunkEnd}/${totalSize}`,
+    },
+    body: chunkBlob,
+    signal,
+  });
+
+  if (res.status === 200 || res.status === 201) {
+    const data = await res.json().catch(() => ({}));
+    return { complete: true, status: res.status, data };
+  }
+
+  if (res.status === 308) {
+    const range = res.headers.get('Range');
+    let nextOffset = chunkEnd + 1;
+    if (range) {
+      const parts = range.split('-');
+      if (parts[1]) nextOffset = parseInt(parts[1], 10) + 1;
+    }
+    return { complete: false, status: 308, nextOffset };
+  }
+
+  const body = await res.json().catch(() => ({}));
+  throw new Error(body?.error?.message || `Chunk upload failed: HTTP ${res.status}`);
+};
+
+/**
+ * Query current progress / state of a resumable upload session on Drive.
+ * Used for recovering from transient network interruptions.
+ */
+export const getResumableUploadStatus = async (uploadUrl, totalSize, signal = null) => {
+  const res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Length': '0',
+      'Content-Range': `bytes */${totalSize}`,
+    },
+    signal,
+  });
+
+  if (res.status === 200 || res.status === 201) {
+    const data = await res.json().catch(() => ({}));
+    return { complete: true, data };
+  }
+
+  if (res.status === 308) {
+    const range = res.headers.get('Range');
+    let nextOffset = 0;
+    if (range) {
+      const parts = range.split('-');
+      if (parts[1]) nextOffset = parseInt(parts[1], 10) + 1;
+    }
+    return { complete: false, nextOffset };
+  }
+
+  const body = await res.json().catch(() => ({}));
+  throw new Error(body?.error?.message || `Failed to check upload status: HTTP ${res.status}`);
+};
+
+/**
+ * Cancel an active resumable upload session to release server resources.
+ */
+export const cancelResumableUpload = async (uploadUrl) => {
+  if (!uploadUrl) return;
+  try {
+    await fetch(uploadUrl, {
+      method: 'DELETE',
+      headers: { 'Content-Length': '0' },
+    });
+  } catch {
+    // Best effort cleanup
+  }
 };

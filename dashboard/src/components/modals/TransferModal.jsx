@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box, Typography, Avatar, Alert, LinearProgress,
@@ -415,6 +415,8 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
 
   const [fileProgress, setFileProgress] = useState(0);
   const [folderProgress, setFolderProgress] = useState({ filesDone: 0, total: 0, currentFile: '' });
+  const [activeMode, setActiveMode] = useState(null); // 'cloud_copy' | 'stream' | null
+  const abortControllerRef = useRef(null);
 
   const isFolder = isFolderFile(file);
   const isGApps = !isFolder && isGoogleAppsType(file?.mimeType);
@@ -435,13 +437,32 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
     setShowFolderPicker(false);
   }, [destEmail]);
 
+  // Clean up controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleClose = useCallback(() => {
-    if (state === STATE.RUNNING || state === STATE.COUNTING) return;
+    if (state === STATE.RUNNING || state === STATE.COUNTING) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      toast('Transfer cancelled', { icon: '🛑' });
+      setState(STATE.IDLE);
+      return;
+    }
     setState(STATE.IDLE);
     setDestEmail('');
     setDestFolder({ id: 'root', name: 'My Drive' });
     setShowFolderPicker(false);
     setFileProgress(0);
+    setActiveMode(null);
     setFolderProgress({ filesDone: 0, total: 0, currentFile: '' });
     setErrorMsg('');
     onOpenChange(false);
@@ -450,9 +471,13 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
   const handleTransfer = useCallback(async () => {
     if (!srcAccount || !destAccount || !file) return;
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setState(STATE.RUNNING);
     setErrorMsg('');
     setFileProgress(0);
+    setActiveMode('cloud_copy');
 
     try {
       if (isFolder) {
@@ -464,22 +489,51 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
         } catch {
           total = 0;
         }
+        if (controller.signal.aborted) return;
+
         setFolderProgress({ filesDone: 0, total, currentFile: '' });
         setState(STATE.RUNNING);
 
-        await transferFolder(srcAccount, destAccount, file, destFolder.id, ({ filesDone, currentFile }) => {
-          setFolderProgress({ filesDone, total, currentFile });
-        });
+        await transferFolder(
+          srcAccount,
+          destAccount,
+          file,
+          destFolder.id,
+          ({ filesDone, currentFile }) => {
+            setFolderProgress({ filesDone, total, currentFile });
+          },
+          { done: 0, total },
+          controller.signal
+        );
 
         toast.success(`Folder "${file.name}" copied to ${destAccount.email}`, { icon: '📁' });
       } else {
-        await transferFile(srcAccount, destAccount, file, destFolder.id, (pct) => setFileProgress(pct));
+        const result = await transferFile(
+          srcAccount,
+          destAccount,
+          file,
+          destFolder.id,
+          (pct, meta) => {
+            setFileProgress(pct);
+            if (meta?.mode) setActiveMode(meta.mode);
+          },
+          controller.signal
+        );
+
+        setActiveMode(result?.transferMode || 'cloud_copy');
         toast.success(`"${file.name}" copied to ${destAccount.email}`, { icon: '✅' });
       }
       setState(STATE.SUCCESS);
     } catch (err) {
+      if (controller.signal.aborted || err.name === 'AbortError') {
+        setState(STATE.IDLE);
+        toast('Transfer cancelled', { icon: '🛑' });
+        return;
+      }
       setState(STATE.ERROR);
       setErrorMsg(err.message || 'Transfer failed. Please try again.');
+    } finally {
+      abortControllerRef.current = null;
     }
   }, [srcAccount, destAccount, file, destFolder.id, isFolder]);
 
@@ -938,8 +992,8 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
           </Box>
         )}
 
-        {/* ── Single Binary File Progress ── */}
-        {state === STATE.RUNNING && !isFolder && !isGApps && (
+        {/* ── Single File Progress (Streaming Mode) ── */}
+        {state === STATE.RUNNING && !isFolder && activeMode === 'stream' && (
           <Box
             sx={{
               p: 2,
@@ -971,7 +1025,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                     Streaming file to destination…
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                    Direct browser in-memory pipe
+                    Bounded 8 MiB in-memory pipeline
                   </Typography>
                 </Box>
               </Box>
@@ -1004,8 +1058,8 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
           </Box>
         )}
 
-        {/* ── Google Apps Spinner ── */}
-        {state === STATE.RUNNING && !isFolder && isGApps && (
+        {/* ── Single File Progress (Cloud Copy Mode) ── */}
+        {state === STATE.RUNNING && !isFolder && activeMode !== 'stream' && (
           <Box
             sx={{
               display: 'flex',
@@ -1036,7 +1090,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
             <Box sx={{ flex: 1 }}>
               <Typography variant="body2" fontWeight={600}>Zero-Latency Cloud Cloning…</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                Google Workspace Document is duplicated directly within Google Cloud servers.
+                Duplicating directly within Google Cloud servers. Zero bytes downloaded.
               </Typography>
             </Box>
             <Loader2 size={20} className="animate-spin text-emerald-500" style={{ flexShrink: 0 }} />
@@ -1066,6 +1120,11 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
                 "{file?.name}" is now accessible in {destAccount?.email}'s Drive
                 {destFolder.id !== 'root' ? ` (inside "${destFolder.name}")` : ''}.
+                {!isFolder && (
+                  <span style={{ display: 'block', fontWeight: 600, marginTop: 2 }}>
+                    {activeMode === 'stream' ? 'Transferred via 8 MiB Bounded Stream' : 'Transferred via Instant Cloud-to-Cloud Copy'}
+                  </span>
+                )}
               </Typography>
             </Box>
           </Box>
@@ -1084,9 +1143,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
             <Typography variant="caption" sx={{ lineHeight: 1.4, display: 'block' }}>
               {isFolder
                 ? 'Folder transfer will recreate the complete directory structure and copy all child files into the destination account.'
-                : isGApps
-                ? 'Google Docs and Sheets are copied directly server-side without downloading.'
-                : 'Direct in-memory transfer between cloud endpoints.'}
+                : 'Preferred method: Zero-byte cloud-to-cloud copy. Automatic fallback: Bounded 8 MiB in-memory resumable stream.'}
             </Typography>
           </Alert>
         )}
@@ -1114,10 +1171,9 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
               <Button
                 variant="outline"
                 onClick={handleClose}
-                disabled={state === STATE.RUNNING || state === STATE.COUNTING}
                 className="w-full sm:w-auto"
               >
-                Cancel
+                {state === STATE.RUNNING || state === STATE.COUNTING ? 'Cancel Transfer' : 'Cancel'}
               </Button>
               <Button
                 variant="primary"

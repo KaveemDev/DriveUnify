@@ -73,7 +73,10 @@ export const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 
 // Default file fields to fetch from Drive API
 export const DEFAULT_FILE_FIELDS =
-  'id,name,mimeType,size,modifiedTime,createdTime,parents,iconLink,thumbnailLink,shared,starred,trashed,capabilities,owners,webViewLink,webContentLink';
+  'id,name,mimeType,size,md5Checksum,modifiedTime,createdTime,parents,iconLink,thumbnailLink,shared,starred,trashed,capabilities,owners,webViewLink,webContentLink';
+
+// Bounded chunk size for cross-drive streaming (8 MiB = 32 * 256 KiB)
+export const TRANSFER_CHUNK_SIZE = 8 * 1024 * 1024;
 
 // Account colors for avatars
 export const ACCOUNT_COLORS = [
