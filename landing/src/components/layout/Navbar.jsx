@@ -15,9 +15,16 @@ import {
 export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => (typeof window !== 'undefined' ? getCrossDomainSession() : null));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -26,10 +33,6 @@ export const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    // Initial check from cross-domain cookie
-    const saved = getCrossDomainSession();
-    if (saved) setUser(saved);
-
     // Live Firebase Auth listener
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -52,11 +55,6 @@ export const Navbar = () => {
 
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-    setUserMenuOpen(false);
-  }, [pathname]);
 
   const handleSignIn = async () => {
     try {

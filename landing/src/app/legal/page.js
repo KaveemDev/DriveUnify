@@ -20,7 +20,7 @@ export default function LegalPage() {
         <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
           <h3 className="text-lg font-bold text-white mb-2">1. Privacy & Zero-Retention Architecture</h3>
           <p className="text-slate-400">
-            DriveUnify operates as a direct client-to-API bridge. We do not store, copy, or read your file contents on our servers. File transfers and downloads stream directly between your browser and Google Drive's servers.
+            DriveUnify operates as a direct client-to-API bridge. We do not store, copy, or read your file contents on our servers. File transfers and downloads stream directly between your browser and Google Drive&apos;s servers.
           </p>
         </div>
 

@@ -10,7 +10,7 @@ const faqs = [
       <span>
         There are two strategies depending on the file type:
         <br /><br />
-        <strong className="text-white">Google Docs, Sheets, Slides</strong> — DriveUnify temporarily shares the file with your destination account, calls Google's <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300 text-xs">files.copy</code> API, and revokes the share. Google executes the copy on their infrastructure — zero bytes travel through your device.
+        <strong className="text-white">Google Docs, Sheets, Slides</strong> — DriveUnify temporarily shares the file with your destination account, calls Google&apos;s <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300 text-xs">files.copy</code> API, and revokes the share. Google executes the copy on their infrastructure — zero bytes travel through your device.
         <br /><br />
         <strong className="text-white">Binary files (PDFs, images, archives)</strong> — The file streams in browser memory and uploads directly to the destination drive without writing to local disk.
       </span>

@@ -84,34 +84,32 @@ DriveUnify operates on a decoupled client-serverless architecture designed for e
 
 ```
 DriveUnify/
-├── client/                                 # React Frontend (Vite)
+├── landing/                                 # Marketing Site & SEO (Next.js)
+│   ├── src/app/                            # App Router pages (/, /features, /docs, etc.)
+│   ├── src/components/                     # Marketing layout, Navbar, and UI
+│   ├── src/lib/                            # Auth session sync & Firebase client
+│   ├── package.json                        # Landing dependencies
+│   └── vercel.json                         # Vercel Next.js configuration
+├── dashboard/                               # Web App Dashboard (React + Vite)
 │   ├── src/
 │   │   ├── api/                            # Google Drive REST API v3 wrappers
-│   │   ├── components/
-│   │   │   ├── common/                     # Reusable UI primitives (Button, Modal, Spinner, etc.)
-│   │   │   ├── explorer/                   # FileGrid, FileList, FileCard, FileRow, FileIcon
-│   │   │   ├── sidebar/                    # Navigation Sidebar, AccountList, StorageBar
-│   │   │   ├── modals/                     # Account Connection, File Preview, Rename Modals
-│   │   │   └── upload/                     # Drag-Drop Zone, Upload Queue & Progress
+│   │   ├── components/                     # Explorer, sidebar, modals, upload
 │   │   ├── config/                         # Firebase & App constants
-│   │   ├── hooks/                          # Custom React hooks (useAuth, useDrive, useUpload, etc.)
-│   │   ├── layouts/                        # Main Dashboard DashboardLayout
-│   │   ├── pages/                          # Login, Dashboard, Settings
+│   │   ├── hooks/                          # Custom React hooks (useAuth, useDrive, etc.)
+│   │   ├── pages/                          # Login, Dashboard, Settings, Support
 │   │   ├── routes/                         # App routes & ProtectedRoute wrapper
-│   │   ├── services/
-│   │   │   ├── firebase/                   # Auth & Firestore service wrappers
-│   │   │   └── google-drive/               # Auth, file operations, upload streams
-│   │   ├── store/                          # Redux Toolkit store (auth, drive, upload, ui)
-│   │   └── utils/                          # Helper formatters & analytics
+│   │   ├── services/                       # Firebase & Google Drive services
+│   │   └── store/                          # Redux Toolkit store (auth, drive, upload, ui)
 │   ├── firestore.rules                     # Client-side Firestore security rules
-│   ├── package.json                        # Client dependencies
-│   ├── tailwind.config.js                  # Tailwind CSS v4 setup
+│   ├── package.json                        # Dashboard dependencies
 │   ├── vite.config.js                      # Vite build configuration
-│   └── vercel.json                         # Vercel deployment config
+│   └── vercel.json                         # Vercel SPA rewrite & Vite config
 ├── functions/                              # Firebase Cloud Functions (v2 Node.js)
 │   ├── index.js                            # Serverless functions (exchange, refresh, revoke)
 │   ├── package.json                        # Backend dependencies (googleapis, firebase-admin)
 │   └── .env                                # Backend OAuth secrets
+├── package.json                            # Monorepo build script orchestration
+├── vercel.json                             # Root Vercel build configuration
 ├── firebase.json                           # Firebase multi-target project config
 └── README.md                               # Project documentation
 ```
@@ -265,13 +263,27 @@ firebase use --add # select your Firebase project
 firebase deploy --only functions,firestore:rules
 ```
 
-### 2. Deploy Client to Vercel
+### 2. Deploy to Vercel (Two-Project Architecture)
 
-```bash
-cd client
-vercel --prod
-```
-> Make sure to set all `VITE_FIREBASE_*` and `VITE_GOOGLE_CLIENT_ID` environment variables in the Vercel dashboard.
+DriveUnify is split into two independent applications in a monorepo structure. In Vercel, deploy each app as its own Project linked to the same Git repository:
+
+#### A. Marketing & Landing Site (`landing/`)
+- **Project Settings → General → Root Directory**: `landing`
+- **Framework Preset**: `Next.js`
+- **Build Command**: `next build` (or `npm run build`)
+- **Output Directory**: `.next`
+- **Domain**: `driveunify.com` (or your primary domain)
+- **Environment Variables**: Add all `NEXT_PUBLIC_FIREBASE_*` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` variables (see `landing/.env.example`).
+
+#### B. Dashboard Web Application (`dashboard/`)
+- **Project Settings → General → Root Directory**: `dashboard`
+- **Framework Preset**: `Vite`
+- **Build Command**: `vite build` (or `npm run build`)
+- **Output Directory**: `dist`
+- **Domain**: `dashboard.driveunify.com`
+- **Environment Variables**: Add all `VITE_FIREBASE_*` and `VITE_GOOGLE_CLIENT_ID` variables (see `dashboard/.env.example`).
+
+> **Note on Root Deployment**: The repository also contains a root `package.json` and `vercel.json` configured with npm scripts (`npm run build:landing`, `npm run build:dashboard`, `npm run build:all`) so any root-level CI or deployments build without missing directory errors.
 
 ---
 

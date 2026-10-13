@@ -87,7 +87,7 @@ export default function FeaturesPage() {
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/50">
                 <span className="text-xl mb-1 block">⚡</span>
                 <h4 className="font-semibold text-white text-sm mb-1">Server-Side Transfer</h4>
-                <p className="text-xs text-slate-400">Google Docs, Sheets, & Slides copy via Google's cloud APIs without using bandwidth.</p>
+                <p className="text-xs text-slate-400">Google Docs, Sheets, & Slides copy via Google&apos;s cloud APIs without using bandwidth.</p>
               </div>
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/50">
                 <span className="text-xl mb-1 block">📦</span>

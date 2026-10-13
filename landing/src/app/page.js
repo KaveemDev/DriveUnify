@@ -6,11 +6,7 @@ import { AnimatedButton, GlassCard, SectionHeading, GradientText } from '@/compo
 import { getDashboardUrl } from '@/lib/auth-sync';
 
 export default function Home() {
-  const [dashboardUrl, setDashboardUrl] = useState('https://dashboard.driveunify.com');
-
-  useEffect(() => {
-    setDashboardUrl(getDashboardUrl());
-  }, []);
+  const [dashboardUrl] = useState(() => getDashboardUrl());
 
   return (
     <div className="w-full">
@@ -64,7 +60,7 @@ export default function Home() {
                 href={`${dashboardUrl}/login`}
                 className="inline-flex items-center justify-center font-semibold text-base px-7 py-3.5 gap-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
               >
-                <span>Get Started — It's Free</span>
+                <span>Get Started — It&apos;s Free</span>
                 <ArrowRight size={18} />
               </a>
               <a
