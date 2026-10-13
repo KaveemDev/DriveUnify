@@ -15,6 +15,7 @@ import {
 import { FileIcon } from '../explorer/FileIcon';
 import { formatFileSize, formatDateTime, getMimeLabel } from '../../utils/formatters';
 import { openInGoogleDrive, isPreviewableImage, isPreviewableVideo, isGoogleAppsFile } from '../../utils/helpers';
+import { getDropboxTemporaryLink } from '../../api/dropboxApi';
 import { useSelector } from 'react-redux';
 
 export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
@@ -32,6 +33,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dbxMediaUrl, setDbxMediaUrl] = useState(null);
   const videoContainerRef = useRef(null);
 
   const handlePrev = useCallback(() => {
@@ -56,16 +58,45 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [handlePrev, handleNext, onClose]);
 
+  const account = getAccount(file?.accountEmail);
+  const canPreviewImage = isPreviewableImage(file?.mimeType);
+  const canPreviewVideo = isPreviewableVideo(file?.mimeType);
+  const isGApp = isGoogleAppsFile(file?.mimeType);
+  const previewUrl = file?.webViewLink;
+
+  useEffect(() => {
+    let active = true;
+    if (file?.provider === 'dropbox' && account?.accessToken && (canPreviewImage || canPreviewVideo)) {
+      getDropboxTemporaryLink(account.accessToken, file.pathLower || file.id)
+        .then((url) => {
+          if (active && url) setDbxMediaUrl(url);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [file, account, canPreviewImage, canPreviewVideo]);
+
   if (!file) return null;
 
-  const account = getAccount(file.accountEmail);
-  const canPreviewImage = isPreviewableImage(file.mimeType);
-  const canPreviewVideo = isPreviewableVideo(file.mimeType);
-  const isGApp = isGoogleAppsFile(file.mimeType);
-  const previewUrl = file.webViewLink;
-
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!account) return;
+    if (file.provider === 'dropbox') {
+      try {
+        const link = await getDropboxTemporaryLink(account.accessToken, file.pathLower || file.id);
+        if (link) {
+          const a = document.createElement('a');
+          a.href = link;
+          a.download = file.name;
+          a.target = '_blank';
+          a.click();
+          return;
+        }
+      } catch {
+        // fallback
+      }
+    }
     const url = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`;
     fetch(url, { headers: { Authorization: `Bearer ${account.accessToken}` } })
       .then((r) => r.blob())
@@ -273,7 +304,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
         >
           {canPreviewImage ? (
             <img
-              src={`https://lh3.googleusercontent.com/d/${file.id}`}
+              src={file.provider === 'dropbox' ? (dbxMediaUrl || file.thumbnailLink || '') : `https://lh3.googleusercontent.com/d/${file.id}`}
               alt={file.name}
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
               onError={(e) => {
@@ -296,7 +327,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
             >
               <video
                 ref={videoRef}
-                src={`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`}
+                src={file.provider === 'dropbox' ? (dbxMediaUrl || '') : `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`}
                 style={{
                   maxWidth: '100%',
                   maxHeight: 'calc(100% - 60px)',

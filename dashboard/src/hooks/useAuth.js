@@ -6,6 +6,7 @@ import { setConnectedAccounts, updateAccount, setLoading as setDriveLoading } fr
 import { signInWithGoogle, signOutUser, onAuthStateChange, checkRedirectResult } from '../services/firebase/auth';
 import { createUserDocument, getConnectedAccounts, getLocalConnectedAccounts } from '../services/firebase/firestore';
 import { silentRefreshAccount } from '../services/google-drive/auth';
+import { silentRefreshDropboxAccount } from '../services/dropbox/auth';
 
 /**
  * Global auth initialization hook — MUST ONLY BE RUN ONCE at the app root (App.jsx).
@@ -63,7 +64,10 @@ export const useAuthInit = (enabled = true) => {
           // Silently refresh tokens for all connected accounts via Cloud Functions.
           if (accounts.length > 0) {
             const refreshed = await Promise.allSettled(
-              accounts.map((account) => silentRefreshAccount(account))
+              accounts.map((account) => {
+                const isDbx = (account.provider || '').toLowerCase().includes('dropbox');
+                return isDbx ? silentRefreshDropboxAccount(account) : silentRefreshAccount(account);
+              })
             );
 
             refreshed.forEach((result) => {

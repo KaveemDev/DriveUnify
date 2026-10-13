@@ -8,6 +8,7 @@ import {
 } from '../store/slices/uploadSlice';
 import { upsertFiles } from '../store/slices/driveSlice';
 import { uploadFile } from '../services/google-drive/upload';
+import { uploadDropboxFile } from '../services/dropbox/upload';
 import { UPLOAD_MAX_SIZE } from '../config/constants';
 
 const MAX_CONCURRENT = 3;
@@ -32,7 +33,10 @@ export const useUpload = () => {
     abortControllersRef.current[uploadId] = controller;
 
     try {
-      const result = await uploadFile(account.accessToken, file, {
+      const isDropbox = (account.provider || '').toLowerCase().includes('dropbox');
+      const uploadFn = isDropbox ? uploadDropboxFile : uploadFile;
+
+      const result = await uploadFn(account.accessToken, file, {
         folderId,
         accountEmail,
         signal: controller.signal,
@@ -101,7 +105,7 @@ export const useUpload = () => {
     dispatch(cancelUpload(uploadId));
   }, [dispatch]);
 
-  const retryUpload = useCallback((upload) => {
+  const retryUpload = useCallback((_upload) => {
     // Re-trigger with same params — for simplicity, open file picker
     toast('Please re-select the file to retry', { icon: 'ℹ️' });
   }, []);

@@ -15,6 +15,8 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { transferFile, transferFolder, countFilesInFolder } from '../../services/google-drive/transfer';
 import { listFoldersInFolder } from '../../api/googleDriveApi';
+import { listDropboxFolders } from '../../api/dropboxApi';
+import { CloudProviderIcon, ProviderBadge } from '../common/ProviderBadge';
 import { setConnectModalOpen } from '../../store/slices/uiSlice';
 import { getAccountColor } from '../../config/constants';
 import { getInitials, formatFileSize } from '../../utils/formatters';
@@ -143,9 +145,12 @@ const AccountChip = ({ account }) => (
     >
       {!account.picture && getInitials(account.email)}
     </Avatar>
-    <Typography variant="body2" noWrap sx={{ fontSize: '0.8125rem', fontWeight: 500 }}>
-      {account.name || account.email}
-    </Typography>
+    <Box sx={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 0.75 }}>
+      <Typography variant="body2" noWrap sx={{ fontSize: '0.8125rem', fontWeight: 500 }}>
+        {account.name || account.email}
+      </Typography>
+      <CloudProviderIcon provider={account.provider} size={13} />
+    </Box>
   </Box>
 );
 
@@ -157,17 +162,26 @@ const FolderPicker = ({ destAccount, selectedFolder, onSelect }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const currentId = path.length > 0 ? path[path.length - 1].id : 'root';
+  const isDestDropbox = (destAccount?.provider || '').toLowerCase().includes('dropbox');
+  const currentId = path.length > 0 ? path[path.length - 1].id : (isDestDropbox ? '' : 'root');
 
   useEffect(() => {
     if (!destAccount?.accessToken) return;
     setLoading(true);
     setError(null);
-    listFoldersInFolder(destAccount.accessToken, currentId, destAccount.email)
-      .then((res) => setFolders(res?.files || []))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [currentId, destAccount?.accessToken, destAccount?.email]);
+
+    if (isDestDropbox) {
+      listDropboxFolders(destAccount.accessToken, currentId)
+        .then((res) => setFolders(res || []))
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    } else {
+      listFoldersInFolder(destAccount.accessToken, currentId, destAccount.email)
+        .then((res) => setFolders(res?.files || []))
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    }
+  }, [currentId, destAccount?.accessToken, destAccount?.email, isDestDropbox]);
 
   useEffect(() => {
     setPath([]);
@@ -185,7 +199,7 @@ const FolderPicker = ({ destAccount, selectedFolder, onSelect }) => {
   const navigateToRoot = () => setPath([]);
 
   const currentDisplayName = path.length === 0
-    ? 'My Drive'
+    ? (isDestDropbox ? 'Dropbox (All Files)' : 'My Drive')
     : path[path.length - 1].name;
 
   const isSelected = selectedFolder.id === currentId;
@@ -454,9 +468,13 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
 
   // Reset picker when dest account changes
   useEffect(() => {
-    setDestFolder({ id: 'root', name: 'My Drive' });
+    const isDbx = (destAccount?.provider || '').toLowerCase().includes('dropbox');
+    setDestFolder({
+      id: isDbx ? '' : 'root',
+      name: isDbx ? 'Dropbox (All Files)' : 'My Drive',
+    });
     setShowFolderPicker(false);
-  }, [destEmail]);
+  }, [destEmail, destAccount?.provider]);
 
   // Clean up controller on unmount
   useEffect(() => {
@@ -564,13 +582,13 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
     <Modal
       open={open}
       onOpenChange={handleClose}
-      title={isFolder ? 'Copy Folder to Drive' : 'Copy File to Drive'}
+      title={isFolder ? 'Transfer Folder' : 'Transfer File'}
       description={
         connectedAccounts.length < 2
-          ? 'Connect another Google Drive account to enable instant cross-account copying.'
+          ? 'Connect another Google Drive or Dropbox account to enable instant cross-account transfers.'
           : isFolder
-          ? 'Recursively clone this folder and all its contents to another connected Google Drive account.'
-          : 'Instantly transfer this file to another connected Google Drive account.'
+          ? 'Recursively clone this folder and all its contents to another connected cloud storage account.'
+          : 'Instantly transfer this file to another connected cloud storage account.'
       }
       size="md"
     >
@@ -607,10 +625,10 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
 
             <Box>
               <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem', color: 'text.primary', mb: 0.75 }}>
-                Connect a Second Google Drive
+                Connect a Second Account
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 430, fontSize: '0.84rem', lineHeight: 1.55 }}>
-                Cross-Drive copying transfers files directly between multiple Google Drive accounts. Connect at least two accounts in DriveUnify to enable one-click cloud migration.
+                Cross-cloud copying transfers files directly between multiple Google Drive and Dropbox accounts. Connect at least two accounts in DriveUnify to enable one-click cloud migration.
               </Typography>
             </Box>
 

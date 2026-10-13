@@ -273,7 +273,7 @@ export const FileDetailsPanel = ({
             {/* Provider */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Provider</span>
-              <ProviderBadge provider="google_drive" accountEmail={file.accountEmail} compact />
+              <ProviderBadge provider={file.provider || 'google_drive'} accountEmail={file.accountEmail} compact />
             </div>
 
             {/* Account */}

@@ -113,7 +113,7 @@ export const FileRow = ({
       {/* 4. Provider / Account */}
       <div className="hidden md:block">
         <ProviderBadge
-          provider="google_drive"
+          provider={file.provider || 'google_drive'}
           accountEmail={file.accountEmail}
           compact
         />

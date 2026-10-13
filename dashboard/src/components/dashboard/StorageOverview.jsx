@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Database, ChevronRight } from 'lucide-react';
 import { formatFileSize } from '../../utils/formatters';
-import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../common/ProviderBadge';
+import { GoogleDriveIcon, OneDriveIcon, DropboxIcon, CloudProviderIcon } from '../common/ProviderBadge';
 
 export const StorageOverview = ({
   connectedAccounts = [],
@@ -127,7 +127,7 @@ export const StorageOverview = ({
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-                    <GoogleDriveIcon size={16} />
+                    <CloudProviderIcon provider={account.provider} size={16} />
                     <span
                       style={{
                         fontSize: '0.8125rem',
@@ -138,7 +138,7 @@ export const StorageOverview = ({
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      Google Drive
+                      {account.provider === 'dropbox' ? 'Dropbox' : 'Google Drive'}
                     </span>
                   </div>
                   <span
@@ -167,7 +167,7 @@ export const StorageOverview = ({
                       width: `${pct}%`,
                       height: '100%',
                       borderRadius: 99,
-                      background: pct > 85 ? '#ef4444' : '#34A853',
+                      background: pct > 85 ? '#ef4444' : account.provider === 'dropbox' ? '#0061FF' : '#34A853',
                       transition: 'width 0.4s ease',
                     }}
                   />
@@ -242,10 +242,10 @@ export const StorageOverview = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-secondary)', fontSize: '0.78rem', fontWeight: 500 }}>
             <Plus size={14} />
-            <span>Add Google Drive Account</span>
+            <span>Add Storage Account</span>
           </div>
           <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
-            Manage multiple work & personal drives
+            Connect Google Drive or Dropbox accounts
           </span>
         </div>
       </div>
@@ -263,10 +263,10 @@ export const StorageOverview = ({
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
-          Active provider: <strong style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>Google Drive</strong>
+          Active providers: <strong style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>Google Drive & Dropbox</strong>
         </span>
         <span>•</span>
-        <span>OneDrive & Dropbox integrations arriving in v2.1</span>
+        <span>OneDrive connector arriving in v2.1</span>
       </div>
     </section>
   );

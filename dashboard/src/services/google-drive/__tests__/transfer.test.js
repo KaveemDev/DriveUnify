@@ -1,10 +1,10 @@
-import { test, it, describe, beforeEach, afterEach } from 'node:test';
+import { it, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   transferFile,
   transferFolder,
-  isGoogleAppsFile,
   driveApiAdapter,
+  dropboxApiAdapter,
 } from '../transfer.js';
 
 describe('Google Drive Cross-Account Transfer Service', () => {
@@ -12,15 +12,18 @@ describe('Google Drive Cross-Account Transfer Service', () => {
   const destAccount = { email: 'bob@example.com', accessToken: 'dest-token-456' };
 
   let originalDriveApi;
+  let originalDropboxApi;
 
   beforeEach(() => {
     // Preserve original API adapter functions
     originalDriveApi = { ...driveApiAdapter };
+    originalDropboxApi = { ...dropboxApiAdapter };
   });
 
   afterEach(() => {
     // Restore
     Object.assign(driveApiAdapter, originalDriveApi);
+    Object.assign(dropboxApiAdapter, originalDropboxApi);
   });
 
   // ── 1. Authorization & Parameter Validation ─────────────────
@@ -54,7 +57,7 @@ describe('Google Drive Cross-Account Transfer Service', () => {
       let copyCalled = false;
       let deletePermCalled = false;
 
-      driveApiAdapter.addPermission = async (token, fileId, email, role) => {
+      driveApiAdapter.addPermission = async (token, fileId, email, _role) => {
         addPermCalled = true;
         assert.equal(token, srcAccount.accessToken);
         assert.equal(email, destAccount.email);
@@ -314,6 +317,148 @@ describe('Google Drive Cross-Account Transfer Service', () => {
 
       assert.equal(res.id, 'new-folder-MyDocuments');
       assert.deepEqual(transferredFiles, ['File1.txt', 'File2.txt']);
+    });
+  });
+
+  // ── 5. Cross-Cloud Transfers: Google Drive <-> Dropbox ─────
+  describe('Cross-Cloud Transfers (Method 2: Bounded Stream with Dropbox)', () => {
+    const dropboxAccount = {
+      email: 'carol@dropbox.com',
+      accessToken: 'dropbox-token-789',
+      provider: 'dropbox',
+    };
+
+    it('should skip Strategy A and stream Google Drive file directly to Dropbox', async () => {
+      let cloudCopyAttempted = false;
+      let driveDownloadCalled = false;
+      let dropboxUploadCalled = false;
+
+      driveApiAdapter.addPermission = async () => {
+        cloudCopyAttempted = true;
+        return { id: 'p' };
+      };
+
+      driveApiAdapter.downloadFileRange = async (token, fileId, _start, _end) => {
+        driveDownloadCalled = true;
+        assert.equal(token, srcAccount.accessToken);
+        assert.equal(fileId, 'gdrive-file-1');
+        return new Blob(['dropbox file content slice']);
+      };
+
+      dropboxApiAdapter.uploadDropboxFileDirect = async (token, blob, targetPath) => {
+        dropboxUploadCalled = true;
+        assert.equal(token, dropboxAccount.accessToken);
+        assert.equal(targetPath, '/Documents/Report.pdf');
+        return { id: 'id:dbx123', name: 'Report.pdf', size: 100 };
+      };
+
+      const file = {
+        id: 'gdrive-file-1',
+        name: 'Report.pdf',
+        mimeType: 'application/pdf',
+        size: '100',
+      };
+
+      const result = await transferFile(srcAccount, dropboxAccount, file, '/Documents');
+
+      assert.equal(cloudCopyAttempted, false, 'Strategy A must be skipped when target is Dropbox');
+      assert.equal(driveDownloadCalled, true);
+      assert.equal(dropboxUploadCalled, true);
+      assert.equal(result.transferMode, 'stream');
+    });
+
+    it('should stream Dropbox file directly to Google Drive via resumable upload', async () => {
+      let dbxDownloadCalled = false;
+      let gdriveResumableCalled = false;
+      let gdriveChunkUploaded = false;
+
+      dropboxApiAdapter.downloadDropboxFileRange = async (token, pathOrId, _start, _end) => {
+        dbxDownloadCalled = true;
+        assert.equal(token, dropboxAccount.accessToken);
+        assert.equal(pathOrId, '/photos/beach.png');
+        return new Blob(['image binary slice']);
+      };
+
+      driveApiAdapter.initiateResumableUpload = async (token, meta, _mime, _totalSize) => {
+        gdriveResumableCalled = true;
+        assert.equal(token, destAccount.accessToken);
+        assert.equal(meta.name, 'beach.png');
+        return 'https://upload.google.com/session-url';
+      };
+
+      driveApiAdapter.uploadResumableChunk = async (url, _blob, _start, _end, _total) => {
+        gdriveChunkUploaded = true;
+        assert.equal(url, 'https://upload.google.com/session-url');
+        return { complete: true, status: 200, data: { id: 'gdrive-beach', name: 'beach.png', size: '200' } };
+      };
+
+      const file = {
+        id: 'id:beach',
+        pathLower: '/photos/beach.png',
+        name: 'beach.png',
+        mimeType: 'image/png',
+        size: '200',
+        provider: 'dropbox',
+      };
+
+      const result = await transferFile(dropboxAccount, destAccount, file, 'folder-gdrive');
+
+      assert.equal(dbxDownloadCalled, true);
+      assert.equal(gdriveResumableCalled, true);
+      assert.equal(gdriveChunkUploaded, true);
+      assert.equal(result.transferMode, 'stream');
+    });
+
+    it('should transfer Dropbox folder recursively into Google Drive', async () => {
+      const createdFolders = [];
+
+      dropboxApiAdapter.listDropboxFiles = async (token, path) => {
+        if (path === '/my_drop_folder') {
+          return [
+            { '.tag': 'file', id: 'id:f1', name: 'file1.txt', path_lower: '/my_drop_folder/file1.txt', size: 50 },
+            { '.tag': 'folder', id: 'id:sub', name: 'sub', path_lower: '/my_drop_folder/sub' },
+          ];
+        }
+        if (path === '/my_drop_folder/sub') {
+          return [
+            { '.tag': 'file', id: 'id:f2', name: 'file2.txt', path_lower: '/my_drop_folder/sub/file2.txt', size: 60 },
+          ];
+        }
+        return [];
+      };
+
+      driveApiAdapter.createFolder = async (token, name, parentId) => {
+        createdFolders.push({ name, parentId });
+        return { id: `gfolder-${name}`, name };
+      };
+
+      dropboxApiAdapter.downloadDropboxFileRange = async () => new Blob(['data']);
+      driveApiAdapter.initiateResumableUpload = async () => 'https://upload.google.com/s';
+      driveApiAdapter.uploadResumableChunk = async (_url, _blob, _start, _end, total) => {
+        return { complete: true, status: 200, data: { id: 'gfile', size: String(total) } };
+      };
+
+      const folder = {
+        id: 'id:my_drop_folder',
+        pathLower: '/my_drop_folder',
+        name: 'my_drop_folder',
+        provider: 'dropbox',
+      };
+
+      const progressUpdates = [];
+      await transferFolder(
+        dropboxAccount,
+        destAccount,
+        folder,
+        'root',
+        (p) => progressUpdates.push(p),
+        { done: 0, total: 2 }
+      );
+
+      assert.equal(createdFolders.length, 2);
+      assert.equal(createdFolders[0].name, 'my_drop_folder');
+      assert.equal(createdFolders[1].name, 'sub');
+      assert.equal(progressUpdates.length, 2);
     });
   });
 });

@@ -171,7 +171,7 @@ export const RecentFiles = ({
                   flexShrink: 0,
                 }}
               >
-                <ProviderBadge provider="google_drive" accountEmail={file.accountEmail} compact />
+                <ProviderBadge provider={file.provider || 'google_drive'} accountEmail={file.accountEmail} compact />
                 <span className="hidden sm:inline">{formatFileSize(file.size)}</span>
                 <span className="hidden md:inline">{formatRelativeDate(file.modifiedTime)}</span>
 

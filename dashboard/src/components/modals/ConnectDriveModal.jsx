@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Check, X, Loader2, Plus, Sparkles } from 'lucide-react';
+import { Check, X, Loader2, Sparkles, Key, ChevronDown, ChevronUp } from 'lucide-react';
 import { Modal } from '../common/Modal';
-import { Box, Typography, Avatar, Alert, ButtonBase } from '@mui/material';
+import { Box, Typography, Avatar, Alert, ButtonBase, TextField } from '@mui/material';
 import { useDrive } from '../../hooks/useDrive';
 import { getAccountColor } from '../../config/constants';
 import { getInitials } from '../../utils/formatters';
+import { DropboxIcon, CloudProviderIcon } from '../common/ProviderBadge';
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 18 18">
@@ -17,22 +18,44 @@ const GoogleIcon = () => (
 );
 
 export const ConnectDriveModal = ({ open, onOpenChange }) => {
-  const [connecting, setConnecting] = useState(false);
+  const [connectingProvider, setConnectingProvider] = useState(null); // 'google' | 'dropbox' | null
   const [error, setError] = useState(null);
+  const [customDbxKey, setCustomDbxKey] = useState('');
+  const [showDbxKeyInput, setShowDbxKeyInput] = useState(false);
   const { connectedAccounts } = useSelector((s) => s.drive);
   const { connectNewAccount } = useDrive();
 
-  const handleConnect = async () => {
+  const handleConnectGoogle = async () => {
     setError(null);
-    setConnecting(true);
+    setConnectingProvider('google');
     try {
-      await connectNewAccount();
+      await connectNewAccount('google_drive');
+      onOpenChange(false);
     } catch (err) {
       if (!err.message?.includes('closed')) {
         setError(err.message);
       }
     } finally {
-      setConnecting(false);
+      setConnectingProvider(null);
+    }
+  };
+
+  const handleConnectDropbox = async () => {
+    setError(null);
+    setConnectingProvider('dropbox');
+    try {
+      const keyToUse = customDbxKey.trim() || import.meta.env.VITE_DROPBOX_CLIENT_ID;
+      await connectNewAccount('dropbox', keyToUse);
+      onOpenChange(false);
+    } catch (err) {
+      if (!err.message?.includes('closed')) {
+        setError(err.message);
+        if (err.message?.toLowerCase().includes('client') || err.message?.toLowerCase().includes('key') || !import.meta.env.VITE_DROPBOX_CLIENT_ID) {
+          setShowDbxKeyInput(true);
+        }
+      }
+    } finally {
+      setConnectingProvider(null);
     }
   };
 
@@ -40,17 +63,17 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Connect Google Drive"
-      description="Link multiple Google Drive accounts to manage, browse, and transfer files across all of them in one place."
+      title="Connect Cloud Storage"
+      description="Link multiple Google Drive and Dropbox accounts to manage, browse, and transfer files across all of them in one place."
       size="sm"
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        {/* Connect Action Button */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}>
+        {/* Action 1: Connect Google Drive */}
         <ButtonBase
-          onClick={handleConnect}
-          disabled={connecting}
+          onClick={handleConnectGoogle}
+          disabled={connectingProvider !== null}
           sx={{
-            py: 1.75,
+            py: 1.5,
             px: 2.5,
             borderRadius: 2.5,
             border: 1,
@@ -62,10 +85,10 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
             justifyContent: 'center',
             gap: 1.5,
             fontWeight: 600,
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             width: '100%',
             transition: 'all 0.15s ease',
-            boxShadow: '0 2px 8px -2px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 8px -2px rgba(0,0,0,0.08)',
             '&:hover': {
               bgcolor: 'action.selected',
               borderColor: 'primary.main',
@@ -76,18 +99,101 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
             },
           }}
         >
-          {connecting ? (
+          {connectingProvider === 'google' ? (
             <>
-              <Loader2 size={20} className="animate-spin text-blue-500" />
-              <span>Connecting via Google OAuth…</span>
+              <Loader2 size={18} className="animate-spin text-blue-500" />
+              <span>Connecting Google Drive…</span>
             </>
           ) : (
             <>
               <GoogleIcon />
-              <span>Connect with Google</span>
+              <span>Connect with Google Drive</span>
             </>
           )}
         </ButtonBase>
+
+        {/* Action 2: Connect Dropbox */}
+        <ButtonBase
+          onClick={handleConnectDropbox}
+          disabled={connectingProvider !== null}
+          sx={{
+            py: 1.5,
+            px: 2.5,
+            borderRadius: 2.5,
+            border: 1,
+            borderColor: '#0061FF',
+            bgcolor: 'rgba(0, 97, 255, 0.08)',
+            color: 'text.primary',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1.5,
+            fontWeight: 600,
+            fontSize: '0.88rem',
+            width: '100%',
+            transition: 'all 0.15s ease',
+            boxShadow: '0 2px 8px -2px rgba(0, 97, 255, 0.2)',
+            '&:hover': {
+              bgcolor: 'rgba(0, 97, 255, 0.16)',
+              borderColor: '#0061FF',
+            },
+            '&:disabled': {
+              opacity: 0.6,
+              cursor: 'not-allowed',
+            },
+          }}
+        >
+          {connectingProvider === 'dropbox' ? (
+            <>
+              <Loader2 size={18} className="animate-spin text-blue-400" />
+              <span>Connecting Dropbox…</span>
+            </>
+          ) : (
+            <>
+              <DropboxIcon size={19} />
+              <span>Connect with Dropbox</span>
+            </>
+          )}
+        </ButtonBase>
+
+        {/* Custom Dropbox Key Toggle / Input */}
+        <Box sx={{ mt: -0.5 }}>
+          <Box
+            onClick={() => setShowDbxKeyInput(!showDbxKeyInput)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.75,
+              cursor: 'pointer',
+              color: 'text.secondary',
+              fontSize: '0.74rem',
+              '&:hover': { color: 'text.primary' },
+            }}
+          >
+            <Key size={12} />
+            <span>{showDbxKeyInput ? 'Hide Dropbox App Key' : 'Have a Dropbox App Key?'}</span>
+            {showDbxKeyInput ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </Box>
+
+          {showDbxKeyInput && (
+            <Box sx={{ mt: 1.25, p: 1.5, borderRadius: 2, bgcolor: 'background.paper', border: 1, borderColor: 'divider' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontSize: '0.72rem' }}>
+                Enter your Dropbox App Key (found in your Dropbox App Console):
+              </Typography>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="e.g. k7b... (Dropbox App Key)"
+                value={customDbxKey}
+                onChange={(e) => setCustomDbxKey(e.target.value)}
+                sx={{
+                  '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.75 },
+                }}
+              />
+            </Box>
+          )}
+        </Box>
 
         {error && (
           <Alert severity="error" icon={<X size={18} />} sx={{ borderRadius: 2 }}>
@@ -97,7 +203,7 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
 
         <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', border: 1, borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary" align="center" display="block" sx={{ lineHeight: 1.45 }}>
-            DriveUnify connects securely via official Google Drive APIs. Your credentials and file data are never stored on any intermediary servers.
+            DriveUnify connects securely via official Google Drive and Dropbox APIs. Your file contents stream directly between verified servers and are never stored on intermediary servers.
           </Typography>
         </Box>
 
@@ -139,9 +245,12 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
                     {!account.picture && getInitials(account.email)}
                   </Avatar>
                   <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="body2" fontWeight={600} noWrap sx={{ fontSize: '0.8125rem' }}>
-                      {account.name || account.email}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant="body2" fontWeight={600} noWrap sx={{ fontSize: '0.8125rem' }}>
+                        {account.name || account.email}
+                      </Typography>
+                      <CloudProviderIcon provider={account.provider} size={13} />
+                    </Box>
                     <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ fontSize: '0.72rem' }}>
                       {account.email}
                     </Typography>
@@ -158,4 +267,4 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
     </Modal>
   );
 };
-
+export default ConnectDriveModal;

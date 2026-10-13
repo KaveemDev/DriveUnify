@@ -235,9 +235,9 @@ export const FileCard = ({
 
           <div
             style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-            title={`Google Drive (${file.accountEmail || ''})`}
+            title={`${file.provider === 'dropbox' ? 'Dropbox' : 'Google Drive'} (${file.accountEmail || ''})`}
           >
-            <CloudProviderIcon provider="google_drive" size={13} />
+            <CloudProviderIcon provider={file.provider || 'google_drive'} size={13} />
           </div>
         </div>
       </div>

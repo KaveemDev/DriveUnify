@@ -276,3 +276,208 @@ exports.revokeGoogleToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
 
   return { success: true };
 });
+
+// ── Dropbox Token Lifecycle Functions ─────────────────────────
+const dropboxTokenRef = (uid, emailId) =>
+  db.doc(`dropbox_tokens/${uid}/accounts/${emailId}`);
+
+const getDropboxClientId = () => process.env.DROPBOX_CLIENT_ID || process.env.DROPBOX_APP_KEY;
+const getDropboxClientSecret = () => process.env.DROPBOX_CLIENT_SECRET || process.env.DROPBOX_APP_SECRET;
+
+/**
+ * 4. exchangeDropboxCode
+ * Exchanges authorization code for Dropbox access_token + refresh_token.
+ * Saves refresh_token to server-only Firestore path (dropbox_tokens/).
+ */
+exports.exchangeDropboxCode = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+  const uid = requireAuth(request);
+  const { code, redirectUri, codeVerifier, clientId: clientProvidedId } = request.data;
+
+  if (!code || !redirectUri) {
+    throw new HttpsError('invalid-argument', 'code and redirectUri are required.');
+  }
+
+  const clientId = clientProvidedId || getDropboxClientId();
+  const clientSecret = getDropboxClientSecret();
+
+  const params = new URLSearchParams({
+    code,
+    grant_type: 'authorization_code',
+    redirect_uri: redirectUri,
+    client_id: clientId,
+  });
+
+  if (codeVerifier) {
+    params.set('code_verifier', codeVerifier);
+  }
+  if (clientSecret) {
+    params.set('client_secret', clientSecret);
+  }
+
+  const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  if (clientSecret && clientId && !codeVerifier) {
+    headers['Authorization'] = 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  }
+
+  let tokens;
+  try {
+    const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
+      method: 'POST',
+      headers,
+      body: params.toString(),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}: ${errBody}`);
+    }
+    tokens = await res.json();
+  } catch (err) {
+    console.error('[exchangeDropboxCode] Token exchange failed:', err.message);
+    throw new HttpsError('internal', 'Failed to exchange authorization code with Dropbox.');
+  }
+
+  // Fetch Dropbox user profile
+  let profile;
+  try {
+    const profileRes = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    if (!profileRes.ok) throw new Error(`HTTP ${profileRes.status}`);
+    profile = await profileRes.json();
+  } catch (err) {
+    console.error('[exchangeDropboxCode] Profile fetch failed:', err.message);
+    throw new HttpsError('internal', 'Failed to fetch Dropbox profile.');
+  }
+
+  const emailId = sanitizeEmail(profile.email);
+  const expiryDate = Date.now() + (tokens.expires_in || 14400) * 1000;
+
+  // Store refresh_token server-side in dropbox_tokens
+  await dropboxTokenRef(uid, emailId).set({
+    email: profile.email,
+    ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
+    accountId: profile.account_id,
+    invalid: false,
+    connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  // Store client-readable metadata
+  await accountMetaRef(uid, emailId).set({
+    email: profile.email,
+    name: profile.name?.display_name || profile.email,
+    picture: profile.profile_photo_url || null,
+    provider: 'dropbox',
+    connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  return {
+    accessToken: tokens.access_token,
+    expiryDate,
+    email: profile.email,
+    name: profile.name?.display_name || profile.email,
+    picture: profile.profile_photo_url || null,
+    provider: 'dropbox',
+    refreshToken: tokens.refresh_token || null,
+  };
+});
+
+/**
+ * 5. refreshDropboxToken
+ * Refreshes Dropbox access token using stored refresh_token.
+ */
+exports.refreshDropboxToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+  const uid = requireAuth(request);
+  const { email } = request.data;
+
+  if (!email) {
+    throw new HttpsError('invalid-argument', 'email is required.');
+  }
+
+  const emailId = sanitizeEmail(email);
+  const snap = await dropboxTokenRef(uid, emailId).get();
+
+  if (!snap.exists) {
+    throw new HttpsError('not-found', `No stored token found for ${email}. Please reconnect.`);
+  }
+
+  const { refreshToken } = snap.data();
+  if (!refreshToken) {
+    throw new HttpsError('not-found', `Refresh token missing for ${email}. Please reconnect.`);
+  }
+
+  const clientId = getDropboxClientId();
+  const clientSecret = getDropboxClientSecret();
+
+  const params = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+    client_id: clientId,
+  });
+  if (clientSecret) {
+    params.set('client_secret', clientSecret);
+  }
+
+  let tokens;
+  try {
+    const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}: ${errBody}`);
+    }
+    tokens = await res.json();
+  } catch (err) {
+    console.error(`[refreshDropboxToken] Refresh failed for ${email}:`, err.message);
+    throw new HttpsError('unavailable', `Could not refresh Dropbox token for ${email}. Please try again.`);
+  }
+
+  const expiryDate = Date.now() + (tokens.expires_in || 14400) * 1000;
+
+  await dropboxTokenRef(uid, emailId).update({
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    invalid: false,
+  });
+
+  return {
+    accessToken: tokens.access_token,
+    expiryDate,
+    email,
+    provider: 'dropbox',
+  };
+});
+
+/**
+ * 6. revokeDropboxToken
+ * Revokes Dropbox token and deletes stored Firestore credentials.
+ */
+exports.revokeDropboxToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+  const uid = requireAuth(request);
+  const { email } = request.data;
+
+  if (!email) {
+    throw new HttpsError('invalid-argument', 'email is required.');
+  }
+
+  const emailId = sanitizeEmail(email);
+  const snap = await dropboxTokenRef(uid, emailId).get();
+
+  if (snap.exists) {
+    await dropboxTokenRef(uid, emailId).delete();
+  }
+
+  try {
+    await accountMetaRef(uid, emailId).delete();
+  } catch {
+    // Best-effort
+  }
+
+  return { success: true };
+});
+

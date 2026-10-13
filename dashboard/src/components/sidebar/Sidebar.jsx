@@ -255,10 +255,10 @@ export const Sidebar = ({ onSelectView }) => {
           }}
         >
           <Plus size={13} />
-          <span>Connect Google Drive</span>
+          <span>Connect Account</span>
         </button>
 
-        {/* Multi-cloud Roadmap: OneDrive & Dropbox */}
+        {/* Multi-cloud Connectors */}
         <div
           style={{
             display: 'flex',
@@ -273,8 +273,43 @@ export const Sidebar = ({ onSelectView }) => {
             opacity: 0.65,
           }}
         >
-          <span>Coming in v2.1</span>
+          <span>Cloud Providers</span>
         </div>
+
+        <button
+          onClick={() => dispatch(setConnectModalOpen(true))}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '5px 8px',
+            borderRadius: 6,
+            border: 'none',
+            background: 'transparent',
+            fontSize: '0.75rem',
+            color: 'var(--color-text-secondary)',
+            cursor: 'pointer',
+            transition: 'background var(--transition-fast)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-bg-overlay)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--color-text-secondary)';
+          }}
+          title="Connect a Dropbox account"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <DropboxIcon size={14} />
+            <span>Dropbox</span>
+          </div>
+          <span style={{ fontSize: '0.62rem', padding: '1px 5px', borderRadius: 3, background: 'rgba(0, 97, 255, 0.15)', color: '#0061FF', fontWeight: 600 }}>
+            Active
+          </span>
+        </button>
 
         <div
           style={{
@@ -293,29 +328,6 @@ export const Sidebar = ({ onSelectView }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <OneDriveIcon size={14} />
             <span>OneDrive</span>
-          </div>
-          <span style={{ fontSize: '0.58rem', padding: '1px 4px', borderRadius: 3, background: 'var(--color-bg-elevated)', color: 'var(--color-text-muted)' }}>
-            Soon
-          </span>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '5px 8px',
-            borderRadius: 6,
-            opacity: 0.45,
-            fontSize: '0.75rem',
-            color: 'var(--color-text-secondary)',
-            cursor: 'default',
-          }}
-          title="Dropbox integration coming in v2.1"
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <DropboxIcon size={14} />
-            <span>Dropbox</span>
           </div>
           <span style={{ fontSize: '0.58rem', padding: '1px 4px', borderRadius: 3, background: 'var(--color-bg-elevated)', color: 'var(--color-text-muted)' }}>
             Soon

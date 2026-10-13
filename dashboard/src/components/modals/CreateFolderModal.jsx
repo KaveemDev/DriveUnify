@@ -14,6 +14,7 @@ import {
 import { Button } from '../common/Button';
 import toast from 'react-hot-toast';
 import { createFolder } from '../../api/googleDriveApi';
+import { createDropboxFolder, resolveDropboxPath, normalizeDropboxFile } from '../../api/dropboxApi';
 import { getAccountColor } from '../../config/constants';
 import { getInitials } from '../../utils/formatters';
 
@@ -43,8 +44,19 @@ export const CreateFolderModal = ({
 
     setLoading(true);
     try {
-      const parentId = currentFolder?.id || 'root';
-      const created = await createFolder(account.accessToken, name, parentId, account.email);
+      const isDbx = (account.provider || '').toLowerCase().includes('dropbox');
+      let created;
+
+      if (isDbx) {
+        const parentPath = currentFolder?.pathLower || currentFolder?.id || 'root';
+        const targetPath = resolveDropboxPath(parentPath, name);
+        const dbxMeta = await createDropboxFolder(account.accessToken, targetPath);
+        created = normalizeDropboxFile(dbxMeta, account.email);
+      } else {
+        const parentId = currentFolder?.id || 'root';
+        created = await createFolder(account.accessToken, name, parentId, account.email);
+      }
+
       toast.success(`Folder "${name}" created`, { icon: '📁' });
       onFolderCreated?.({ ...created, accountEmail: account.email });
       setFolderName('');

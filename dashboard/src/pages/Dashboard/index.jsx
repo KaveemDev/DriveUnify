@@ -447,7 +447,7 @@ const Dashboard = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <AlertTriangle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
               <span style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
-                Google Drive session expired for{' '}
+                {[...new Set(expiredAccounts.map((a) => (a.provider === 'dropbox' ? 'Dropbox' : 'Google Drive')))].join(' & ')} session expired for{' '}
                 <strong>{expiredAccounts.map((a) => a.email).join(', ')}</strong>.
                 Re-authenticate to resume syncing your files.
               </span>

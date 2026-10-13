@@ -326,7 +326,7 @@ export const CommandPalette = ({
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                             <ProviderBadge
-                              provider="google_drive"
+                              provider={file.provider || 'google_drive'}
                               accountEmail={file.accountEmail}
                               compact
                             />

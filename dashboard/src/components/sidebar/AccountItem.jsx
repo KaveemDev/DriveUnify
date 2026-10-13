@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { X, RefreshCw } from 'lucide-react';
 import { setSelectedAccount } from '../../store/slices/driveSlice';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { GoogleDriveIcon } from '../common/ProviderBadge';
+import { GoogleDriveIcon, CloudProviderIcon } from '../common/ProviderBadge';
 import { formatFileSize } from '../../utils/formatters';
 import { getAccountColor } from '../../config/constants';
 import { getInitials } from '../../utils/formatters';
@@ -69,22 +69,49 @@ export const AccountItem = ({ account, onDisconnect, onRefresh, onReconnect }) =
         {/* Provider Icon / Avatar */}
         <div
           style={{
-            width: 22,
-            height: 22,
-            borderRadius: 5,
-            background: 'var(--color-bg-elevated)',
-            border: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: 'relative',
+            width: 24,
+            height: 24,
             flexShrink: 0,
-            overflow: 'hidden',
           }}
         >
-          {account.picture ? (
-            <img src={account.picture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <GoogleDriveIcon size={13} />
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              background: 'var(--color-bg-elevated)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            {account.picture ? (
+              <img src={account.picture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <CloudProviderIcon provider={account.provider} size={13} />
+            )}
+          </div>
+          {account.picture && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: 'var(--color-bg-surface)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <CloudProviderIcon provider={account.provider} size={8} />
+            </div>
           )}
         </div>
 

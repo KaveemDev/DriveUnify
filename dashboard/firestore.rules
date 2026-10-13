@@ -29,6 +29,15 @@ service cloud.firestore {
       }
     }
 
+    // ── Dropbox Tokens (server-only) ───────────────────────────
+    match /dropbox_tokens/{userId} {
+      allow read, write: if false;
+
+      match /accounts/{accountId} {
+        allow read, write: if false;
+      }
+    }
+
     // ── Deny everything else ──────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

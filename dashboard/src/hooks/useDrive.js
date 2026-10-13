@@ -13,23 +13,66 @@ import {
   revokeDriveAccess,
   refreshDriveToken,
 } from '../services/google-drive/auth';
-import { fetchAllFilesForAccount, fetchFilesInFolder, fetchStorageInfo } from '../services/google-drive/files';
-import { renameFile, deleteFile, permanentlyDeleteFile, starFile, restoreFile } from '../api/googleDriveApi';
+import {
+  requestDropboxAccess,
+  checkAndRefreshDropboxToken,
+  revokeDropboxAccess,
+  refreshDropboxToken,
+} from '../services/dropbox/auth';
+import {
+  fetchAllFilesForAccount as fetchAllDriveFiles,
+  fetchFilesInFolder as fetchDriveFilesInFolder,
+  fetchStorageInfo as fetchDriveStorageInfo,
+} from '../services/google-drive/files';
+import {
+  fetchAllDropboxFilesForAccount,
+  fetchDropboxFilesInFolder,
+  fetchDropboxStorageInfo,
+} from '../services/dropbox/files';
+import {
+  renameFile, deleteFile, permanentlyDeleteFile, starFile, restoreFile,
+} from '../api/googleDriveApi';
+import {
+  renameDropboxItem,
+  deleteDropboxItem,
+  resolveDropboxPath,
+} from '../api/dropboxApi';
 import {
   addConnectedAccount,
   removeConnectedAccount,
   updateAccountTokens,
 } from '../services/firebase/firestore';
 
+const isDropbox = (accountOrFile) =>
+  (accountOrFile?.provider || '').toLowerCase().includes('dropbox');
+
 export const useDrive = () => {
   const dispatch = useDispatch();
   const { connectedAccounts, files, loading, error, currentFolder } = useSelector(s => s.drive);
   const { user } = useSelector(s => s.auth);
 
+  // ── Unified Storage & Files Telemetry Wrappers ────────────────
+  const getAccountFiles = useCallback(async (account) => {
+    if (isDropbox(account)) {
+      return await fetchAllDropboxFilesForAccount(account);
+    }
+    return await fetchAllDriveFiles(account);
+  }, []);
+
+  const getAccountStorage = useCallback(async (account) => {
+    if (isDropbox(account)) {
+      return await fetchDropboxStorageInfo(account);
+    }
+    return await fetchDriveStorageInfo(account);
+  }, []);
+
   // ── Get fresh account with token check ───────────────────────
   const getFreshAccount = useCallback(async (account) => {
     try {
-      const refreshed = await checkAndRefreshToken(account);
+      const refreshed = isDropbox(account)
+        ? await checkAndRefreshDropboxToken(account)
+        : await checkAndRefreshToken(account);
+
       if (!refreshed || refreshed.needsReconnect || refreshed.expired || !refreshed.accessToken) {
         dispatch(updateAccount({
           email: account.email,
@@ -66,26 +109,34 @@ export const useDrive = () => {
     }
   }, [dispatch, user?.uid]);
 
-  // ── Connect a new Drive account ───────────────────────────────
-  const connectNewAccount = useCallback(async () => {
+  // ── Connect a new account (Google Drive or Dropbox) ───────────
+  const connectNewAccount = useCallback(async (provider = 'google_drive', customAppKey = null) => {
     try {
-      // requestDriveAccess now uses Authorization Code flow via Cloud Function
-      const oauthData = await requestDriveAccess();
+      let oauthData;
+      const isDbx = provider === 'dropbox';
+
+      if (isDbx) {
+        oauthData = await requestDropboxAccess(customAppKey);
+      } else {
+        oauthData = await requestDriveAccess();
+      }
 
       const accountData = {
         email: oauthData.email,
         name: oauthData.name,
         picture: oauthData.picture,
         accessToken: oauthData.accessToken,
+        refreshToken: oauthData.refreshToken || null,
+        clientId: oauthData.clientId || customAppKey || null,
         expiryDate: oauthData.expiryDate,
-        provider: 'google_drive',
+        provider: isDbx ? 'dropbox' : 'google_drive',
         expired: false,
         needsReconnect: false,
       };
 
       dispatch(addAccount(accountData));
 
-      // Save metadata (no token) to Firestore — CF already saved both token & metadata
+      // Save metadata (no token) to Firestore — CF already stored both token & metadata
       if (user?.uid) {
         try {
           await addConnectedAccount(user.uid, accountData);
@@ -94,15 +145,16 @@ export const useDrive = () => {
         }
       }
 
-      toast.success(`Connected ${oauthData.email}`);
+      const providerLabel = isDbx ? 'Dropbox' : 'Google Drive';
+      toast.success(`Connected ${providerLabel} (${oauthData.email})`);
       dispatch(setConnectModalOpen(false));
 
       // Fetch files for the new account
-      const filesData = await fetchAllFilesForAccount(accountData);
+      const filesData = await getAccountFiles(accountData);
       dispatch(upsertFiles(filesData));
 
       // Fetch storage info
-      const storage = await fetchStorageInfo(accountData);
+      const storage = await getAccountStorage(accountData);
       dispatch(updateAccount({ email: accountData.email, storage }));
 
       return accountData;
@@ -111,22 +163,29 @@ export const useDrive = () => {
       toast.error(`Failed to connect: ${err.message}`);
       throw err;
     }
-  }, [dispatch, user?.uid]);
+  }, [dispatch, user?.uid, getAccountFiles, getAccountStorage]);
 
-  // ── Disconnect a Drive account ────────────────────────────────
+  const connectDropboxAccount = useCallback(async (customAppKey = null) => {
+    return connectNewAccount('dropbox', customAppKey);
+  }, [connectNewAccount]);
+
+  // ── Disconnect an account ─────────────────────────────────────
   const disconnectAccount = useCallback(async (email) => {
+    const account = connectedAccounts.find(a => a.email === email);
     try {
       dispatch(removeAccount(email));
 
-      // Revoke token via Cloud Function (handles both Google revocation + Firestore cleanup)
-      await revokeDriveAccess(email);
+      if (isDropbox(account)) {
+        await revokeDropboxAccess(email, account?.accessToken);
+      } else {
+        await revokeDriveAccess(email);
+      }
 
-      // Also remove from client-readable Firestore metadata
       if (user?.uid) {
         try {
           await removeConnectedAccount(user.uid, email);
         } catch (err) {
-          console.warn('[DriveUnify] Direct Firestore removal skipped (handled by Cloud Function):', err.message);
+          console.warn('[DriveUnify] Direct Firestore removal skipped:', err.message);
         }
       }
 
@@ -134,16 +193,20 @@ export const useDrive = () => {
     } catch (err) {
       toast.error(`Failed to disconnect: ${err.message}`);
     }
-  }, [dispatch, user?.uid]);
+  }, [dispatch, user?.uid, connectedAccounts]);
 
   // ── Re-connect an expired account ────────────────────────────
   const reconnectAccount = useCallback(async (email) => {
     const account = connectedAccounts.find(a => a.email === email);
     if (!account) return;
 
+    const isDbx = isDropbox(account);
+
     try {
       // First try silent refresh via Cloud Function
-      const refreshed = await refreshDriveToken(account);
+      const refreshed = isDbx
+        ? await refreshDropboxToken(account)
+        : await refreshDriveToken(account);
 
       if (!refreshed.needsReconnect) {
         dispatch(updateAccount({
@@ -156,22 +219,36 @@ export const useDrive = () => {
         toast.success(`Reconnected ${email}`);
 
         // Refresh files for this account
-        const accountFiles = await fetchAllFilesForAccount(refreshed);
+        const accountFiles = await getAccountFiles(refreshed);
         const otherFiles = files.filter(f => f.accountEmail !== email);
         dispatch(setFiles([...otherFiles, ...accountFiles]));
         return;
       }
 
-      // Silent refresh failed — show OAuth popup for this specific account
-      const oauthData = await requestDriveAccess();
+      // Silent refresh failed — show OAuth popup
+      const storedClientId = typeof window !== 'undefined' ? localStorage.getItem('driveunify_dropbox_client_id') : null;
+      const keyToUse = account.clientId || storedClientId || import.meta.env.VITE_DROPBOX_CLIENT_ID;
+
+      if (isDbx && !keyToUse) {
+        dispatch(setConnectModalOpen(true));
+        toast('Please enter your Dropbox App Key to reconnect.', { icon: '🔑' });
+        return;
+      }
+
+      const oauthData = isDbx
+        ? await requestDropboxAccess(keyToUse)
+        : await requestDriveAccess();
+
       if (oauthData.email !== email) {
-        toast.error('Please sign in with the same Google account to reconnect');
+        toast.error(`Please sign in with the same account (${email}) to reconnect`);
         return;
       }
 
       dispatch(updateAccount({
         email,
         accessToken: oauthData.accessToken,
+        refreshToken: oauthData.refreshToken || account.refreshToken || null,
+        clientId: oauthData.clientId || account.clientId || keyToUse || null,
         expiryDate: oauthData.expiryDate,
         needsReconnect: false,
         expired: false,
@@ -179,14 +256,14 @@ export const useDrive = () => {
 
       toast.success(`Reconnected ${email}`);
 
-      const accountFiles = await fetchAllFilesForAccount({ ...account, accessToken: oauthData.accessToken });
+      const accountFiles = await getAccountFiles({ ...account, accessToken: oauthData.accessToken });
       const otherFiles = files.filter(f => f.accountEmail !== email);
       dispatch(setFiles([...otherFiles, ...accountFiles]));
     } catch (err) {
       if (err.message?.includes('closed') || err.message?.includes('popup')) return;
       toast.error(`Failed to reconnect ${email}: ${err.message}`);
     }
-  }, [dispatch, connectedAccounts, files]);
+  }, [dispatch, connectedAccounts, files, getAccountFiles]);
 
   // ── Fetch files for all accounts ─────────────────────────────
   const fetchFilesForAllAccounts = useCallback(async () => {
@@ -195,12 +272,10 @@ export const useDrive = () => {
     dispatch(setError(null));
 
     try {
-      // Check and refresh tokens
       const checkedAccounts = await Promise.all(
         connectedAccounts.map(account => getFreshAccount(account))
       );
 
-      // Only attempt to fetch files for accounts with valid tokens
       const validAccounts = checkedAccounts.filter(
         a => !a.needsReconnect && !a.expired && a.accessToken
       );
@@ -211,7 +286,7 @@ export const useDrive = () => {
       }
 
       const results = await Promise.allSettled(
-        validAccounts.map(account => fetchAllFilesForAccount(account))
+        validAccounts.map(account => getAccountFiles(account))
       );
 
       const allFiles = [];
@@ -227,7 +302,7 @@ export const useDrive = () => {
 
       // Fetch storage info in parallel
       const storageResults = await Promise.allSettled(
-        validAccounts.map(account => fetchStorageInfo(account))
+        validAccounts.map(account => getAccountStorage(account))
       );
       storageResults.forEach((result, i) => {
         if (result.status === 'fulfilled') {
@@ -239,7 +314,7 @@ export const useDrive = () => {
     } finally {
       dispatch(setLoading(false));
     }
-  }, [connectedAccounts, dispatch, getFreshAccount]);
+  }, [connectedAccounts, dispatch, getFreshAccount, getAccountFiles, getAccountStorage]);
 
   // ── Navigate to folder ────────────────────────────────────────
   const navigateToFolder = useCallback(async (folder, accountEmail) => {
@@ -251,7 +326,13 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      const folderFiles = await fetchFilesInFolder(freshAccount, folder.id);
+      let folderFiles = [];
+
+      if (isDropbox(account)) {
+        folderFiles = await fetchDropboxFilesInFolder(freshAccount, folder.pathLower || folder.id);
+      } else {
+        folderFiles = await fetchDriveFilesInFolder(freshAccount, folder.id);
+      }
       dispatch(setFiles(folderFiles));
     } catch (err) {
       dispatch(setError(err.message));
@@ -273,14 +354,14 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      const accountFiles = await fetchAllFilesForAccount(freshAccount);
+      const accountFiles = await getAccountFiles(freshAccount);
       const otherFiles = files.filter(f => f.accountEmail !== email);
       dispatch(setFiles([...otherFiles, ...accountFiles]));
       toast.success(`Refreshed ${email}`);
     } catch (err) {
       toast.error(`Failed to refresh ${email}: ${err.message}`);
     }
-  }, [dispatch, connectedAccounts, files, getFreshAccount]);
+  }, [dispatch, connectedAccounts, files, getFreshAccount, getAccountFiles]);
 
   // ── Rename file ───────────────────────────────────────────────
   const renameFileAction = useCallback(async (file, newName) => {
@@ -291,7 +372,13 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      await renameFile(freshAccount.accessToken, file.id, newName, file.accountEmail);
+      if (isDropbox(file) || isDropbox(account)) {
+        const parentPath = file.parents?.[0] || 'root';
+        const targetPath = resolveDropboxPath(parentPath, newName);
+        await renameDropboxItem(freshAccount.accessToken, file.pathLower || file.id, targetPath);
+      } else {
+        await renameFile(freshAccount.accessToken, file.id, newName, file.accountEmail);
+      }
       toast.success('File renamed');
     } catch (err) {
       dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, name: file.name }));
@@ -299,7 +386,7 @@ export const useDrive = () => {
     }
   }, [dispatch, connectedAccounts, getFreshAccount]);
 
-  // ── Delete file (trash) ───────────────────────────────────────
+  // ── Delete file (trash / remove) ──────────────────────────────
   const deleteFileAction = useCallback(async (file) => {
     const account = connectedAccounts.find(a => a.email === file.accountEmail);
     if (!account) return;
@@ -308,8 +395,13 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      await deleteFile(freshAccount.accessToken, file.id, file.accountEmail);
-      toast.success(`"${file.name}" moved to trash`);
+      if (isDropbox(file) || isDropbox(account)) {
+        await deleteDropboxItem(freshAccount.accessToken, file.pathLower || file.id);
+        toast.success(`"${file.name}" deleted from Dropbox`);
+      } else {
+        await deleteFile(freshAccount.accessToken, file.id, file.accountEmail);
+        toast.success(`"${file.name}" moved to trash`);
+      }
     } catch (err) {
       dispatch(upsertFiles([file]));
       toast.error(`Failed to delete: ${err.message}`);
@@ -325,7 +417,11 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      await permanentlyDeleteFile(freshAccount.accessToken, file.id, file.accountEmail);
+      if (isDropbox(file) || isDropbox(account)) {
+        await deleteDropboxItem(freshAccount.accessToken, file.pathLower || file.id);
+      } else {
+        await permanentlyDeleteFile(freshAccount.accessToken, file.id, file.accountEmail);
+      }
       toast.success(`"${file.name}" permanently deleted`);
     } catch (err) {
       dispatch(upsertFiles([file]));
@@ -343,7 +439,9 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      await starFile(freshAccount.accessToken, file.id, newStarred, file.accountEmail);
+      if (!isDropbox(account)) {
+        await starFile(freshAccount.accessToken, file.id, newStarred, file.accountEmail);
+      }
     } catch {
       dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, starred: file.starred }));
     }
@@ -358,8 +456,10 @@ export const useDrive = () => {
 
     try {
       const freshAccount = await getFreshAccount(account);
-      await restoreFile(freshAccount.accessToken, file.id, file.accountEmail);
-      toast.success(`Restored "${file.name}"`);
+      if (!isDropbox(account)) {
+        await restoreFile(freshAccount.accessToken, file.id, file.accountEmail);
+        toast.success(`Restored "${file.name}"`);
+      }
     } catch (err) {
       dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, trashed: true }));
       toast.error(`Failed to restore: ${err.message}`);
@@ -368,7 +468,7 @@ export const useDrive = () => {
 
   return {
     connectedAccounts, files, loading, error, currentFolder,
-    connectNewAccount, disconnectAccount, reconnectAccount,
+    connectNewAccount, connectDropboxAccount, disconnectAccount, reconnectAccount,
     fetchFilesForAllAccounts, refreshAccount,
     navigateToFolder, navigateToRoot,
     renameFileAction, deleteFileAction, permanentlyDeleteFileAction, toggleStar,
