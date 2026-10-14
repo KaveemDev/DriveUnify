@@ -29,6 +29,9 @@ const Login = () => {
     } catch (err) {
       if (err.code === 'auth/popup-blocked' || err.message?.includes('popup-blocked')) {
         setLocalError('Your browser blocked the sign-in popup. Please allow popups for this site (check the address bar) and try again.');
+      } else if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
+        const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+        setLocalError(`This domain (${currentDomain}) is not authorized in Firebase Console.\n\nPlease add "${currentDomain}" to Firebase Console > Authentication > Settings > Authorized Domains.`);
       } else if (!err.message?.includes('popup-closed-by-user')) {
         setLocalError(err.message || 'Sign in failed. Please try again.');
       }

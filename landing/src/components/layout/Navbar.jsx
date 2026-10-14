@@ -58,8 +58,13 @@ export const Navbar = () => {
   }, []);
 
   const handleSignIn = async () => {
+    const dashUrl = getDashboardUrl();
     if (!auth || !googleProvider) {
-      window.location.href = `${getDashboardUrl()}/login`;
+      if (dashUrl && dashUrl !== window.location.origin && !dashUrl.includes('driveunify.com')) {
+        window.location.href = `${dashUrl}/login`;
+      } else {
+        alert('Firebase Auth is not initialized. Please verify your Firebase environment variables.');
+      }
       return;
     }
     try {
@@ -75,11 +80,28 @@ export const Navbar = () => {
         setCrossDomainSession(userData, idToken);
         setUser(userData);
         // Navigate directly to dashboard
-        window.location.href = getDashboardUrl();
+        window.location.href = dashUrl;
       }
     } catch (err) {
-      console.warn('Sign-in redirecting to dashboard login:', err);
-      window.location.href = `${getDashboardUrl()}/login`;
+      console.warn('Sign-in error:', err);
+      if (err?.code === 'auth/popup-closed-by-user') {
+        return;
+      }
+      if (err?.code === 'auth/unauthorized-domain') {
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+        alert(`This domain (${host}) is not authorized in Firebase Console.\n\nTo fix:\n1. Open Firebase Console\n2. Go to Authentication > Settings > Authorized domains\n3. Click "Add domain" and add "${host}".`);
+        return;
+      }
+      if (err?.code === 'auth/popup-blocked') {
+        alert('Sign-in popup was blocked by your browser. Please allow popups for this site and try again.');
+        return;
+      }
+      // If dashboard is explicitly set to a custom external URL, redirect there as fallback
+      if (dashUrl && dashUrl !== window.location.origin && !dashUrl.includes('driveunify.com')) {
+        window.location.href = `${dashUrl}/login`;
+      } else {
+        alert(`Sign-in failed: ${err.message || 'Please check your configuration.'}`);
+      }
     }
   };
 

@@ -18,7 +18,11 @@ export const getDropboxRedirectUri = () => {
   if (isLocal) {
     return `${window.location.origin}/oauth/callback`;
   }
-  return import.meta.env.VITE_OAUTH_REDIRECT_URI || `${window.location.origin}/oauth/callback`;
+  const configuredUri = import.meta.env.VITE_OAUTH_REDIRECT_URI;
+  if (configuredUri && !configuredUri.includes('localhost') && !configuredUri.includes('127.0.0.1')) {
+    return configuredUri;
+  }
+  return `${window.location.origin}/oauth/callback`;
 };
 
 // ── PKCE Helpers ──────────────────────────────────────────────

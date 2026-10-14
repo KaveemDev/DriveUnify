@@ -14,10 +14,16 @@ export const getRootDomain = () => {
 };
 
 export const getDashboardUrl = () => {
+  if (process.env.NEXT_PUBLIC_DASHBOARD_URL) {
+    return process.env.NEXT_PUBLIC_DASHBOARD_URL;
+  }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:5173';
+      return 'http://localhost:5173';
+    }
+    if (hostname.endsWith('.vercel.app')) {
+      return window.location.origin;
     }
   }
   return 'https://dashboard.driveunify.com';

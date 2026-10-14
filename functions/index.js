@@ -32,8 +32,10 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5174',
   'http://127.0.0.1:5175',
   'https://drive-unify.vercel.app',
+  'https://driveunify.vercel.app',
   'https://driveunify.com',
   'https://dashboard.driveunify.com',
+  /^https?:\/\/(.+\.)?vercel\.app$/,
   /^https?:\/\/(.+\.)?driveunify\.com$/,
   /^https?:\/\/localhost:[0-9]+$/,
   /^https?:\/\/127\.0\.0\.1:[0-9]+$/

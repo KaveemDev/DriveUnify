@@ -21,6 +21,9 @@ const getRootDomain = () => {
 };
 
 export const getLandingUrl = () => {
+  if (import.meta.env.VITE_LANDING_URL) {
+    return import.meta.env.VITE_LANDING_URL;
+  }
   if (typeof window === 'undefined') return 'https://driveunify.com';
   const hostname = window.location.hostname;
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -30,10 +33,17 @@ export const getLandingUrl = () => {
 };
 
 export const getDashboardUrl = () => {
-  if (typeof window === 'undefined') return 'https://dashboard.driveunify.com';
-  const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:5173';
+  if (import.meta.env.VITE_DASHBOARD_URL) {
+    return import.meta.env.VITE_DASHBOARD_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5173';
+    }
+    if (hostname.endsWith('.vercel.app')) {
+      return window.location.origin;
+    }
   }
   return 'https://dashboard.driveunify.com';
 };

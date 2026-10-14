@@ -12,6 +12,7 @@
     "dev:dashboard": "npm --prefix dashboard run dev",
     "lint:landing": "npm --prefix landing run lint",
     "lint:dashboard": "npm --prefix dashboard run lint",
-    "lint": "npm --prefix landing run lint"
+    "lint": "npm --prefix landing run lint",
+    "deploy:functions": "npx firebase-tools deploy --only functions"
   }
 }
