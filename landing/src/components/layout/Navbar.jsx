@@ -33,6 +33,7 @@ export const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    if (!auth) return;
     // Live Firebase Auth listener
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -57,6 +58,10 @@ export const Navbar = () => {
   }, []);
 
   const handleSignIn = async () => {
+    if (!auth || !googleProvider) {
+      window.location.href = `${getDashboardUrl()}/login`;
+      return;
+    }
     try {
       const result = await signInWithPopup(auth, googleProvider);
       if (result?.user) {
@@ -79,10 +84,12 @@ export const Navbar = () => {
   };
 
   const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.error(e);
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (e) {
+        console.error(e);
+      }
     }
     clearCrossDomainSession();
     setUser(null);
