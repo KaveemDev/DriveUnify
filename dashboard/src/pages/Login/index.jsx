@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cloud } from 'lucide-react';
-import { Box, Typography, Button, Alert, Paper } from '@mui/material';
+import { Box, Typography, Button, Alert, Paper, Link } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 
 const GoogleIcon = () => (
@@ -17,24 +17,36 @@ const Login = () => {
   const { signIn, loading, error, user } = useAuth();
   const navigate = useNavigate();
   const [localError, setLocalError] = useState('');
+  const [isPopupBlocked, setIsPopupBlocked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true });
   }, [user, navigate]);
 
-  const handleSignIn = async () => {
+  const handleSignIn = async (useRedirect = false) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setLocalError('');
+    setIsPopupBlocked(false);
+    setIsSubmitting(true);
+
     try {
-      await signIn();
+      await signIn(useRedirect);
     } catch (err) {
       if (err.code === 'auth/popup-blocked' || err.message?.includes('popup-blocked')) {
-        setLocalError('Your browser blocked the sign-in popup. Please allow popups for this site (check the address bar) and try again.');
+        setIsPopupBlocked(true);
+        setLocalError('Your browser blocked the sign-in popup. Please click the popup icon in your address bar to allow popups, or try the redirect option below.');
       } else if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
         const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
         setLocalError(`This domain (${currentDomain}) is not authorized in Firebase Console.\n\nPlease add "${currentDomain}" to Firebase Console > Authentication > Settings > Authorized Domains.`);
       } else if (!err.message?.includes('popup-closed-by-user')) {
         setLocalError(err.message || 'Sign in failed. Please try again.');
       }
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -78,13 +90,25 @@ const Login = () => {
             fullWidth
             size="large"
             variant="contained"
-            onClick={handleSignIn}
-            disabled={loading}
-            startIcon={loading ? null : <GoogleIcon />}
+            onClick={() => handleSignIn(false)}
+            startIcon={isSubmitting || loading ? null : <GoogleIcon />}
             sx={{ py: 1.5, bgcolor: '#fff', color: '#333', '&:hover': { bgcolor: '#f5f5f5' }, '&:active': { bgcolor: '#e5e5e5' } }}
           >
-            {loading ? 'Signing in…' : 'Continue with Google'}
+            {isSubmitting || loading ? 'Signing in…' : 'Continue with Google'}
           </Button>
+
+          {isPopupBlocked && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => handleSignIn(true)}
+                sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer' }}
+              >
+                Sign in with page redirect instead
+              </Link>
+            </Box>
+          )}
 
           <Typography variant="caption" color="text.secondary" display="block" align="center" mt={3}>
             By signing in, you agree to our Terms and Privacy Policy.

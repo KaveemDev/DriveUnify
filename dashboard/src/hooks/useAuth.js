@@ -18,93 +18,108 @@ export const useAuthInit = (enabled = true) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // Check if returning from a redirect sign-in
-    checkRedirectResult().then((userData) => {
-      if (userData) {
-        dispatch(setUser(userData));
-        createUserDocument(userData.uid, userData).catch((err) =>
-          console.warn('[DriveUnify] Failed to update user document after redirect:', err)
-        );
-      }
-    }).catch((err) => {
-      console.warn('[DriveUnify] checkRedirectResult error:', err);
-    });
+    let isMounted = true;
+    let unsubscribe = () => {};
 
-    const unsubscribe = onAuthStateChange(async (firebaseUser) => {
-      if (firebaseUser) {
-        const userData = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-        };
-
-        dispatch(setUser(userData));
-
-        // Ensure user document exists (non-blocking)
-        createUserDocument(userData.uid, userData).catch((err) =>
-          console.warn('[DriveUnify] Failed to update user document:', err)
-        );
-
-        // Instantly hydrate accounts from localStorage cache (ensures zero empty-state flash on refresh)
-        const cachedAccounts = getLocalConnectedAccounts(firebaseUser.uid);
-        if (cachedAccounts.length > 0) {
-          dispatch(setConnectedAccounts(cachedAccounts));
+    const initialize = async () => {
+      // 1. Process redirect result first if returning from OAuth redirect
+      try {
+        const redirectUser = await checkRedirectResult();
+        if (redirectUser && isMounted) {
+          dispatch(setUser(redirectUser));
+          createUserDocument(redirectUser.uid, redirectUser).catch((err) =>
+            console.warn('[DriveUnify] Failed to update user document after redirect:', err)
+          );
         }
+      } catch (err) {
+        console.warn('[DriveUnify] checkRedirectResult error:', err);
+      }
 
-        try {
-          dispatch(setDriveLoading(true));
+      if (!isMounted) return;
 
-          // Load connected account metadata from Firestore (or fallback to local cache)
-          const accounts = await getConnectedAccounts(firebaseUser.uid);
+      // 2. Attach global Firebase auth state listener
+      unsubscribe = onAuthStateChange(async (firebaseUser) => {
+        if (!isMounted) return;
+        if (firebaseUser) {
+          const userData = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+          };
 
-          // Update store with latest accounts
-          dispatch(setConnectedAccounts(accounts));
+          dispatch(setUser(userData));
 
-          // Silently refresh tokens for all connected accounts via Cloud Functions.
-          if (accounts.length > 0) {
-            const refreshed = await Promise.allSettled(
-              accounts.map((account) => {
-                const isDbx = (account.provider || '').toLowerCase().includes('dropbox');
-                return isDbx ? silentRefreshDropboxAccount(account) : silentRefreshAccount(account);
-              })
-            );
+          // Ensure user document exists (non-blocking)
+          createUserDocument(userData.uid, userData).catch((err) =>
+            console.warn('[DriveUnify] Failed to update user document:', err)
+          );
 
-            refreshed.forEach((result) => {
-              if (result.status === 'fulfilled') {
-                const acct = result.value;
-                dispatch(updateAccount({
-                  email: acct.email,
-                  accessToken: acct.accessToken,
-                  expiryDate: acct.expiryDate,
-                  needsReconnect: acct.needsReconnect ?? false,
-                  expired: acct.expired ?? false,
-                }));
-              }
-            });
+          // Instantly hydrate accounts from localStorage cache (ensures zero empty-state flash on refresh)
+          const cachedAccounts = getLocalConnectedAccounts(firebaseUser.uid);
+          if (cachedAccounts.length > 0) {
+            dispatch(setConnectedAccounts(cachedAccounts));
           }
-        } catch (err) {
-          console.warn('[DriveUnify] Could not load connected accounts:', err);
-          if (err.message?.includes('permission') || err.code === 'permission-denied') {
-            toast.error(
-              'Firestore permission denied. Please publish security rules in Firebase Console for cross-device sync.',
-              { id: 'firestore-rules-warning', duration: 8000 }
-            );
+
+          try {
+            dispatch(setDriveLoading(true));
+
+            // Load connected account metadata from Firestore (or fallback to local cache)
+            const accounts = await getConnectedAccounts(firebaseUser.uid);
+
+            // Update store with latest accounts
+            dispatch(setConnectedAccounts(accounts));
+
+            // Silently refresh tokens for all connected accounts via Cloud Functions.
+            if (accounts.length > 0) {
+              const refreshed = await Promise.allSettled(
+                accounts.map((account) => {
+                  const isDbx = (account.provider || '').toLowerCase().includes('dropbox');
+                  return isDbx ? silentRefreshDropboxAccount(account) : silentRefreshAccount(account);
+                })
+              );
+
+              refreshed.forEach((result) => {
+                if (result.status === 'fulfilled') {
+                  const acct = result.value;
+                  dispatch(updateAccount({
+                    email: acct.email,
+                    accessToken: acct.accessToken,
+                    expiryDate: acct.expiryDate,
+                    needsReconnect: acct.needsReconnect ?? false,
+                    expired: acct.expired ?? false,
+                  }));
+                }
+              });
+            }
+          } catch (err) {
+            console.warn('[DriveUnify] Could not load connected accounts:', err);
+            if (err.message?.includes('permission') || err.code === 'permission-denied') {
+              toast.error(
+                'Firestore permission denied. Please publish security rules in Firebase Console for cross-device sync.',
+                { id: 'firestore-rules-warning', duration: 8000 }
+              );
+            }
+          } finally {
+            if (isMounted) dispatch(setDriveLoading(false));
           }
-        } finally {
+        } else {
+          // User signed out — clear everything immediately to prevent cross-user data leakage
+          dispatch(logout());
+          dispatch(setConnectedAccounts([]));
           dispatch(setDriveLoading(false));
         }
-      } else {
-        // User signed out — clear everything immediately to prevent cross-user data leakage
-        dispatch(logout());
-        dispatch(setConnectedAccounts([]));
-        dispatch(setDriveLoading(false));
-      }
 
-      dispatch(setInitialized(true));
-    });
+        if (isMounted) dispatch(setInitialized(true));
+      });
+    };
 
-    return unsubscribe;
+    initialize();
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [dispatch, enabled]);
 };
 
@@ -116,12 +131,17 @@ export const useAuth = () => {
   const dispatch = useDispatch();
   const { user, loading, initialized, error } = useSelector((s) => s.auth);
 
-  const signIn = async () => {
-    dispatch(setLoading(true));
-    dispatch(setDriveLoading(true));
+  const signIn = async (useRedirect = false) => {
+    dispatch(setError(null));
     try {
-      const userData = await signInWithGoogle();
+      // Note: Do not dispatch setLoading(true) before signInWithGoogle.
+      // Disabling the button or modifying DOM before window.open causes browsers
+      // (Chrome, Safari, Firefox) to revoke the user activation gesture, causing popup-blocked.
+      const userData = await signInWithGoogle(useRedirect);
       if (!userData) return; // User is being redirected
+
+      dispatch(setLoading(true));
+      dispatch(setDriveLoading(true));
 
       // Set user immediately in Redux
       dispatch(setUser(userData));

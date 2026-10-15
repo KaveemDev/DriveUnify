@@ -46,8 +46,12 @@ export const checkRedirectResult = async () => {
   }
 };
 
-export const signInWithGoogle = async () => {
+export const signInWithGoogle = async (useRedirect = false) => {
   if (!auth) throw new Error('Firebase auth is not initialized. Check your .env file.');
+  if (useRedirect) {
+    await signInWithRedirect(auth, googleProvider);
+    return null;
+  }
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const token = await result.user.getIdToken();
@@ -56,9 +60,7 @@ export const signInWithGoogle = async () => {
     return formatted;
   } catch (error) {
     if (error.code === 'auth/popup-blocked') {
-      console.warn('Popup blocked by browser. Falling back to redirect...');
-      await signInWithRedirect(auth, googleProvider);
-      return null;
+      console.warn('[DriveUnify] Sign-in popup was blocked by browser.');
     }
     throw error;
   }
