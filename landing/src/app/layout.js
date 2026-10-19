@@ -1,20 +1,29 @@
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+// Satoshi by Indian Type Foundry, self-hosted from Fontshare (free licence, commercial use allowed).
+const satoshi = localFont({
+  src: [
+    { path: "./fonts/Satoshi-400.woff2", weight: "400" },
+    { path: "./fonts/Satoshi-500.woff2", weight: "500" },
+    { path: "./fonts/Satoshi-700.woff2", weight: "700" },
+    { path: "./fonts/Satoshi-900.woff2", weight: "900" },
+  ],
+  variable: "--font-satoshi",
   display: "swap",
 });
+
+// Runs before first paint: saved choice, else the system setting. Shared with the dashboard.
+const themeScript = `(function(){try{var t=localStorage.getItem("themeMode");var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)}catch(e){}})()`;
 
 export const metadata = {
   metadataBase: new URL("https://driveunify.com"),
   title: {
-    default: "DriveUnify — Your Cloud Storage, Unified",
+    default: "DriveUnify: All your Google Drives in one place",
     template: "%s | DriveUnify",
   },
   description:
-    "Connect multiple Google Drive accounts and seamlessly access, search, and manage all your files from one unified, lightning-fast dashboard.",
+    "Browse, search and copy files across your work, personal and school Google Drives without signing out once.",
   keywords: [
     "Google Drive manager",
     "cloud storage unification",
@@ -30,9 +39,9 @@ export const metadata = {
     locale: "en_US",
     url: "https://driveunify.com",
     siteName: "DriveUnify",
-    title: "DriveUnify — Your Cloud Storage, Unified",
+    title: "DriveUnify: All your Google Drives in one place",
     description:
-      "Connect multiple Google Drive accounts and seamlessly access, search, and manage all your files from one unified, lightning-fast dashboard.",
+      "Browse, search and copy files across your work, personal and school Google Drives without signing out once.",
     images: [
       {
         url: "/og-image.png",
@@ -44,9 +53,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DriveUnify — Your Cloud Storage, Unified",
+    title: "DriveUnify: All your Google Drives in one place",
     description:
-      "Connect multiple Google Drive accounts and manage all your files in one place.",
+      "Browse, search and copy files across all your Google Drives in one place.",
     creator: "@driveunify",
   },
   robots: {
@@ -64,8 +73,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased dark`} data-scroll-behavior="smooth">
-      <body className="min-h-full flex flex-col bg-[#020617] text-slate-100 font-sans selection:bg-blue-500/30">
+    <html lang="en" className={`${satoshi.variable} h-full antialiased`} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-page text-ink font-sans">
         {children}
       </body>
     </html>

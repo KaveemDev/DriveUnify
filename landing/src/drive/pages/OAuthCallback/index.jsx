@@ -64,24 +64,24 @@ const OAuthCallback = () => {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen bg-page flex items-center justify-center">
       <div className="text-center space-y-4 p-8">
         {/* Logo */}
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center mx-auto mb-6 shadow-glow">
+        <div className="h-12 w-12 rounded-xl bg-brand flex items-center justify-center mx-auto mb-6 shadow-glow">
           <Cloud size={22} className="text-white" />
         </div>
 
         {status === 'processing' && (
           <>
-            <Loader2 size={36} className="text-blue-400 animate-spin mx-auto" />
-            <p className="text-slate-300 text-sm font-medium">Connecting your Drive…</p>
+            <Loader2 size={36} className="text-brand animate-spin mx-auto" />
+            <p className="text-ink text-sm font-medium">Connecting your Drive…</p>
           </>
         )}
 
         {status === 'success' && (
           <>
             <CheckCircle size={36} className="text-emerald-400 mx-auto" />
-            <p className="text-slate-300 text-sm font-medium">{message}</p>
+            <p className="text-ink text-sm font-medium">{message}</p>
           </>
         )}
 
@@ -89,7 +89,7 @@ const OAuthCallback = () => {
           <>
             <XCircle size={36} className="text-red-400 mx-auto" />
             <p className="text-red-300 text-sm font-medium">{message}</p>
-            <p className="text-slate-600 text-xs">This window will close automatically.</p>
+            <p className="text-muted text-xs">This window will close automatically.</p>
           </>
         )}
       </div>

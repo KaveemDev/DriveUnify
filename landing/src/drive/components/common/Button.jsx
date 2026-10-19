@@ -1,11 +1,11 @@
 import { clsx } from 'clsx';
 
 const variants = {
-  primary: 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm hover:shadow-blue-500/20 active:scale-[0.98]',
-  secondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700/60 active:scale-[0.98]',
-  ghost: 'hover:bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100',
-  danger: 'bg-red-600 hover:bg-red-500 text-white shadow-sm active:scale-[0.98]',
-  outline: 'border border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-500/10 active:scale-[0.98]',
+  primary: 'bg-brand text-brand-ink hover:brightness-110 active:scale-[0.98]',
+  secondary: 'bg-raised text-ink border border-line hover:brightness-95 dark:hover:brightness-125 active:scale-[0.98]',
+  ghost: 'text-muted hover:text-ink hover:bg-raised',
+  danger: 'bg-red-600 hover:bg-red-500 text-white active:scale-[0.98]',
+  outline: 'border border-line text-ink hover:bg-raised active:scale-[0.98]',
 };
 
 const sizes = {
@@ -36,7 +36,7 @@ export const Button = ({
       className={clsx(
         'inline-flex items-center justify-center font-medium rounded-lg',
         'transition-all duration-150 cursor-pointer',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],

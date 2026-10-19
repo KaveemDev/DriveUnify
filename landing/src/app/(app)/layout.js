@@ -27,15 +27,15 @@ export default function DriveLayout({ children }) {
               toastOptions={{
                 duration: 4000,
                 style: {
-                  background: '#1e293b',
-                  color: '#f1f5f9',
+                  background: '#10131a',
+                  color: '#eef0f5',
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: '12px',
                   fontSize: '14px',
                   padding: '12px 16px',
                 },
-                success: { iconTheme: { primary: '#10b981', secondary: '#1e293b' } },
-                error: { iconTheme: { primary: '#ef4444', secondary: '#1e293b' } },
+                success: { iconTheme: { primary: '#10b981', secondary: '#10131a' } },
+                error: { iconTheme: { primary: '#ef4444', secondary: '#10131a' } },
               }}
             />
           </ThemeContextProvider>

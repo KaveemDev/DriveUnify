@@ -1,311 +1,175 @@
-'use client';
-import React, { useState } from 'react';
-import { ArrowRight, Cloud, Search, FolderOpen, Share2, CopyPlus, Zap } from 'lucide-react';
-import { GlassCard, SectionHeading, GradientText } from '@/components/ui';
+import Image from 'next/image';
+import { ArrowRight, Check, FileText, FileSpreadsheet, FileImage, Search } from 'lucide-react';
 import { getDashboardUrl } from '@/lib/auth-sync';
+import { AppWindow } from '@/components/home/AppWindow';
+import { StorageCalculator } from '@/components/home/StorageCalculator';
+import { StepsStack } from '@/components/home/StepsStack';
+import { Reveal, RevealItem } from '@/components/home/Reveal';
+
+const h2 = 'text-[clamp(2.25rem,1.4rem+2.8vw,3.75rem)] font-bold leading-[1.02] tracking-[-0.035em] text-ink';
+const btn = 'inline-flex h-[52px] items-center gap-2.5 whitespace-nowrap rounded-full px-6 font-bold transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.97]';
+
+const faqs = [
+  ['Which clouds does it support?', 'Google Drive, personal and Workspace. OneDrive and Dropbox are next.'],
+  ['What can DriveUnify see?', 'What you can see in Drive, so it can list, preview and copy for you. File contents are never stored on our servers.'],
+  ['Where are my sign-in tokens kept?', 'On our server, in a database path that browser code cannot read or write.'],
+  ['How do I disconnect an account?', 'From Settings. The token is revoked with Google and deleted.'],
+];
+
+const included = ['Unlimited Google accounts', 'Search across every account', 'Copy between accounts, server-side', 'Uploads up to 5 GB that resume'];
 
 export default function Home() {
-  const [dashboardUrl] = useState(() => getDashboardUrl());
+  const startHref = `${getDashboardUrl()}/login`;
 
   return (
-    <div className="w-full">
-      {/* ── Hero Section ── */}
-      <section className="relative pt-8 pb-28 overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/20 blur-[120px]" />
-          <div className="absolute top-[10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/15 blur-[120px]" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* New feature badge */}
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-sm font-medium mb-6"
-            >
-              <Zap size={13} className="text-indigo-400" />
-              New — Cross-drive copy with zero local downloads
-            </div>
-
-            <h1
-              className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.05]"
-            >
-              Your Cloud Storage,{' '}
-              <GradientText variant="mixed">Unified.</GradientText>
-            </h1>
-
-            <p
-              className="text-lg sm:text-xl md:text-2xl text-slate-400 mb-10 max-w-2xl mx-auto"
-            >
-              Connect multiple Google Drive accounts and seamlessly access, search, and manage all your files from one lightning-fast dashboard.
-            </p>
-
-            <div
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <a
-                href={`${dashboardUrl}/login`}
-                className="inline-flex items-center justify-center font-semibold text-base px-7 py-3.5 gap-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
-              >
-                <span>Get Started — It&apos;s Free</span>
-                <ArrowRight size={18} />
-              </a>
-              <a
-                href="#features"
-                className="inline-flex items-center justify-center font-medium text-base px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all hover:-translate-y-0.5"
-              >
-                Explore Features
-              </a>
-            </div>
-
-            <p
-              className="mt-4 text-sm text-slate-400"
-            >
-              Sign in with Google. No credit card needed.
-            </p>
-          </div>
-
-          {/* Interactive Mock Preview */}
-          <div
-            className="mt-16 relative max-w-5xl mx-auto"
-          >
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md p-2.5 shadow-2xl shadow-blue-900/30">
-              {/* Window Bar */}
-              <div className="h-8 flex items-center gap-2 px-4 mb-2 border-b border-slate-800">
-                <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                <div className="w-3 h-3 rounded-full bg-green-500/70" />
-                <div className="flex-1 mx-4 h-5 bg-slate-800 rounded-md flex items-center justify-center">
-                  <span className="text-[11px] text-slate-400 font-mono">dashboard.driveunify.com</span>
-                </div>
-              </div>
-
-              {/* Mock App Shell */}
-              <div className="aspect-[16/9] rounded-xl bg-[#F7F7F9] text-[#15151C] flex overflow-hidden border border-slate-200 shadow-inner">
-                {/* Left Mini Sidebar */}
-                <div className="w-48 bg-white border-r border-[#E6E6EC] p-3 flex flex-col gap-2">
-                  <div className="flex items-center gap-2 pb-2 border-b border-[#E6E6EC]">
-                    <div className="w-6 h-6 rounded bg-[#4338CA] text-white flex items-center justify-center font-bold text-xs">D</div>
-                    <span className="font-bold text-xs text-[#15151C]">DriveUnify</span>
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="p-1.5 rounded-md bg-[#EEEDFB] text-[#4338CA] font-semibold flex items-center gap-2">
-                      <span>•</span> Overview
-                    </div>
-                    <div className="p-1.5 rounded-md text-[#62627A] flex items-center gap-2">
-                      <span>•</span> All Files
-                    </div>
-                    <div className="p-1.5 rounded-md text-[#62627A] flex items-center gap-2">
-                      <span>•</span> Recent
-                    </div>
-                    <div className="p-1.5 rounded-md text-[#62627A] flex items-center gap-2">
-                      <span>•</span> Shared
-                    </div>
-                  </div>
-                  <div className="mt-auto p-2 bg-[#F7F7F9] rounded-lg text-[10px] text-[#62627A]">
-                    <p className="font-semibold text-[#15151C]">Google Drive</p>
-                    <div className="w-full h-1.5 bg-[#E6E6EC] rounded-full my-1 overflow-hidden">
-                      <div className="w-3/5 h-full bg-[#4338CA] rounded-full" />
-                    </div>
-                    <span>93 GB of 150 GB</span>
-                  </div>
-                </div>
-
-                {/* Right Mini Content */}
-                <div className="flex-1 p-4 bg-[#F7F7F9] flex flex-col gap-3 overflow-hidden">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-bold text-sm text-[#15151C]">Good morning, Aarav</h4>
-                      <p className="text-[11px] text-[#62627A]">3 drives connected · Live sync active</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="px-2.5 py-1 bg-[#4338CA] text-white rounded text-xs font-semibold">
-                        + Connect Drive
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 4 Stat Cards */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="bg-white p-2.5 rounded-lg border border-[#E6E6EC]">
-                      <span className="text-[10px] text-[#62627A]">Storage used</span>
-                      <p className="font-bold text-sm text-[#15151C]">186 GB</p>
-                    </div>
-                    <div className="bg-white p-2.5 rounded-lg border border-[#E6E6EC]">
-                      <span className="text-[10px] text-[#62627A]">Available</span>
-                      <p className="font-bold text-sm text-[#15151C]">214 GB</p>
-                    </div>
-                    <div className="bg-white p-2.5 rounded-lg border border-[#E6E6EC]">
-                      <span className="text-[10px] text-[#62627A]">Connected</span>
-                      <p className="font-bold text-sm text-[#15151C]">3 Accounts</p>
-                    </div>
-                    <div className="bg-white p-2.5 rounded-lg border border-[#E6E6EC]">
-                      <span className="text-[10px] text-[#62627A]">Files indexed</span>
-                      <p className="font-bold text-sm text-[#15151C]">24,310</p>
-                    </div>
-                  </div>
-
-                  {/* Table Sample */}
-                  <div className="bg-white rounded-lg border border-[#E6E6EC] p-3 flex-1">
-                    <span className="font-semibold text-xs text-[#15151C] mb-2 block">Recent Files</span>
-                    <div className="space-y-1.5 text-[11px]">
-                      <div className="flex justify-between items-center py-1 border-b border-[#E6E6EC]/50">
-                        <span className="font-medium text-[#15151C]">Q3-board-deck-final.pptx</span>
-                        <span className="text-[#62627A]">Google · Work</span>
-                        <span className="text-[#62627A]">14.2 MB</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1 border-b border-[#E6E6EC]/50">
-                        <span className="font-medium text-[#15151C]">Brand-guidelines-2026.pdf</span>
-                        <span className="text-[#62627A]">Google · Personal</span>
-                        <span className="text-[#62627A]">6.8 MB</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1">
-                        <span className="font-medium text-[#15151C]">Financial-model-v4.xlsx</span>
-                        <span className="text-[#62627A]">Google · Studio</span>
-                        <span className="text-[#62627A]">1.1 MB</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-[#020617] to-transparent pointer-events-none" />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Supported Providers Section ── */}
-      <section className="py-8 border-y border-slate-800/60 bg-slate-900/30">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-xs font-semibold text-slate-400 mb-6 uppercase tracking-widest">
-            Production Cloud Providers
+    <div className="mx-auto w-full max-w-[1280px] px-4 md:px-8">
+      {/* Hero: text left, photograph right */}
+      <header className="grid items-center gap-10 pb-16 pt-8 lg:grid-cols-[6fr_5fr] lg:gap-16 lg:pb-24 lg:pt-16">
+        <div className="hero-rise">
+          <h1 className="text-[10vw] font-bold leading-[1.02] tracking-[-0.035em] text-ink sm:text-[clamp(2.75rem,1.2rem+4vw,4.5rem)]">
+            All your Drives, one place
+          </h1>
+          <p className="mt-5 max-w-[50ch] text-[1.1875rem] text-muted">
+            Browse, search and copy files across work, personal and school Drives without signing out once.
           </p>
-          <div className="flex flex-wrap justify-center items-center gap-4">
-            <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-slate-800/80 border border-slate-700 shadow-sm">
-              <Cloud size={18} className="text-blue-400" />
-              <span className="font-semibold text-sm text-slate-200">Google Drive</span>
-              <span className="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">Live</span>
-            </div>
-            <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-slate-800/40 border border-slate-800 opacity-60">
-              <Cloud size={18} className="text-slate-400" />
-              <span className="font-semibold text-sm text-slate-400">OneDrive & Dropbox</span>
-              <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-medium">Next Release</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features Grid ── */}
-      <section id="features" className="py-28 relative">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <SectionHeading
-            badge="Unified Productivity"
-            title="Everything in one"
-            gradientWord="intelligent dashboard."
-            subtitle="DriveUnify eliminates tab overload and context switching by unifying all your Google Drive accounts into a fast, central control center."
-          />
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <GlassCard>
-              <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-5">
-                <Search size={22} />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Global Search</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Find any document, sheet, slide, or PDF across all your connected accounts instantly from a universal search bar with keyboard shortcuts (⌘K).
-              </p>
-            </GlassCard>
-
-            <GlassCard>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-5">
-                <FolderOpen size={22} />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Multi-Account Browsing</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Seamlessly toggle between work, school, and personal accounts or view all files in one unified stream without signing in and out.
-              </p>
-            </GlassCard>
-
-            <GlassCard>
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
-                <Share2 size={22} />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Instant Preview & Actions</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Preview documents, star important files, rename folders, and download files directly with a single click.
-              </p>
-            </GlassCard>
-
-            {/* Feature Spotlight: Cross-Drive Copy */}
-            <GlassCard className="md:col-span-2 lg:col-span-3 relative overflow-hidden">
-              <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center relative z-10">
-                <div className="flex-1">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-5">
-                    <CopyPlus size={28} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Copy Between Drives — Zero Local Storage</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                    Transfer files and folders across accounts directly on the server without consuming bandwidth or disk space on your local computer.
-                  </p>
-                  <ul className="space-y-2 text-sm text-slate-300">
-                    <li className="flex items-center gap-2">
-                      <span className="text-emerald-400 font-bold">✓</span> Google Docs, Sheets, and Slides copy directly via cloud APIs
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-emerald-400 font-bold">✓</span> Direct folder transfer with live progress tracking
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-emerald-400 font-bold">✓</span> Choose destination folder with an intuitive directory browser
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="w-full lg:w-96 rounded-2xl bg-slate-800/80 border border-slate-700/60 p-5 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="font-semibold text-white">Transfer Status</span>
-                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-medium">In Progress</span>
-                  </div>
-                  <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-700/40 text-xs">
-                    <p className="font-medium text-white">Q3-Quarterly-Review.docx</p>
-                    <p className="text-slate-400 mt-0.5">work@studio.com → personal@gmail.com</p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px] text-slate-400">
-                      <span>Server copy</span>
-                      <span className="text-indigo-400 font-semibold">78%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-                      <div className="w-[78%] h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </GlassCard>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA Banner ── */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="max-w-3xl mx-auto rounded-3xl p-10 md:p-14 border border-blue-500/30 bg-gradient-to-br from-blue-900/20 via-slate-900/60 to-indigo-900/20 backdrop-blur-xl relative shadow-2xl">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
-              Unify your cloud files today.
-            </h2>
-            <p className="text-base sm:text-lg text-slate-400 mb-8 max-w-xl mx-auto">
-              Join thousands of creators, professionals, and students who manage all their Google Drive accounts from DriveUnify.
-            </p>
-            <a
-              href={`${dashboardUrl}/login`}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base px-8 py-4 rounded-xl shadow-xl shadow-blue-500/30 hover:-translate-y-0.5 transition-all"
-            >
-              <span>Get Started Free with Google</span>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <a href={startHref} className={`${btn} flex-1 justify-center bg-brand text-brand-ink sm:flex-none`}>
+              Start free
               <ArrowRight size={18} />
             </a>
-            <p className="mt-4 text-xs text-slate-400">
-              No credit card required · Free tier included · Instant setup
-            </p>
+            <a href="#app" className={`${btn} flex-1 justify-center bg-raised text-ink sm:flex-none`}>
+              See it work
+            </a>
           </div>
+        </div>
+        <figure className="hero-settle relative aspect-[4/3] overflow-hidden rounded-3xl bg-raised lg:aspect-[4/5]">
+          {/* Placeholder photo: replace with a real product or customer photograph. */}
+          <Image
+            src="https://picsum.photos/id/445/900/1125"
+            alt="A laptop on a home desk by a window"
+            fill
+            priority
+            sizes="(min-width: 1024px) 40vw, 100vw"
+            className="object-cover"
+          />
+        </figure>
+      </header>
+
+      <AppWindow />
+
+      <section id="storage" aria-labelledby="calc-h" className="py-20 md:py-30">
+        <StorageCalculator />
+      </section>
+
+      {/* Bento: four cells for four jobs */}
+      <section aria-labelledby="jobs-h" className="pb-20 md:pb-30">
+        <h2 id="jobs-h" className={h2}>Everything in one window</h2>
+        <Reveal className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <RevealItem className="flex flex-col gap-3.5 rounded-3xl bg-surface p-8 md:col-span-2">
+            <h3 className="text-[1.625rem] font-bold leading-tight tracking-[-0.03em] text-ink">Find any file from one search box</h3>
+            <p className="max-w-[40ch] text-muted">Results come back from every account, labelled with where they live.</p>
+            <div className="mt-2 rounded-2xl bg-page p-3.5">
+              <div className="flex items-center gap-2.5 rounded-xl bg-surface px-3.5 py-3 text-ink">
+                <Search size={18} className="text-muted" />
+                thesis
+              </div>
+              <ul className="mt-2">
+                {[['Thesis chapter 3 draft.docx', 'School'], ['Thesis feedback.pdf', 'School'], ['Thesis backup.docx', 'Personal']].map(([name, acct], i) => (
+                  <li key={name} className={`flex justify-between gap-3 rounded-[10px] px-3 py-2.5 text-[0.9375rem] text-ink ${i === 0 ? 'bg-brand-soft' : ''}`}>
+                    {name}
+                    <span className="text-muted">{acct}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </RevealItem>
+
+          <RevealItem className="flex flex-col overflow-hidden rounded-3xl bg-surface lg:row-span-2">
+            <div className="relative h-64 flex-none lg:h-auto lg:flex-1">
+              <Image
+                src="https://picsum.photos/id/20/700/900"
+                alt="A study desk with books, a notebook and a phone"
+                fill
+                sizes="(min-width: 1024px) 30vw, (min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="px-7 pb-7 pt-6">
+              <h3 className="text-[1.625rem] font-bold leading-tight tracking-[-0.03em] text-ink">Coursework, client work, life admin</h3>
+              <p className="mt-2.5 text-muted">Each kept in its own account. All of it one search away.</p>
+            </div>
+          </RevealItem>
+
+          <RevealItem className="flex flex-col gap-3.5 rounded-3xl bg-brand p-8 text-brand-ink">
+            <h3 className="text-[1.625rem] font-bold leading-tight tracking-[-0.03em]">Copy between accounts</h3>
+            <p className="opacity-85">Google copies the file on its side. Nothing passes through your laptop.</p>
+            <div className="mt-auto text-[4rem] font-black leading-none tracking-[-0.05em]">0 bytes</div>
+          </RevealItem>
+
+          <RevealItem className="flex flex-col gap-3.5 rounded-3xl bg-raised p-8">
+            <h3 className="text-[1.625rem] font-bold leading-tight tracking-[-0.03em] text-ink">Preview in place</h3>
+            <div className="mt-auto flex flex-wrap gap-2.5">
+              {[[FileText, 'PDF'], [FileText, 'Docs'], [FileSpreadsheet, 'Sheets'], [FileImage, 'Photos']].map(([Icon, label]) => (
+                <span key={label} className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-[0.9375rem] font-medium text-ink">
+                  <Icon size={18} className="text-brand" />
+                  {label}
+                </span>
+              ))}
+            </div>
+          </RevealItem>
+        </Reveal>
+      </section>
+
+      <section id="how" aria-labelledby="how-h" className="scroll-mt-24">
+        <h2 id="how-h" className={h2}>Ready in about a minute</h2>
+        <StepsStack />
+      </section>
+
+      <section id="pricing" aria-labelledby="price-h" className="grid scroll-mt-24 items-center gap-12 py-20 md:py-30 lg:grid-cols-[5fr_6fr]">
+        <div>
+          <h2 id="price-h" className={h2}>Free while we are in early access</h2>
+          <p className="mt-4 max-w-[50ch] text-[1.1875rem] text-muted">Every feature on this page is included. You will hear from us before anything changes.</p>
+        </div>
+        <Reveal className="rounded-3xl bg-surface p-8 md:p-11">
+          <RevealItem className="text-[4.5rem] font-black leading-none tracking-[-0.05em] text-ink">
+            Free<span className="mt-3 block text-lg font-medium tracking-normal text-muted">during early access</span>
+          </RevealItem>
+          <RevealItem>
+            <ul className="mb-8 mt-7 grid gap-3">
+              {included.map((item) => (
+                <li key={item} className="flex items-center gap-3 text-ink">
+                  <Check size={18} className="flex-none text-brand" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a href={startHref} className={`${btn} bg-brand text-brand-ink`}>
+              Start free
+              <ArrowRight size={18} />
+            </a>
+          </RevealItem>
+        </Reveal>
+      </section>
+
+      <section id="faq" aria-labelledby="faq-h" className="scroll-mt-24 pb-20 md:pb-30">
+        <h2 id="faq-h" className={h2}>Questions</h2>
+        <Reveal className="mt-12 grid gap-7 md:grid-cols-2 md:gap-x-16 md:gap-y-10">
+          {faqs.map(([q, a]) => (
+            <RevealItem key={q}>
+              <h3 className="text-xl font-bold tracking-[-0.02em] text-ink">{q}</h3>
+              <p className="mt-2 max-w-[46ch] text-muted">{a}</p>
+            </RevealItem>
+          ))}
+        </Reveal>
+      </section>
+
+      <section aria-labelledby="close-h">
+        <div className="grid items-end gap-8 rounded-3xl bg-brand-soft px-6 py-12 md:grid-cols-[1fr_auto] md:px-16 md:py-22">
+          <h2 id="close-h" className={h2}>Stop signing out to find a file</h2>
+          <a href={startHref} className={`${btn} justify-self-start bg-brand text-brand-ink`}>
+            Start free
+            <ArrowRight size={18} />
+          </a>
         </div>
       </section>
     </div>

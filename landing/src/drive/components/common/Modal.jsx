@@ -38,7 +38,6 @@ export const Modal = ({
         sx: {
           borderRadius: { xs: 3, sm: 3.5 },
           bgcolor: 'background.paper',
-          backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)',
           border: '1px solid',
           borderColor: 'divider',
           boxShadow: '0 24px 70px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05)',

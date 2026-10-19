@@ -101,7 +101,7 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
         >
           {connectingProvider === 'google' ? (
             <>
-              <Loader2 size={18} className="animate-spin text-blue-500" />
+              <Loader2 size={18} className="animate-spin text-brand" />
               <span>Connecting Google Drive…</span>
             </>
           ) : (
@@ -145,7 +145,7 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
         >
           {connectingProvider === 'dropbox' ? (
             <>
-              <Loader2 size={18} className="animate-spin text-blue-400" />
+              <Loader2 size={18} className="animate-spin text-brand" />
               <span>Connecting Dropbox…</span>
             </>
           ) : (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Cloud } from 'lucide-react';
-import { Box, Typography, Button, Alert, Paper, Link } from '@mui/material';
+import NextLink from 'next/link';
+import { Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const GoogleIcon = () => (
@@ -52,75 +52,77 @@ const Login = () => {
 
   const displayError = localError || error;
 
+  const busy = isSubmitting || loading;
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, position: 'relative', overflow: 'hidden' }}>
-      {/* Animated gradient mesh background */}
-      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <Box sx={{ position: 'absolute', top: '-25%', left: '-25%', width: '75%', height: '75%', borderRadius: '50%', opacity: 0.2, background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)' }} />
-        <Box sx={{ position: 'absolute', bottom: '-25%', right: '-25%', width: '75%', height: '75%', borderRadius: '50%', opacity: 0.15, background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)' }} />
-        <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '50%', height: '50%', borderRadius: '50%', opacity: 0.1, background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)' }} />
-      </Box>
-
-      {/* Login card */}
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 400, zIndex: 1 }}>
-        <Paper elevation={24} sx={{ p: 4, borderRadius: 4, bgcolor: 'background.paper', backdropFilter: 'blur(20px)' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mb: 4 }}>
-            <Box sx={{ width: 64, height: 64, borderRadius: 3, background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(59, 130, 246, 0.4)' }}>
-              <Cloud size={32} color="#fff" />
-            </Box>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h5" fontWeight="bold">DriveUnify</Typography>
-              <Typography variant="body2" color="text.secondary" mt={0.5}>Manage all your Google Drives in one place</Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 4 }}>
-            {['🗂️ Unified file explorer across all accounts', '⚡ Upload to any connected Drive account', '🔍 Search and filter across everything'].map(feat => (
-              <Typography key={feat} variant="body2" color="text.secondary">{feat}</Typography>
+    <main className="min-h-dvh bg-page text-ink grid lg:grid-cols-2">
+      {/* What you get, on the brand-tinted half (desktop only) */}
+      <section className="hidden lg:flex flex-col justify-between bg-brand-soft p-12 xl:p-16">
+        <NextLink href="/" className="flex items-center gap-2.5 text-[1.1875rem] font-black tracking-[-0.03em]">
+          <span aria-hidden="true" className="size-[22px] rounded-full bg-brand" />
+          DriveUnify
+        </NextLink>
+        <div>
+          <p className="max-w-[14ch] text-[clamp(2.5rem,1.2rem+3vw,4rem)] font-bold leading-[1.02] tracking-[-0.035em]">
+            All your Drives, one place
+          </p>
+          <ul className="mt-8 grid gap-3 text-lg">
+            {['One file explorer for every account', 'Upload to any connected Drive', 'Search and filter across everything'].map((feat) => (
+              <li key={feat} className="flex items-center gap-3">
+                <Check size={20} className="flex-none text-brand" />
+                {feat}
+              </li>
             ))}
-          </Box>
+          </ul>
+        </div>
+        <p className="text-muted">We never store your Drive files on our servers.</p>
+      </section>
+
+      {/* Sign-in */}
+      <section className="flex flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-[400px]">
+          <NextLink href="/" className="mb-12 flex items-center gap-2.5 text-[1.1875rem] font-black tracking-[-0.03em] lg:hidden">
+            <span aria-hidden="true" className="size-[22px] rounded-full bg-brand" />
+            DriveUnify
+          </NextLink>
+
+          <h1 className="text-[2.5rem] font-bold leading-[1.05] tracking-[-0.035em]">Sign in</h1>
+          <p className="mt-3 text-[1.0625rem] text-muted">Use the Google account you open most days. You can add the others once you are in.</p>
 
           {displayError && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {displayError}
-            </Alert>
+            <div role="alert" className="mt-8 flex gap-3 whitespace-pre-line rounded-xl bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+              <AlertCircle size={18} className="mt-0.5 flex-none" />
+              <span>{displayError}</span>
+            </div>
           )}
 
-          <Button
-            fullWidth
-            size="large"
-            variant="contained"
+          <button
+            type="button"
             onClick={() => handleSignIn(false)}
-            startIcon={isSubmitting || loading ? null : <GoogleIcon />}
-            sx={{ py: 1.5, bgcolor: '#fff', color: '#333', '&:hover': { bgcolor: '#f5f5f5' }, '&:active': { bgcolor: '#e5e5e5' } }}
+            disabled={busy}
+            className="mt-8 flex h-[52px] w-full items-center justify-center gap-3 rounded-full border border-line bg-surface font-bold text-ink transition-transform hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 cursor-pointer"
           >
-            {isSubmitting || loading ? 'Signing in…' : 'Continue with Google'}
-          </Button>
+            {!busy && <GoogleIcon />}
+            {busy ? 'Signing in…' : 'Continue with Google'}
+          </button>
 
           {isPopupBlocked && (
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Link
-                component="button"
-                variant="body2"
-                onClick={() => handleSignIn(true)}
-                sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer' }}
-              >
-                Sign in with page redirect instead
-              </Link>
-            </Box>
+            <button
+              type="button"
+              onClick={() => handleSignIn(true)}
+              className="mt-4 w-full text-center text-sm font-medium text-brand underline underline-offset-4 cursor-pointer"
+            >
+              Sign in with page redirect instead
+            </button>
           )}
 
-          <Typography variant="caption" color="text.secondary" display="block" align="center" mt={3}>
-            By signing in, you agree to our Terms and Privacy Policy.
-            <br />We never store your Drive files on our servers.
-          </Typography>
-        </Paper>
-
-        <Typography variant="caption" color="text.disabled" display="block" align="center" mt={2}>
-          DriveUnify v2.0
-        </Typography>
-      </Box>
-    </Box>
+          <p className="mt-8 text-sm text-muted">
+            By signing in, you agree to our{' '}
+            <NextLink href="/legal" className="text-ink underline underline-offset-4">terms and privacy policy</NextLink>.
+          </p>
+        </div>
+      </section>
+    </main>
   );
 };
 

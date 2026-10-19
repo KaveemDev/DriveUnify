@@ -10,9 +10,9 @@ const faqs = [
       <span>
         There are two strategies depending on the file type:
         <br /><br />
-        <strong className="text-white">Google Docs, Sheets, Slides</strong> — DriveUnify temporarily shares the file with your destination account, calls Google&apos;s <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300 text-xs">files.copy</code> API, and revokes the share. Google executes the copy on their infrastructure — zero bytes travel through your device.
+        <strong className="text-ink">Google Docs, Sheets, Slides:</strong> DriveUnify temporarily shares the file with your destination account, calls Google&apos;s <code className="bg-raised px-1 py-0.5 rounded text-brand text-xs">files.copy</code> API, and revokes the share. Google executes the copy on their infrastructure, so zero bytes travel through your device.
         <br /><br />
-        <strong className="text-white">Binary files (PDFs, images, archives)</strong> — The file streams in browser memory and uploads directly to the destination drive without writing to local disk.
+        <strong className="text-ink">Binary files (PDFs, images, archives):</strong> the file streams in browser memory and uploads directly to the destination drive without writing to local disk.
       </span>
     ),
   },
@@ -43,18 +43,18 @@ const FaqItem = ({ q, a }) => {
   return (
     <div
       className={`rounded-2xl border transition-colors ${
-        open ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
+        open ? 'border-line bg-brand-soft' : 'border-line bg-surface hover:border-line'
       }`}
     >
       <button
         className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left cursor-pointer"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="text-base font-semibold text-white">{q}</span>
-        {open ? <ChevronUp size={18} className="text-indigo-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+        <span className="text-base font-semibold text-ink">{q}</span>
+        {open ? <ChevronUp size={18} className="text-brand" /> : <ChevronDown size={18} className="text-muted" />}
       </button>
       {open && (
-        <div className="px-6 pb-6 text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-4">
+        <div className="px-6 pb-6 text-sm text-ink leading-relaxed border-t border-line pt-4">
           {a}
         </div>
       )}

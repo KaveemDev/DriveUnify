@@ -34,7 +34,6 @@ const getFileVisuals = (mimeType, name = '') => {
 
   if (mimeType === FOLDER_MIME) {
     return {
-      gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       shadow: '0 8px 20px -3px rgba(245, 158, 11, 0.4)',
       accent: '#f59e0b',
       label: 'Folder',
@@ -43,7 +42,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.startsWith('image/')) {
     return {
-      gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
       shadow: '0 8px 20px -3px rgba(236, 72, 153, 0.4)',
       accent: '#ec4899',
       label: 'Image File',
@@ -52,7 +50,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.startsWith('video/')) {
     return {
-      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
       shadow: '0 8px 20px -3px rgba(139, 92, 246, 0.4)',
       accent: '#8b5cf6',
       label: 'Video Media',
@@ -61,7 +58,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.startsWith('audio/')) {
     return {
-      gradient: 'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)',
       shadow: '0 8px 20px -3px rgba(6, 182, 212, 0.4)',
       accent: '#06b6d4',
       label: 'Audio Track',
@@ -70,7 +66,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.includes('pdf')) {
     return {
-      gradient: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
       shadow: '0 8px 20px -3px rgba(239, 68, 68, 0.4)',
       accent: '#ef4444',
       label: 'PDF Document',
@@ -79,7 +74,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.includes('spreadsheet') || mimeType?.includes('excel') || ext === 'CSV' || ext === 'XLSX') {
     return {
-      gradient: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
       shadow: '0 8px 20px -3px rgba(16, 185, 129, 0.4)',
       accent: '#10b981',
       label: 'Spreadsheet',
@@ -88,7 +82,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.includes('document') || mimeType?.includes('word') || ext === 'DOCX') {
     return {
-      gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
       shadow: '0 8px 20px -3px rgba(59, 130, 246, 0.4)',
       accent: '#3b82f6',
       label: 'Document',
@@ -97,7 +90,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.includes('presentation') || mimeType?.includes('powerpoint')) {
     return {
-      gradient: 'linear-gradient(135deg, #f97316 0%, #c2410c 100%)',
       shadow: '0 8px 20px -3px rgba(249, 115, 22, 0.4)',
       accent: '#f97316',
       label: 'Presentation',
@@ -106,7 +98,6 @@ const getFileVisuals = (mimeType, name = '') => {
   }
   if (mimeType?.includes('zip') || mimeType?.includes('rar') || mimeType?.includes('tar') || mimeType?.includes('compressed')) {
     return {
-      gradient: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
       shadow: '0 8px 20px -3px rgba(99, 102, 241, 0.4)',
       accent: '#6366f1',
       label: 'Archive Package',
@@ -114,7 +105,6 @@ const getFileVisuals = (mimeType, name = '') => {
     };
   }
   return {
-    gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
     shadow: '0 8px 20px -3px rgba(59, 130, 246, 0.4)',
     accent: '#3b82f6',
     label: 'Cloud File',
@@ -832,7 +822,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                       width: 90,
                       height: 90,
                       borderRadius: '50%',
-                      background: visuals.gradient,
+                      background: visuals.accent,
                       opacity: 0.12,
                       filter: 'blur(20px)',
                       pointerEvents: 'none',
@@ -845,7 +835,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                         width: { xs: 46, sm: 52 },
                         height: { xs: 46, sm: 52 },
                         borderRadius: 2.25,
-                        background: visuals.gradient,
+                        background: visuals.accent,
                         boxShadow: visuals.shadow,
                         display: 'flex',
                         alignItems: 'center',
@@ -1214,7 +1204,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                   borderColor: 'divider',
                 }}
               >
-                <Loader2 size={22} className="animate-spin text-blue-500" style={{ flexShrink: 0 }} />
+                <Loader2 size={22} className="animate-spin text-brand" style={{ flexShrink: 0 }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2" fontWeight={600}>Scanning folder hierarchy…</Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -1228,7 +1218,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
             {state === STATE.RUNNING && isFolder && (
               <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: 'action.hover', border: 1, borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                  <CopyPlus size={18} className="text-blue-500" style={{ flexShrink: 0 }} />
+                  <CopyPlus size={18} className="text-brand" style={{ flexShrink: 0 }} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="body2" fontWeight={600}>
                       {folderProgress.total > 0
@@ -1252,7 +1242,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                       bgcolor: 'action.selected',
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 3,
-                        background: 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                        background: 'var(--color-accent)',
                       },
                     }}
                   />
@@ -1321,7 +1311,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                     bgcolor: 'action.selected',
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 3,
-                      background: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)',
+                      background: 'var(--color-accent)',
                     },
                   }}
                 />

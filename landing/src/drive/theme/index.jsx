@@ -1,33 +1,26 @@
-import React, { createContext, useState, useMemo, useContext, useEffect } from 'react';
+import React, { createContext, useMemo, useContext, useSyncExternalStore } from 'react';
 import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
 
 const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
 export const useColorMode = () => useContext(ColorModeContext);
 
-export const ThemeContextProvider = ({ children }) => {
-  const [mode, setMode] = useState('dark');
+// The .dark class on <html> is the single source of truth, shared with the marketing site.
+// The root layout's inline script sets it before paint from localStorage 'themeMode' or the system.
+const subscribe = (onChange) => {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+};
+const getMode = () => (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
 
-  useEffect(() => {
-    const savedMode = localStorage.getItem('themeMode');
-    if (savedMode === 'light' || savedMode === 'dark') setMode(savedMode);
-  }, []);
+export const ThemeContextProvider = ({ children }) => {
+  const mode = useSyncExternalStore(subscribe, getMode, () => 'light');
 
   const toggleColorMode = () => {
-    setMode((prevMode) => {
-      const newMode = prevMode === 'light' ? 'dark' : 'light';
-      localStorage.setItem('themeMode', newMode);
-      return newMode;
-    });
+    const dark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('themeMode', dark ? 'dark' : 'light');
   };
-
-  useEffect(() => {
-    if (mode === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [mode]);
 
   const theme = useMemo(
     () =>
@@ -36,11 +29,11 @@ export const ThemeContextProvider = ({ children }) => {
           mode,
           ...(mode === 'light'
             ? {
-                primary: { main: '#18181b', light: '#3f3f46', dark: '#09090b', contrastText: '#fff' },
-                secondary: { main: '#71717a' },
-                background: { default: '#f4f4f5', paper: '#ffffff' },
-                text: { primary: '#09090b', secondary: '#71717a', disabled: '#a1a1aa' },
-                divider: 'rgba(0,0,0,0.07)',
+                primary: { main: '#2348d8', light: '#4a6ae3', dark: '#1a36a6', contrastText: '#fff' },
+                secondary: { main: '#545b6b' },
+                background: { default: '#f5f6f8', paper: '#ffffff' },
+                text: { primary: '#10131a', secondary: '#545b6b', disabled: '#9aa0ad' },
+                divider: 'rgba(16,19,26,0.08)',
                 action: {
                   hover: 'rgba(0,0,0,0.04)',
                   selected: 'rgba(0,0,0,0.06)',
@@ -48,11 +41,11 @@ export const ThemeContextProvider = ({ children }) => {
                 },
               }
             : {
-                primary: { main: '#e4e4e7', light: '#f4f4f5', dark: '#a1a1aa', contrastText: '#09090b' },
-                secondary: { main: '#71717a' },
-                background: { default: '#09090b', paper: '#111113' },
-                text: { primary: '#fafafa', secondary: '#a1a1aa', disabled: '#52525b' },
-                divider: 'rgba(255,255,255,0.07)',
+                primary: { main: '#7d97ff', light: '#a3b5ff', dark: '#5873e6', contrastText: '#0d1015' },
+                secondary: { main: '#a3aabb' },
+                background: { default: '#0d1015', paper: '#151922' },
+                text: { primary: '#eef0f5', secondary: '#a3aabb', disabled: '#5d6474' },
+                divider: 'rgba(238,240,245,0.08)',
                 action: {
                   hover: 'rgba(255,255,255,0.04)',
                   selected: 'rgba(255,255,255,0.07)',
@@ -61,7 +54,7 @@ export const ThemeContextProvider = ({ children }) => {
               }),
         },
         typography: {
-          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+          fontFamily: 'var(--font-satoshi), system-ui, -apple-system, sans-serif',
           button: { textTransform: 'none', fontWeight: 500 },
           body2: { fontSize: '0.8125rem' },
           caption: { fontSize: '0.75rem' },
@@ -123,7 +116,7 @@ export const ThemeContextProvider = ({ children }) => {
               tooltip: {
                 borderRadius: '6px',
                 fontSize: '0.75rem',
-                backgroundColor: mode === 'light' ? '#18181b' : '#27272a',
+                backgroundColor: mode === 'light' ? '#10131a' : '#262c3b',
               },
             },
           },

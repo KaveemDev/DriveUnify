@@ -1,19 +1,63 @@
 @import "tailwindcss";
 @import "../drive/styles/globals.css";
 
-:root {
-  --background: #020617;
-  --foreground: #f8fafc;
+/* `dark:` follows the .dark class the theme script sets on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Utility names for the shared Cobalt tokens (values live in drive/styles/globals.css). */
+@theme inline {
+  --color-page: var(--color-bg-base);
+  --color-surface: var(--color-bg-surface);
+  --color-raised: var(--color-bg-elevated);
+  --color-line: var(--color-border);
+  --color-ink: var(--color-text-primary);
+  --color-muted: var(--color-text-secondary);
+  --color-brand: var(--color-accent);
+  --color-brand-ink: var(--color-accent-fg);
+  --color-brand-soft: var(--color-accent-soft);
+  --shadow-tinted: var(--shadow-tinted);
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
   overflow-x: hidden;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.3s, color 0.3s;
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
-  color: #ffffff;
+  background: var(--color-accent-soft);
+  color: var(--color-text-primary);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Home page motion. Everything here is off under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-rise > * { animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .hero-rise > *:nth-child(2) { animation-delay: 0.08s; }
+  .hero-rise > *:nth-child(3) { animation-delay: 0.16s; }
+  .hero-settle { animation: hero-settle 1.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  @supports (animation-timeline: view()) {
+    .scroll-grow {
+      animation: scroll-grow linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 40%;
+    }
+  }
+}
+
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-settle {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes scroll-grow {
+  from { transform: scale(0.9); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
 }

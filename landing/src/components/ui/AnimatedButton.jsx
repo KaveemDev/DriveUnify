@@ -15,20 +15,20 @@ export const AnimatedButton = ({
   disabled = false,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-200 rounded-xl select-none cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-bold transition-transform duration-300 rounded-full select-none cursor-pointer whitespace-nowrap';
 
   const variants = {
-    primary: 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0',
-    secondary: 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 hover:border-slate-600 hover:-translate-y-0.5 active:translate-y-0',
-    outline: 'bg-transparent hover:bg-slate-800/60 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500',
-    ghost: 'bg-transparent hover:bg-slate-800/40 text-slate-400 hover:text-slate-100',
-    danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
+    primary: 'bg-brand text-brand-ink hover:-translate-y-0.5 active:scale-[0.97]',
+    secondary: 'bg-raised text-ink hover:-translate-y-0.5 active:scale-[0.97]',
+    outline: 'bg-transparent text-ink border border-line hover:bg-raised',
+    ghost: 'bg-transparent text-muted hover:text-ink',
+    danger: 'bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20',
   };
 
   const sizes = {
-    sm: 'text-xs px-3 py-1.5 gap-1.5',
-    md: 'text-sm px-4 py-2 gap-2',
-    lg: 'text-base px-6 py-3 gap-2.5 font-semibold',
+    sm: 'text-sm h-9 px-4 gap-1.5',
+    md: 'text-[0.9375rem] h-11 px-5 gap-2',
+    lg: 'text-base h-[52px] px-6 gap-2.5',
   };
 
   const combinedClasses = `${baseStyles} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className} ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`;

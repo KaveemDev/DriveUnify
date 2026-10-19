@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Cloud, Menu, X, ArrowRight, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Moon, Sun } from 'lucide-react';
 import { auth, googleProvider, signInWithPopup, signOut } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
@@ -13,7 +13,6 @@ import {
 } from '@/lib/auth-sync';
 
 export const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(() => (typeof window !== 'undefined' ? getCrossDomainSession() : null));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -25,12 +24,6 @@ export const Navbar = () => {
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
   }
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     if (!auth) return;
@@ -120,181 +113,143 @@ export const Navbar = () => {
 
   const navLinks = [
     { name: 'Features', path: '/features' },
-    { name: 'Integrations', path: '/integrations' },
-    { name: 'About', path: '/about' },
+    { name: 'How it works', path: '/#how' },
+    { name: 'Pricing', path: '/#pricing' },
     { name: 'Docs', path: '/docs' },
-    { name: 'Blog', path: '/blog' },
   ];
 
   const dashboardUrl = getDashboardUrl();
   const dashboardHref = dashboardUrl ? `${dashboardUrl}/dashboard` : '/dashboard';
+  const startHref = `${dashboardUrl}/login`;
+
+  // Same key and class as the dashboard theme, so the choice carries over.
+  const toggleTheme = () => {
+    const dark = document.documentElement.classList.toggle('dark');
+    try { localStorage.setItem('themeMode', dark ? 'dark' : 'light'); } catch {}
+  };
 
   return (
-    <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        scrolled ? 'py-3' : 'py-5'
-      }`}
-    >
-      <div className="container mx-auto px-4 sm:px-6">
-        <div
-          className={`mx-auto max-w-5xl flex items-center justify-between rounded-2xl border transition-all duration-300 px-5 py-2.5 ${
-            scrolled
-              ? 'bg-slate-900/85 backdrop-blur-md border-slate-700/60 shadow-lg'
-              : 'bg-slate-950/40 backdrop-blur-sm border-slate-800/40'
-          }`}
-        >
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_12px_rgba(59,130,246,0.4)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-shadow">
-              <Cloud size={17} />
-            </div>
-            <span className="font-bold text-lg tracking-tight text-white">DriveUnify</span>
-          </Link>
+    <header className="sticky top-0 z-40 bg-page">
+      <div className="mx-auto max-w-[1280px] px-4 md:px-8 h-[72px] flex items-center justify-between gap-6">
+        <Link href="/" className="flex items-center gap-2.5 text-[1.1875rem] font-black tracking-[-0.03em] text-ink">
+          <span aria-hidden="true" className="size-[22px] rounded-full bg-brand" />
+          DriveUnify
+        </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-7">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.path}
-                className={`text-sm font-medium transition-colors ${
-                  pathname === link.path
-                    ? 'text-white'
-                    : 'text-slate-400 hover:text-slate-100'
-                }`}
+        <nav aria-label="Main" className="hidden lg:flex items-center gap-8 font-medium">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.path}
+              className={`transition-colors ${pathname === link.path ? 'text-ink' : 'text-muted hover:text-ink'}`}
+            >
+              {link.name}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            aria-label="Switch colour theme"
+            className="size-11 grid place-items-center rounded-full bg-raised text-ink cursor-pointer transition-transform active:scale-95"
+          >
+            <Moon size={18} className="dark:hidden" />
+            <Sun size={18} className="hidden dark:block" />
+          </button>
+
+          {user ? (
+            <div className="relative hidden md:flex items-center gap-3">
+              <a
+                href={dashboardHref}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-brand text-brand-ink font-bold transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
               >
-                {link.name}
-              </Link>
-            ))}
-          </nav>
+                <LayoutDashboard size={16} />
+                Dashboard
+              </a>
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                aria-label="Account menu"
+                aria-expanded={userMenuOpen}
+                className="size-11 rounded-full bg-raised overflow-hidden grid place-items-center text-xs font-bold text-ink cursor-pointer"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || 'User'} className="size-full object-cover" />
+                ) : (
+                  <span>{(user.displayName || user.email || 'U').slice(0, 2).toUpperCase()}</span>
+                )}
+              </button>
 
-          {/* Desktop Action */}
-          <div className="hidden md:flex items-center gap-3">
-            {user ? (
-              <div className="relative">
-                <div className="flex items-center gap-2">
-                  <a
-                    href={dashboardHref}
-                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-md transition-all hover:-translate-y-0.5"
-                  >
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-60 rounded-3xl bg-surface p-2 shadow-tinted">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-bold text-ink truncate">{user.displayName || 'Signed in'}</p>
+                    <p className="text-xs text-muted truncate">{user.email}</p>
+                  </div>
+                  <a href={dashboardHref} className="flex items-center gap-2 px-3 py-2 text-sm text-ink rounded-xl hover:bg-raised">
                     <LayoutDashboard size={15} />
-                    <span>Dashboard</span>
+                    Open dashboard
                   </a>
-                  <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-xs font-bold text-white hover:border-slate-500 transition-colors"
-                  >
-                    {user.photoURL ? (
-                      <img src={user.photoURL} alt={user.displayName || 'User'} className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{(user.displayName || user.email || 'U').slice(0, 2).toUpperCase()}</span>
-                    )}
+                  <button onClick={handleSignOut} className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 rounded-xl hover:bg-raised cursor-pointer">
+                    <LogOut size={15} />
+                    Sign out
                   </button>
                 </div>
+              )}
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-3">
+              <button onClick={handleSignIn} className="font-medium text-muted hover:text-ink px-2 cursor-pointer">
+                Sign in
+              </button>
+              <a
+                href={startHref}
+                className="inline-flex items-center h-11 px-5 rounded-full bg-brand text-brand-ink font-bold transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
+              >
+                Start free
+              </a>
+            </div>
+          )}
 
-                {/* User Dropdown */}
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
-                    <div className="px-3 py-2 border-b border-slate-800 text-left">
-                      <p className="text-sm font-medium text-white truncate">{user.displayName || 'Signed in'}</p>
-                      <p className="text-xs text-slate-400 truncate">{user.email}</p>
-                    </div>
-                    <a
-                      href={dashboardHref}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors mt-1"
-                    >
-                      <LayoutDashboard size={15} />
-                      Open Dashboard
-                    </a>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                    >
-                      <LogOut size={15} />
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={handleSignIn}
-                  className="text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 transition-colors cursor-pointer"
-                >
-                  Sign In
-                </button>
-                <a
-                  href={`${dashboardUrl}/login`}
-                  className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
-                >
-                  <span>Get Started</span>
-                  <ArrowRight size={14} />
-                </a>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-slate-400 hover:text-white p-1"
-            aria-label="Toggle Menu"
+            className="md:hidden size-11 grid place-items-center rounded-full text-ink cursor-pointer"
+            aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
-
-        {/* Mobile Dropdown */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-2 p-5 rounded-2xl bg-slate-900/95 border border-slate-800 backdrop-blur-xl shadow-2xl">
-            <nav className="flex flex-col gap-3 mb-5">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.path}
-                  className="text-slate-300 hover:text-white py-2 text-base font-medium border-b border-slate-800/50"
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-            <div className="flex flex-col gap-2">
-              {user ? (
-                <>
-                  <a
-                    href={dashboardHref}
-                    className="w-full text-center bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm"
-                  >
-                    Go to Dashboard
-                  </a>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full text-center text-slate-400 hover:text-white py-2 text-sm"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleSignIn}
-                    className="w-full text-center text-slate-300 hover:text-white py-2 text-sm font-medium"
-                  >
-                    Sign In
-                  </button>
-                  <a
-                    href={`${dashboardUrl}/login`}
-                    className="w-full text-center bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm"
-                  >
-                    Get Started Free
-                  </a>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {mobileMenuOpen && (
+        <div className="md:hidden mx-4 mb-4 p-5 rounded-3xl bg-surface shadow-tinted">
+          <nav aria-label="Mobile" className="flex flex-col mb-4">
+            {navLinks.map((link) => (
+              <Link key={link.name} href={link.path} className="py-3 text-lg font-medium text-ink">
+                {link.name}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex flex-col gap-2">
+            {user ? (
+              <>
+                <a href={dashboardHref} className="h-12 grid place-items-center rounded-full bg-brand text-brand-ink font-bold">
+                  Go to dashboard
+                </a>
+                <button onClick={handleSignOut} className="h-12 text-muted cursor-pointer">Sign out</button>
+              </>
+            ) : (
+              <>
+                <a href={startHref} className="h-12 grid place-items-center rounded-full bg-brand text-brand-ink font-bold">
+                  Start free
+                </a>
+                <button onClick={handleSignIn} className="h-12 font-medium text-ink cursor-pointer">Sign in</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

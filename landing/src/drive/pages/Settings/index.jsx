@@ -397,11 +397,11 @@ const Settings = () => {
                           overflow: 'hidden',
                           border: '1px solid var(--color-border)',
                           flexShrink: 0,
-                          background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                          background: 'var(--color-accent)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#fff',
+                          color: 'var(--color-accent-fg)',
                           fontSize: '1.4rem',
                           fontWeight: 700,
                         }}
