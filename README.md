@@ -4,9 +4,9 @@
 
 ![DriveUnify Banner](https://img.shields.io/badge/DriveUnify-v2.0-6366f1?style=for-the-badge&logo=googledrive&logoColor=white)
 ![React 19](https://img.shields.io/badge/React-19.0.0-61dafb?style=for-the-badge&logo=react)
-![Vite 8](https://img.shields.io/badge/Vite-8.0.0-646cff?style=for-the-badge&logo=vite)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs)
 ![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4.0.0-06b6d4?style=for-the-badge&logo=tailwindcss)
-![Firebase Cloud Functions](https://img.shields.io/badge/Firebase-v12.0.0-ffca28?style=for-the-badge&logo=firebase)
+![Firebase](https://img.shields.io/badge/Firebase-Admin%20%2B%20Auth-ffca28?style=for-the-badge&logo=firebase)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ---
@@ -19,7 +19,7 @@
 
 ## 🏷️ Topics / GitHub Tags
 
-`google-drive` • `multi-account` • `react19` • `vite` • `tailwindcss` • `redux-toolkit` • `firebase-auth` • `cloud-functions` • `firestore` • `oauth2` • `google-drive-api` • `dashboard` • `file-manager` • `resumable-uploads` • `dark-mode`
+`google-drive` • `multi-account` • `react19` • `nextjs` • `tailwindcss` • `redux-toolkit` • `firebase-auth` • `firestore` • `oauth2` • `google-drive-api` • `dashboard` • `file-manager` • `resumable-uploads` • `dark-mode`
 
 ---
 
@@ -27,12 +27,12 @@
 
 ### 🔐 Multi-Account OAuth Security
 - **Unlimited Drive Connections**: Connect and switch between multiple personal and workspace Google Drive accounts seamlessly.
-- **Serverless Token Lifecycle**: OAuth authorization code exchange (`exchangeGoogleCode`), token refreshing (`refreshGoogleToken`), and token revocation (`revokeGoogleToken`) are executed securely in Firebase Cloud Functions.
+- **Server Token Lifecycle**: OAuth authorization code exchange, token refresh, and revocation run in the Next.js route `POST /api/oauth`. The Google client secret stays on the server.
 - **Isolated Token Storage**: Google refresh tokens are stored strictly in server-only Firestore documents (`drive_tokens/{uid}`), inaccessible to the client browser.
 
 ### 🗂️ Unified File Explorer & Virtualization
 - **Combined & Per-Account Views**: Browse files across all connected accounts in a single grid/list view or isolate individual accounts.
-- **Virtualized List Rendering**: Powered by `react-window` to effortlessly handle tens of thousands of files without UI lag or memory bloat.
+- **File lists**: Grid and list views for files across connected accounts.
 - **Breadcrumb Navigation**: Deep-folder navigation with breadcrumb trails and instant subfolder opening.
 
 ### 📤 Resumable & Chunked Upload Engine
@@ -56,8 +56,8 @@ DriveUnify operates on a decoupled client-serverless architecture designed for e
 
 ```
                                ┌───────────────────────────┐
-                               │     Client App (Vite)     │
-                               │  React 19 + Redux Toolkit │
+                               │   Next.js app (one site)  │
+                               │  Marketing + dashboard   │
                                └─────────────┬─────────────┘
                                              │
                       ┌──────────────────────┼──────────────────────┐
@@ -66,8 +66,8 @@ DriveUnify operates on a decoupled client-serverless architecture designed for e
           & Code      │                      │    (with access_tok) │    & Auth state
                       ▼                      ▼                      ▼
            ┌────────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-           │ Firebase Cloud     │  │ Google Drive REST│  │ Firebase Auth &  │
-           │ Functions (v2)     │  │ API v3           │  │ Firestore DB     │
+           │ POST /api/oauth    │  │ Google Drive REST│  │ Firebase Auth &  │
+           │ (Firebase Admin)   │  │ API v3           │  │ Firestore DB     │
            └──────────┬─────────┘  └──────────────────┘  └──────────────────┘
                       │
         4. Save token │ (Server-Only Path)
@@ -84,36 +84,15 @@ DriveUnify operates on a decoupled client-serverless architecture designed for e
 
 ```
 DriveUnify/
-├── client/                                 # React Frontend (Vite)
-│   ├── src/
-│   │   ├── api/                            # Google Drive REST API v3 wrappers
-│   │   ├── components/
-│   │   │   ├── common/                     # Reusable UI primitives (Button, Modal, Spinner, etc.)
-│   │   │   ├── explorer/                   # FileGrid, FileList, FileCard, FileRow, FileIcon
-│   │   │   ├── sidebar/                    # Navigation Sidebar, AccountList, StorageBar
-│   │   │   ├── modals/                     # Account Connection, File Preview, Rename Modals
-│   │   │   └── upload/                     # Drag-Drop Zone, Upload Queue & Progress
-│   │   ├── config/                         # Firebase & App constants
-│   │   ├── hooks/                          # Custom React hooks (useAuth, useDrive, useUpload, etc.)
-│   │   ├── layouts/                        # Main Dashboard DashboardLayout
-│   │   ├── pages/                          # Login, Dashboard, Settings
-│   │   ├── routes/                         # App routes & ProtectedRoute wrapper
-│   │   ├── services/
-│   │   │   ├── firebase/                   # Auth & Firestore service wrappers
-│   │   │   └── google-drive/               # Auth, file operations, upload streams
-│   │   ├── store/                          # Redux Toolkit store (auth, drive, upload, ui)
-│   │   └── utils/                          # Helper formatters & analytics
-│   ├── firestore.rules                     # Client-side Firestore security rules
-│   ├── package.json                        # Client dependencies
-│   ├── tailwind.config.js                  # Tailwind CSS v4 setup
-│   ├── vite.config.js                      # Vite build configuration
-│   └── vercel.json                         # Vercel deployment config
-├── functions/                              # Firebase Cloud Functions (v2 Node.js)
-│   ├── index.js                            # Serverless functions (exchange, refresh, revoke)
-│   ├── package.json                        # Backend dependencies (googleapis, firebase-admin)
-│   └── .env                                # Backend OAuth secrets
-├── firebase.json                           # Firebase multi-target project config
-└── README.md                               # Project documentation
+├── landing/                                 # Next.js app (marketing + dashboard)
+│   ├── src/app/                            # Marketing pages, /dashboard, /api/oauth
+│   ├── src/drive/                          # Dashboard UI, Redux, Drive clients
+│   ├── src/lib/server/oauth.js             # Token exchange, refresh, revoke
+│   └── package.json
+├── firestore.rules                         # Client rules; token docs are server-only
+├── package.json                            # npm run dev / build
+├── vercel.json
+└── firebase.json
 ```
 
 ---
@@ -124,7 +103,7 @@ DriveUnify strictly segregates sensitive OAuth credentials from public user data
 
 1. **Server-Only Path (`drive_tokens/{uid}/accounts/{emailId}`)**:
    - Contains raw Google OAuth `refresh_token`.
-   - **Firestore Security Rules block all client reads and writes**. Only Firebase Admin SDK (Cloud Functions) has access.
+   - **Firestore Security Rules block all client reads and writes**. Only the Next.js server, using Firebase Admin, has access.
 2. **Client-Readable Path (`users/{uid}/connected_accounts/{emailId}`)**:
    - Contains safe account metadata (`name`, `email`, `picture`, `connectedAt`).
    - Accessible only by the authenticated owner (`auth.uid == uid`).
@@ -150,16 +129,15 @@ service cloud.firestore {
 
 | Domain | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Frontend Framework** | React 19 + Vite 8 | UI compilation and hot module reloading |
-| **State Management** | Redux Toolkit | Centralized state for auth, drive accounts, file cache, and uploads |
-| **Styling** | Tailwind CSS v4 + Radix UI | Modern responsive glassmorphism UI & accessible primitives |
-| **Routing** | React Router v7 | Declarative route management and code-splitting |
-| **Authentication** | Firebase Auth v12 | Google identity sign-in for application access |
-| **Database** | Firebase Firestore | User metadata and account connection tracking |
-| **Serverless Backend** | Firebase Cloud Functions v2 | Secure OAuth token exchange, refreshing, and revocation |
-| **Drive API** | Google Drive REST API v3 | Multi-account file listing, searching, downloading, and uploading |
-| **Virtualization** | `react-window` v2 | High-performance rendering for 10,000+ files |
-| **Notifications** | `react-hot-toast` | Real-time toast feedback for system events |
+| **App** | Next.js 16 + React 19 | Marketing pages and the dashboard in one app |
+| **State Management** | Redux Toolkit | Auth, drive accounts, file cache, and uploads |
+| **Styling** | Tailwind CSS v4 + MUI | Marketing pages and dashboard UI |
+| **Routing** | Next.js App Router | `/`, `/dashboard`, `/login`, `/api/oauth` |
+| **Authentication** | Firebase Auth | Google sign-in |
+| **Database** | Firebase Firestore | Account metadata. Refresh tokens are server-only |
+| **Token API** | `POST /api/oauth` | Exchange, refresh, and revoke via Firebase Admin |
+| **Drive API** | Google Drive REST API v3 | File listing, search, download, and upload |
+| **Notifications** | `react-hot-toast` | Toast feedback |
 
 ---
 
@@ -167,7 +145,7 @@ service cloud.firestore {
 
 ### Prerequisites
 
-- **Node.js**: `v18.x` or `v20.x`
+- **Node.js**: `v22` or newer
 - **npm**: `v9.x` or higher
 - **Firebase CLI**: `npm install -g firebase-tools`
 - **Google Cloud Console Account**: With OAuth 2.0 Client ID enabled
@@ -183,95 +161,64 @@ cd DriveUnify
 
 ---
 
-### Step 2: Configure Firebase Cloud Functions
+### Step 2: Configure the Next.js app
 
-1. Navigate to `functions/`:
-   ```bash
-   cd functions
-   npm install
-   ```
-2. Create `functions/.env` file with your Google OAuth Credentials:
-   ```env
-   GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   GOOGLE_REDIRECT_URI=http://localhost:5173
-   ```
+```bash
+cd landing
+npm install
+```
 
----
+Create `landing/.env.local` (see `landing/.env.example`):
 
-### Step 3: Configure Frontend Client
+```env
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your_project.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
 
-1. Navigate to `client/`:
-   ```bash
-   cd ../client
-   npm install
-   ```
-2. Create `client/.env` based on `.env.example`:
-   ```env
-   VITE_FIREBASE_API_KEY=your_firebase_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-   ```
+Add `http://localhost:3000/oauth/callback` as an authorized redirect URI on the Google OAuth client.
 
 ---
 
-### Step 4: Run Locally
+### Step 3: Run locally
 
-1. **Start Cloud Functions (Optional / Emulator Mode)**:
-   ```bash
-   cd functions
-   npm run serve
-   ```
-2. **Start Client Dev Server**:
-   ```bash
-   cd client
-   npm run dev
-   ```
-3. Open your browser and navigate to `http://localhost:5173`.
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. The dashboard is at `/dashboard`, sign-in at `/login`.
 
 ---
 
-## 📜 NPM Commands Reference
-
-### Client (`client/`)
+## 📜 NPM Commands
 
 | Command | Action |
 | :--- | :--- |
-| `npm run dev` | Starts Vite local development server on port 5173 |
-| `npm run build` | Compiles production bundle into `dist/` |
-| `npm run preview` | Previews production build locally |
-| `npm run lint` | Runs ESLint syntax and code quality checks |
-
-### Cloud Functions (`functions/`)
-
-| Command | Action |
-| :--- | :--- |
-| `npm run serve` | Runs local Firebase emulator suite for functions |
-| `npm run deploy` | Deploys functions directly to Firebase Cloud |
+| `npm run dev` | Next.js dev server on port 3000 |
+| `npm run build` | Production build |
+| `npm test` | Transfer service tests |
+| `npm run lint` | ESLint |
 
 ---
 
 ## 🚢 Deployment
 
-### 1. Deploy Firebase Cloud Functions & Firestore Rules
+Firestore rules:
 
 ```bash
 firebase login
-firebase use --add # select your Firebase project
-firebase deploy --only functions,firestore:rules
+firebase use --add
+firebase deploy --only firestore:rules
 ```
 
-### 2. Deploy Client to Vercel
+Vercel: one Next.js project.
 
-```bash
-cd client
-vercel --prod
-```
-> Make sure to set all `VITE_FIREBASE_*` and `VITE_GOOGLE_CLIENT_ID` environment variables in the Vercel dashboard.
+- **Root Directory**: `landing` (or the repo root; root `vercel.json` builds `landing`)
+- **Framework**: Next.js
+- **Domain**: `driveunify.com`
+- Set the same env vars as `landing/.env.example`, including the Firebase Admin key and `GOOGLE_CLIENT_SECRET`. Do not prefix secrets with `NEXT_PUBLIC_`.
 
 ---
 

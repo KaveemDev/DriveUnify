@@ -1,0 +1,15 @@
+{
+  "name": "driveunify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DriveUnify - Unified Google Drive management monorepo",
+  "scripts": {
+    "build": "npm --prefix landing run build",
+    "build:landing": "npm --prefix landing run build",
+    "dev": "npm --prefix landing run dev",
+    "dev:landing": "npm --prefix landing run dev",
+    "lint:landing": "npm --prefix landing run lint",
+    "lint": "npm --prefix landing run lint",
+    "test": "npm --prefix landing test"
+  }
+}
