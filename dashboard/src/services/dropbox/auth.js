@@ -220,10 +220,11 @@ export const refreshDropboxToken = async (account) => {
   const refreshPromise = (async () => {
     // 1. Try Cloud Function refresh
     const fns = getFns();
+    let cfRejected = !fns; // true when the server says the token is gone/revoked
     if (fns) {
       try {
         const refreshFn = httpsCallable(fns, 'refreshDropboxToken');
-        const result = await refreshFn({ email: account.email });
+        const result = await refreshFn({ email: account.email, clientId: account.clientId });
         if (result?.data?.accessToken) {
           return {
             ...account,
@@ -235,6 +236,7 @@ export const refreshDropboxToken = async (account) => {
         }
       } catch (cfErr) {
         console.warn(`[DriveUnify] Cloud Function Dropbox refresh failed for ${account.email}:`, cfErr.message);
+        cfRejected = cfErr.code === 'functions/unauthenticated' || cfErr.code === 'functions/not-found';
       }
     }
 
@@ -271,6 +273,12 @@ export const refreshDropboxToken = async (account) => {
           expired: false,
         };
       }
+      // 400/401 = refresh token revoked; anything else is temporary
+      if (tokenRes.status !== 400 && tokenRes.status !== 401) {
+        throw new Error(`Dropbox token refresh failed: HTTP ${tokenRes.status}`);
+      }
+    } else if (!cfRejected) {
+      throw new Error(`Could not refresh Dropbox token for ${account.email} right now.`);
     }
 
     return { ...account, accessToken: null, needsReconnect: true, expired: true };
@@ -286,7 +294,8 @@ export const silentRefreshDropboxAccount = async (account) => {
   try {
     return await refreshDropboxToken(account);
   } catch {
-    return { ...account, accessToken: null, needsReconnect: true, expired: true };
+    // Temporary failure (network, function cold start): don't force a reconnect, retry on next fetch
+    return { ...account, accessToken: null };
   }
 };
 

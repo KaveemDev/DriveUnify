@@ -201,7 +201,8 @@ export const silentRefreshAccount = async (account) => {
   try {
     return await refreshDriveToken(account);
   } catch {
-    return { ...account, accessToken: null, needsReconnect: true, expired: true };
+    // Temporary failure (network, function cold start): don't force a reconnect, retry on next fetch
+    return { ...account, accessToken: null };
   }
 };
 
@@ -214,7 +215,7 @@ export const checkAndRefreshToken = async (account) => {
   const FIVE_MINUTES = 5 * 60 * 1000;
   const isExpiringSoon = !account.expiryDate || (account.expiryDate - Date.now()) < FIVE_MINUTES;
 
-  if (!isExpiringSoon) return account;
+  if (!isExpiringSoon && account.accessToken) return account;
   return refreshDriveToken(account);
 };
 

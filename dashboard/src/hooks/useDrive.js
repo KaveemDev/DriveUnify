@@ -104,8 +104,9 @@ export const useDrive = () => {
       }
       return refreshed;
     } catch (err) {
-      dispatch(updateAccount({ email: account.email, accessToken: null, expired: true, needsReconnect: true }));
-      return { ...account, accessToken: null, expired: true, needsReconnect: true };
+      // Temporary failure: skip this account for now instead of forcing a reconnect
+      console.warn(`[DriveUnify] Token refresh failed for ${account.email}, will retry:`, err.message);
+      return { ...account, accessToken: null };
     }
   }, [dispatch, user?.uid]);
 
@@ -203,12 +204,10 @@ export const useDrive = () => {
     const isDbx = isDropbox(account);
 
     try {
-      // First try silent refresh via Cloud Function
-      const refreshed = isDbx
-        ? await refreshDropboxToken(account)
-        : await refreshDriveToken(account);
+      // First try silent refresh via Cloud Function; on any failure fall through to the OAuth popup
+      const refreshed = await (isDbx ? refreshDropboxToken(account) : refreshDriveToken(account)).catch(() => null);
 
-      if (!refreshed.needsReconnect) {
+      if (refreshed && !refreshed.needsReconnect) {
         dispatch(updateAccount({
           email: refreshed.email,
           accessToken: refreshed.accessToken,

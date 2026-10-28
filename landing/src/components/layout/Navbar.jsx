@@ -15,7 +15,7 @@ import {
 export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(() => (typeof window !== 'undefined' ? getCrossDomainSession() : null));
+  const [user, setUser] = useState(null); // filled from the auth listener; reading the cookie here breaks hydration
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -34,8 +34,17 @@ export const Navbar = () => {
 
   useEffect(() => {
     if (!auth) return;
+    let isInitial = true;
     // Live Firebase Auth listener
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const session = getCrossDomainSession();
+      const firstEvent = isInitial;
+      isInitial = false;
+      // Cookie gone or for another user → signed out / switched account on the dashboard.
+      if (firebaseUser && firstEvent && session?.uid !== firebaseUser.uid) {
+        signOut(auth); // listener fires again with null
+        return;
+      }
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken();
         const userData = {
@@ -47,10 +56,8 @@ export const Navbar = () => {
         setUser(userData);
         setCrossDomainSession(userData, idToken);
       } else {
-        const session = getCrossDomainSession();
-        if (!session) {
-          setUser(null);
-        }
+        // Signed in on the dashboard only: show that user from the shared cookie
+        setUser(session);
       }
     });
 

@@ -49,6 +49,8 @@ export const useAuthInit = (enabled = true) => {
           };
 
           dispatch(setUser(userData));
+          // Don't hold the app behind a spinner while accounts/tokens load
+          dispatch(setInitialized(true));
 
           // Ensure user document exists (non-blocking)
           createUserDocument(userData.uid, userData).catch((err) =>

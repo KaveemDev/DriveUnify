@@ -361,6 +361,7 @@ exports.exchangeDropboxCode = onCall({ cors: ALLOWED_ORIGINS }, async (request) 
     email: profile.email,
     ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
     accountId: profile.account_id,
+    clientId,
     invalid: false,
     connectedAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -406,12 +407,13 @@ exports.refreshDropboxToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) 
     throw new HttpsError('not-found', `No stored token found for ${email}. Please reconnect.`);
   }
 
-  const { refreshToken } = snap.data();
+  const { refreshToken, clientId: storedClientId } = snap.data();
   if (!refreshToken) {
     throw new HttpsError('not-found', `Refresh token missing for ${email}. Please reconnect.`);
   }
 
-  const clientId = getDropboxClientId();
+  // PKCE refresh tokens are bound to the app key used at connect time.
+  const clientId = storedClientId || request.data.clientId || getDropboxClientId();
   const clientSecret = getDropboxClientSecret();
 
   const params = new URLSearchParams({
@@ -437,6 +439,10 @@ exports.refreshDropboxToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) 
     tokens = await res.json();
   } catch (err) {
     console.error(`[refreshDropboxToken] Refresh failed for ${email}:`, err.message);
+    if (isInvalidGrantError(err)) {
+      await dropboxTokenRef(uid, emailId).update({ invalid: true }).catch(() => {});
+      throw new HttpsError('unauthenticated', `Dropbox token for ${email} is invalid or revoked. Please reconnect.`);
+    }
     throw new HttpsError('unavailable', `Could not refresh Dropbox token for ${email}. Please try again.`);
   }
 
@@ -483,3 +489,27 @@ exports.revokeDropboxToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
   return { success: true };
 });
 
+
+// ── 7. createSsoToken ─────────────────────────────────────────
+/**
+ * Cross-subdomain sign-in. The landing site and dashboard are separate origins,
+ * so a Firebase session on one is invisible to the other. The landing site
+ * shares its ID token via the .driveunify.com cookie; the dashboard trades it
+ * here for a custom token. createCustomToken needs the functions service account
+ * to have the "Service Account Token Creator" IAM role.
+ */
+exports.createSsoToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+  const idToken = request.data?.idToken;
+  if (!idToken) {
+    throw new HttpsError('invalid-argument', 'idToken is required.');
+  }
+
+  let decoded;
+  try {
+    decoded = await admin.auth().verifyIdToken(idToken, true);
+  } catch {
+    throw new HttpsError('unauthenticated', 'Session expired. Please sign in again.');
+  }
+
+  return { customToken: await admin.auth().createCustomToken(decoded.uid) };
+});
