@@ -38,7 +38,7 @@ import { useDrive } from '../../hooks/useDrive';
 import { useUpload } from '../../hooks/useUpload';
 import { useAuth } from '../../hooks/useAuth';
 import { VIEW_MODES } from '../../config/constants';
-import { isFolder, downloadFile } from '../../utils/helpers';
+import { isFolder, downloadFile, getAccountId, getFileAccountId, findAccountForFile } from '../../utils/helpers';
 
 /* ── Category Matcher Helper ── */
 const getFileCategory = (mimeType = '', category = '') => {
@@ -213,7 +213,7 @@ const Dashboard = () => {
 
   const handleFilesPicked = (e) => {
     if (e.target.files?.length && connectedAccounts.length > 0) {
-      const targetAccount = selectedAccount || connectedAccounts[0].email;
+      const targetAccount = selectedAccount || getAccountId(connectedAccounts[0]);
       uploadFiles(Array.from(e.target.files), targetAccount, currentFolder?.id);
     }
     e.target.value = '';
@@ -223,7 +223,7 @@ const Dashboard = () => {
   const handleFileClick = useCallback(
     (file) => {
       if (isFolder(file)) {
-        navigateToFolder(file, file.accountEmail);
+        navigateToFolder(file, getFileAccountId(file));
       } else {
         setSelectedInspectorFile(file);
       }
@@ -275,7 +275,7 @@ const Dashboard = () => {
   };
 
   const handleDownload = (f) => {
-    const account = connectedAccounts.find((a) => a.email === f.accountEmail);
+    const account = findAccountForFile(connectedAccounts, f);
     if (!account) return;
     const url = `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`;
     downloadFile(url, f.name, account.accessToken);
@@ -287,7 +287,7 @@ const Dashboard = () => {
 
     // Filter by selected drive account if set
     if (selectedAccount) {
-      result = result.filter((f) => f.accountEmail === selectedAccount);
+      result = result.filter((f) => getFileAccountId(f) === selectedAccount);
     }
 
     // Filter by primary navigation mode
@@ -453,7 +453,7 @@ const Dashboard = () => {
               </span>
             </div>
             <button
-              onClick={() => reconnectAccount(expiredAccounts[0].email)}
+              onClick={() => reconnectAccount(getAccountId(expiredAccounts[0]))}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -517,7 +517,7 @@ const Dashboard = () => {
               <StorageOverview
                 connectedAccounts={connectedAccounts}
                 onConnectDrive={() => dispatch(setConnectModalOpen(true))}
-                onSelectAccount={(email) => dispatch(setSelectedAccount(email))}
+                onSelectAccount={(accountId) => dispatch(setSelectedAccount(accountId))}
               />
             )}
 
@@ -614,7 +614,7 @@ const Dashboard = () => {
           files={files}
           connectedAccounts={connectedAccounts}
           onSelectFile={(f) => {
-            if (isFolder(f)) navigateToFolder(f, f.accountEmail);
+            if (isFolder(f)) navigateToFolder(f, getFileAccountId(f));
             else setPreviewFile(f);
           }}
           onUploadFiles={triggerFileUpload}

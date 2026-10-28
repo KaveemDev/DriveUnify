@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { getFileAccountId } from '../utils/helpers';
 
 export const useSearch = () => {
   const { files, searchQuery, sortBy, sortDir, selectedAccount } = useSelector(s => s.drive);
@@ -9,7 +10,7 @@ export const useSearch = () => {
 
     // Filter by selected account
     if (selectedAccount) {
-      result = result.filter(f => f.accountEmail === selectedAccount);
+      result = result.filter(f => getFileAccountId(f) === selectedAccount);
     }
 
     // Filter by search query

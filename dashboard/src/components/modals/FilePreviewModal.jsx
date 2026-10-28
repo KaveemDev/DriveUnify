@@ -14,15 +14,14 @@ import {
 } from 'lucide-react';
 import { FileIcon } from '../explorer/FileIcon';
 import { formatFileSize, formatDateTime, getMimeLabel } from '../../utils/formatters';
-import { openInGoogleDrive, isPreviewableImage, isPreviewableVideo, isGoogleAppsFile } from '../../utils/helpers';
+import { openInGoogleDrive, isPreviewableImage, isPreviewableVideo, isGoogleAppsFile, findAccountForFile } from '../../utils/helpers';
 import { getDropboxTemporaryLink } from '../../api/dropboxApi';
 import { useSelector } from 'react-redux';
 
 export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const { connectedAccounts } = useSelector((s) => s.drive);
-  const getAccount = (email) => connectedAccounts?.find((a) => a.email === email);
 
-  const currentIndex = files?.findIndex((f) => f.id === file?.id && f.accountEmail === file?.accountEmail) ?? -1;
+  const currentIndex = files?.findIndex((f) => f.id === file?.id && f.accountEmail === file?.accountEmail && f.provider === file?.provider) ?? -1;
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < (files?.length || 0) - 1;
 
@@ -58,7 +57,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [handlePrev, handleNext, onClose]);
 
-  const account = getAccount(file?.accountEmail);
+  const account = findAccountForFile(connectedAccounts, file);
   const canPreviewImage = isPreviewableImage(file?.mimeType);
   const canPreviewVideo = isPreviewableVideo(file?.mimeType);
   const isGApp = isGoogleAppsFile(file?.mimeType);

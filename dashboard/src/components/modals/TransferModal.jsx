@@ -20,6 +20,7 @@ import { CloudProviderIcon, ProviderBadge } from '../common/ProviderBadge';
 import { setConnectModalOpen } from '../../store/slices/uiSlice';
 import { getAccountColor } from '../../config/constants';
 import { getInitials, formatFileSize } from '../../utils/formatters';
+import { getAccountId, findAccountById, findAccountForFile } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import { Zap, ShieldCheck, HardDrive, ArrowUpRight } from 'lucide-react';
 
@@ -186,7 +187,7 @@ const FolderPicker = ({ destAccount, selectedFolder, onSelect }) => {
   useEffect(() => {
     setPath([]);
     setFolders([]);
-  }, [destAccount?.email]);
+  }, [destAccount?.email, destAccount?.provider]);
 
   const navigateInto = (folder) => {
     setPath((prev) => [...prev, { id: folder.id, name: folder.name }]);
@@ -424,7 +425,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
   const { connectedAccounts, files } = useSelector((s) => s.drive);
 
   const [selectedFileId, setSelectedFileId] = useState(file?.id || '');
-  const [destEmail, setDestEmail] = useState('');
+  const [destAccountId, setDestAccountId] = useState('');
   const [destFolder, setDestFolder] = useState({ id: 'root', name: 'My Drive' });
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [state, setState] = useState(STATE.IDLE);
@@ -450,21 +451,21 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
 
   // Guarantee valid source account from activeFile or first connected account
   const srcAccount = activeFile
-    ? (connectedAccounts.find((a) => a.email === activeFile.accountEmail) || connectedAccounts[0] || null)
+    ? (findAccountForFile(connectedAccounts, activeFile) || connectedAccounts[0] || null)
     : (connectedAccounts[0] || null);
 
   const otherAccounts = srcAccount
-    ? connectedAccounts.filter((a) => a.email !== srcAccount.email)
+    ? connectedAccounts.filter((a) => getAccountId(a) !== getAccountId(srcAccount))
     : [];
 
-  const destAccount = connectedAccounts.find((a) => a.email === destEmail) || otherAccounts[0] || null;
+  const destAccount = findAccountById(connectedAccounts, destAccountId) || otherAccounts[0] || null;
 
   // Auto-select first other account when destination is unassigned
   useEffect(() => {
-    if (otherAccounts.length > 0 && (!destEmail || !otherAccounts.some((a) => a.email === destEmail))) {
-      setDestEmail(otherAccounts[0].email);
+    if (otherAccounts.length > 0 && (!destAccountId || !otherAccounts.some((a) => getAccountId(a) === destAccountId))) {
+      setDestAccountId(getAccountId(otherAccounts[0]));
     }
-  }, [otherAccounts, destEmail]);
+  }, [otherAccounts, destAccountId]);
 
   // Reset picker when dest account changes
   useEffect(() => {
@@ -474,7 +475,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
       name: isDbx ? 'Dropbox (All Files)' : 'My Drive',
     });
     setShowFolderPicker(false);
-  }, [destEmail, destAccount?.provider]);
+  }, [destAccountId, destAccount?.provider]);
 
   // Clean up controller on unmount
   useEffect(() => {
@@ -497,7 +498,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
       return;
     }
     setState(STATE.IDLE);
-    setDestEmail('');
+    setDestAccountId('');
     setDestFolder({ id: 'root', name: 'My Drive' });
     setShowFolderPicker(false);
     setFileProgress(0);
@@ -576,7 +577,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
     }
   }, [srcAccount, destAccount, activeFile, destFolder.id, isFolder]);
 
-  const canTransfer = destEmail && state === STATE.IDLE && activeFile;
+  const canTransfer = destAccountId && state === STATE.IDLE && activeFile;
 
   return (
     <Modal
@@ -1062,16 +1063,16 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
 
                 <FormControl fullWidth size="small" variant="standard">
                   <Select
-                    value={destEmail}
+                    value={destAccountId}
                     onChange={(e) => {
-                      setDestEmail(e.target.value);
+                      setDestAccountId(e.target.value);
                       setState(STATE.IDLE);
                       setErrorMsg('');
                     }}
                     disabled={state !== STATE.IDLE || otherAccounts.length === 0}
                     disableUnderline
                     renderValue={(val) => {
-                      const acc = otherAccounts.find((a) => a.email === val);
+                      const acc = findAccountById(otherAccounts, val);
                       return acc ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, mt: 0.25 }}>
                           <Avatar
@@ -1102,7 +1103,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                     }}
                   >
                     {otherAccounts.map((acc) => (
-                      <MenuItem key={acc.email} value={acc.email} sx={{ py: 1.25, px: 2 }}>
+                      <MenuItem key={getAccountId(acc)} value={getAccountId(acc)} sx={{ py: 1.25, px: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
                           <Avatar
                             src={acc.picture}
@@ -1127,7 +1128,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
             </Box>
 
             {/* ── Destination Folder Picker Card ── */}
-            {destEmail && state === STATE.IDLE && (
+            {destAccountId && state === STATE.IDLE && (
               <Box
                 sx={{
                   p: 1.5,
@@ -1408,7 +1409,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
             )}
 
             {/* ── Explanatory Hint ── */}
-            {state === STATE.IDLE && destEmail && !showFolderPicker && (
+            {state === STATE.IDLE && destAccountId && !showFolderPicker && (
               <Alert severity="info" sx={{ py: 0.75, px: 1.5, borderRadius: 2 }}>
                 <Typography variant="caption" sx={{ lineHeight: 1.4, display: 'block' }}>
                   {isFolder

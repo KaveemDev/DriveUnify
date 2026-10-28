@@ -10,6 +10,7 @@ import { upsertFiles } from '../store/slices/driveSlice';
 import { uploadFile } from '../services/google-drive/upload';
 import { uploadDropboxFile } from '../services/dropbox/upload';
 import { UPLOAD_MAX_SIZE } from '../config/constants';
+import { findAccountById } from '../utils/helpers';
 
 const MAX_CONCURRENT = 3;
 
@@ -19,11 +20,11 @@ export const useUpload = () => {
   const abortControllersRef = useRef({});
   const [isUploading, setIsUploading] = useState(false);
 
-  const getAccount = (email) =>
-    connectedAccounts.find(a => a.email === email) || connectedAccounts[0];
+  const getAccount = (accountId) =>
+    findAccountById(connectedAccounts, accountId) || connectedAccounts[0];
 
-  const uploadSingleFile = useCallback(async (file, uploadId, accountEmail, folderId) => {
-    const account = getAccount(accountEmail);
+  const uploadSingleFile = useCallback(async (file, uploadId, accountId, folderId) => {
+    const account = getAccount(accountId);
     if (!account) {
       dispatch(failUpload({ id: uploadId, error: 'No connected account found' }));
       return;
@@ -38,7 +39,7 @@ export const useUpload = () => {
 
       const result = await uploadFn(account.accessToken, file, {
         folderId,
-        accountEmail,
+        accountEmail: account.email,
         signal: controller.signal,
         onProgress: (progress) => {
           dispatch(updateUploadProgress({ id: uploadId, progress }));
@@ -61,7 +62,7 @@ export const useUpload = () => {
   }, [dispatch, connectedAccounts]);
 
   // ── Queue-based concurrent upload (max 3 at a time) ──────────
-  const uploadFiles = useCallback(async (files, targetAccountEmail, targetFolderId = null) => {
+  const uploadFiles = useCallback(async (files, targetAccountId, targetFolderId = null) => {
     const validFiles = Array.from(files).filter(file => {
       if (file.size > UPLOAD_MAX_SIZE) {
         toast.error(`"${file.name}" exceeds the 5GB limit`);
@@ -79,10 +80,10 @@ export const useUpload = () => {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        accountEmail: targetAccountEmail,
+        accountEmail: getAccount(targetAccountId)?.email,
         folderId: targetFolderId,
       }));
-      return { file, uploadId, accountEmail: targetAccountEmail, folderId: targetFolderId };
+      return { file, uploadId, accountId: targetAccountId, folderId: targetFolderId };
     });
 
     setIsUploading(true);
@@ -91,8 +92,8 @@ export const useUpload = () => {
     for (let i = 0; i < uploadQueue.length; i += MAX_CONCURRENT) {
       const batch = uploadQueue.slice(i, i + MAX_CONCURRENT);
       await Promise.allSettled(
-        batch.map(({ file, uploadId, accountEmail, folderId }) =>
-          uploadSingleFile(file, uploadId, accountEmail, folderId)
+        batch.map(({ file, uploadId, accountId, folderId }) =>
+          uploadSingleFile(file, uploadId, accountId, folderId)
         )
       );
     }
