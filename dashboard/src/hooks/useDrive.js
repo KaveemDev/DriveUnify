@@ -471,6 +471,6 @@ export const useDrive = () => {
     fetchFilesForAllAccounts, refreshAccount,
     navigateToFolder, navigateToRoot,
     renameFileAction, deleteFileAction, permanentlyDeleteFileAction, toggleStar,
-    restoreFileAction,
+    restoreFileAction, getFreshAccount,
   };
 };

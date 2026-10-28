@@ -15,6 +15,32 @@ service cloud.firestore {
       match /connected_accounts/{accountId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // ── Unified Storage (metadata only — chunk bytes live in the user's own drives) ──
+      // Ownership comes from the path, never from a client-supplied field.
+      match /unified_files/{fileId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.id == fileId
+          && request.resource.data.size is int && request.resource.data.size >= 0
+          && request.resource.data.state in ['planning', 'uploading', 'verifying', 'ready', 'degraded', 'deleting', 'deleted', 'failed']
+          && !('accessToken' in request.resource.data) && !('refreshToken' in request.resource.data);
+
+        match /chunks/{chunkId} {
+          allow read, delete: if request.auth != null && request.auth.uid == userId;
+          allow create, update: if request.auth != null && request.auth.uid == userId
+            && request.resource.data.id == chunkId
+            && request.resource.data.fileId == fileId
+            && request.resource.data.length is int;
+        }
+      }
+
+      match /unified_cleanup_jobs/{jobId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.id == jobId
+          && request.resource.data.status in ['pending', 'done'];
+      }
     }
 
     // ── Drive Tokens (server-only) ─────────────────────────────

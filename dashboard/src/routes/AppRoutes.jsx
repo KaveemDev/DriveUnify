@@ -9,6 +9,7 @@ const Login = lazy(() => import('../pages/Login'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Settings = lazy(() => import('../pages/Settings'));
 const Support = lazy(() => import('../pages/Support'));
+const UnifiedStorage = lazy(() => import('../pages/UnifiedStorage'));
 const OAuthCallback = lazy(() => import('../pages/OAuthCallback'));
 
 // ── Protected route ───────────────────────────────────────────
@@ -70,6 +71,16 @@ export const AppRoutes = () => (
           <ProtectedRoute>
             <DashboardLayout>
               <Settings />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/unified"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <UnifiedStorage />
             </DashboardLayout>
           </ProtectedRoute>
         }
