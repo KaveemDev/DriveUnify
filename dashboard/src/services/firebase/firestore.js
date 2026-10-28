@@ -148,7 +148,15 @@ export const getConnectedAccounts = async (uid) => {
   try {
     const colRef = collection(db, 'users', uid, 'connected_accounts');
     const snap = await withTimeout(getDocs(colRef), 'getConnectedAccounts');
-    const firestoreAccounts = snap.docs.map(d => serializeTimestamps({ id: d.id, ...d.data() }));
+    // Older records can map to the same account (e.g. Dropbox once written over a Drive doc);
+    // keep one per account, preferring the doc stored under that account's own id.
+    const byId = new Map();
+    snap.docs.forEach(d => {
+      const acc = serializeTimestamps({ ...d.data(), id: d.id });
+      const key = getAccountId(acc);
+      if (!byId.has(key) || d.id === key) byId.set(key, acc);
+    });
+    const firestoreAccounts = [...byId.values()];
 
     if (firestoreAccounts.length > 0) {
       setLocalConnectedAccounts(uid, firestoreAccounts);
