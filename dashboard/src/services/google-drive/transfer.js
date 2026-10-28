@@ -45,6 +45,7 @@ import {
 } from '../../api/dropboxApi.js';
 
 import { TRANSFER_CHUNK_SIZE } from '../../config/constants.js';
+import { getAccountId } from '../../utils/helpers.js';
 
 // Google Apps mime types that do not have a raw binary media stream (must use files.copy)
 const GOOGLE_APPS_MIME_TYPES = new Set([
@@ -141,7 +142,7 @@ export const transferFile = async (
 ) => {
   if (!srcAccount?.accessToken) throw new Error('Source account has no access token.');
   if (!destAccount?.accessToken) throw new Error('Destination account has no access token.');
-  if (srcAccount.email === destAccount.email) throw new Error('Source and destination accounts are the same.');
+  if (getAccountId(srcAccount) === getAccountId(destAccount)) throw new Error('Source and destination accounts are the same.');
   if (signal?.aborted) throw new DOMException('Transfer aborted', 'AbortError');
 
   const srcIsDropbox = isDropboxAccount(srcAccount);

@@ -17,6 +17,7 @@ import { createFolder } from '../../api/googleDriveApi';
 import { createDropboxFolder, resolveDropboxPath, normalizeDropboxFile } from '../../api/dropboxApi';
 import { getAccountColor } from '../../config/constants';
 import { getInitials } from '../../utils/formatters';
+import { getAccountId, getFileAccountId, findAccountById } from '../../utils/helpers';
 
 export const CreateFolderModal = ({
   open,
@@ -26,8 +27,8 @@ export const CreateFolderModal = ({
   onFolderCreated,
 }) => {
   const [folderName, setFolderName] = useState('');
-  const [selectedEmail, setSelectedEmail] = useState(
-    currentFolder?.accountEmail || connectedAccounts[0]?.email || ''
+  const [selectedAccountId, setSelectedAccountId] = useState(
+    currentFolder ? getFileAccountId(currentFolder) : (connectedAccounts[0] ? getAccountId(connectedAccounts[0]) : '')
   );
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +37,7 @@ export const CreateFolderModal = ({
     const name = folderName.trim();
     if (!name) return;
 
-    const account = connectedAccounts.find((a) => a.email === selectedEmail) || connectedAccounts[0];
+    const account = findAccountById(connectedAccounts, selectedAccountId) || connectedAccounts[0];
     if (!account) {
       toast.error('No connected account found');
       return;
@@ -58,7 +59,7 @@ export const CreateFolderModal = ({
       }
 
       toast.success(`Folder "${name}" created`, { icon: '📁' });
-      onFolderCreated?.({ ...created, accountEmail: account.email });
+      onFolderCreated?.({ ...created, accountEmail: account.email, provider: account.provider });
       setFolderName('');
       onOpenChange(false);
     } catch (err) {
@@ -120,8 +121,8 @@ export const CreateFolderModal = ({
               </Typography>
               <FormControl fullWidth size="small">
                 <Select
-                  value={selectedEmail}
-                  onChange={(e) => setSelectedEmail(e.target.value)}
+                  value={selectedAccountId}
+                  onChange={(e) => setSelectedAccountId(e.target.value)}
                   sx={{
                     borderRadius: 2,
                     bgcolor: 'action.hover',
@@ -129,7 +130,7 @@ export const CreateFolderModal = ({
                   }}
                 >
                   {connectedAccounts.map((a) => (
-                    <MenuItem key={a.email} value={a.email}>
+                    <MenuItem key={getAccountId(a)} value={getAccountId(a)}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
                         <Avatar
                           src={a.picture}

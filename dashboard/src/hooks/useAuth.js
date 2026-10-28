@@ -7,6 +7,7 @@ import { signInWithGoogle, signOutUser, onAuthStateChange, checkRedirectResult }
 import { createUserDocument, getConnectedAccounts, getLocalConnectedAccounts } from '../services/firebase/firestore';
 import { silentRefreshAccount } from '../services/google-drive/auth';
 import { silentRefreshDropboxAccount } from '../services/dropbox/auth';
+import { getAccountId } from '../utils/helpers';
 
 /**
  * Global auth initialization hook — MUST ONLY BE RUN ONCE at the app root (App.jsx).
@@ -81,11 +82,11 @@ export const useAuthInit = (enabled = true) => {
                 })
               );
 
-              refreshed.forEach((result) => {
+              refreshed.forEach((result, i) => {
                 if (result.status === 'fulfilled') {
                   const acct = result.value;
                   dispatch(updateAccount({
-                    email: acct.email,
+                    id: getAccountId(accounts[i]),
                     accessToken: acct.accessToken,
                     expiryDate: acct.expiryDate,
                     needsReconnect: acct.needsReconnect ?? false,

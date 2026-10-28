@@ -91,6 +91,9 @@ const tokenRef = (uid, emailId) =>
 const accountMetaRef = (uid, emailId) =>
   db.doc(`users/${uid}/connected_accounts/${emailId}`);
 
+// Dropbox metadata gets its own doc id so a Dropbox account sharing an email with a Drive account doesn't overwrite it
+const dropboxMetaRef = (uid, emailId) => accountMetaRef(uid, `dropbox_${emailId}`);
+
 // ── 1. exchangeGoogleCode ─────────────────────────────────────
 /**
  * Called once when user connects a Drive account.
@@ -368,7 +371,7 @@ exports.exchangeDropboxCode = onCall({ cors: ALLOWED_ORIGINS }, async (request) 
   }, { merge: true });
 
   // Store client-readable metadata
-  await accountMetaRef(uid, emailId).set({
+  await dropboxMetaRef(uid, emailId).set({
     email: profile.email,
     name: profile.name?.display_name || profile.email,
     picture: profile.profile_photo_url || null,
@@ -481,7 +484,7 @@ exports.revokeDropboxToken = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
   }
 
   try {
-    await accountMetaRef(uid, emailId).delete();
+    await dropboxMetaRef(uid, emailId).delete();
   } catch {
     // Best-effort
   }

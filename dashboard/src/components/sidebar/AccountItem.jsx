@@ -7,6 +7,7 @@ import { GoogleDriveIcon, CloudProviderIcon } from '../common/ProviderBadge';
 import { formatFileSize } from '../../utils/formatters';
 import { getAccountColor } from '../../config/constants';
 import { getInitials } from '../../utils/formatters';
+import { getAccountId } from '../../utils/helpers';
 
 export const AccountItem = ({ account, onDisconnect, onRefresh, onReconnect }) => {
   const dispatch = useDispatch();
@@ -17,16 +18,17 @@ export const AccountItem = ({ account, onDisconnect, onRefresh, onReconnect }) =
   const [hovered, setHovered] = useState(false);
 
   const isExpired = account.needsReconnect || account.expired;
-  const isSelected = selectedAccount === account.email;
+  const accountId = getAccountId(account);
+  const isSelected = selectedAccount === accountId;
   const storage = account.storage;
   const usedPct = storage ? Math.min(100, storage.usedPercent) : 0;
 
-  const handleSelect = () => dispatch(setSelectedAccount(isSelected ? null : account.email));
+  const handleSelect = () => dispatch(setSelectedAccount(isSelected ? null : accountId));
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
     try {
-      await onDisconnect(account.email);
+      await onDisconnect(accountId);
     } finally {
       setDisconnecting(false);
       setShowConfirm(false);
@@ -37,7 +39,7 @@ export const AccountItem = ({ account, onDisconnect, onRefresh, onReconnect }) =
     e.stopPropagation();
     setReconnecting(true);
     try {
-      await onReconnect?.(account.email);
+      await onReconnect?.(accountId);
     } finally {
       setReconnecting(false);
     }
@@ -233,7 +235,7 @@ export const AccountItem = ({ account, onDisconnect, onRefresh, onReconnect }) =
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onRefresh?.(account.email);
+                onRefresh?.(accountId);
               }}
               title="Refresh"
               style={{

@@ -1,6 +1,7 @@
 import { useSelector } from 'react-redux';
 import { formatFileSize } from '../../utils/formatters';
 import { getAccountColor } from '../../config/constants';
+import { getAccountId } from '../../utils/helpers';
 
 export const StorageBar = () => {
   const { connectedAccounts } = useSelector(s => s.drive);
@@ -12,6 +13,7 @@ export const StorageBar = () => {
   const totalPct   = totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0;
 
   const segments = accountsWithStorage.map(a => ({
+    id:      getAccountId(a),
     email:   a.email,
     percent: totalLimit > 0 ? ((a.storage?.used || 0) / totalLimit) * 100 : 0,
     color:   getAccountColor(a.email),
@@ -43,7 +45,7 @@ export const StorageBar = () => {
       }}>
         {segments.map((seg, i) => (
           <div
-            key={seg.email}
+            key={seg.id}
             title={`${seg.email}: ${Math.round(seg.percent)}%`}
             style={{
               height: '100%', width: `${seg.percent}%`,

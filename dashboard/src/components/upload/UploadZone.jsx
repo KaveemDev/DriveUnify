@@ -5,6 +5,7 @@ import { Upload, CloudUpload } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useUpload } from '../../hooks/useUpload';
 import toast from 'react-hot-toast';
+import { getAccountId } from '../../utils/helpers';
 
 export const UploadZone = ({ children, targetFolderId = null }) => {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
@@ -22,7 +23,7 @@ export const UploadZone = ({ children, targetFolderId = null }) => {
 
     if (connectedAccounts.length === 1) {
       toast(`Uploading ${files.length} file${files.length > 1 ? 's' : ''}…`, { icon: '📤' });
-      uploadFiles(files, connectedAccounts[0].email, targetFolderId);
+      uploadFiles(files, getAccountId(connectedAccounts[0]), targetFolderId);
     } else {
       setPendingFiles(files);
       setShowAccountPicker(true);
@@ -81,12 +82,12 @@ export const UploadZone = ({ children, targetFolderId = null }) => {
             <div className="space-y-2">
               {connectedAccounts.map(account => (
                 <button
-                  key={account.email}
+                  key={getAccountId(account)}
                   className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-700 transition-colors cursor-pointer"
                   onClick={() => {
                     setShowAccountPicker(false);
                     toast(`Uploading ${pendingFiles.length} file${pendingFiles.length > 1 ? 's' : ''}…`, { icon: '📤' });
-                    uploadFiles(pendingFiles, account.email, targetFolderId);
+                    uploadFiles(pendingFiles, getAccountId(account), targetFolderId);
                     setPendingFiles([]);
                   }}
                 >
@@ -112,7 +113,7 @@ export const UploadZone = ({ children, targetFolderId = null }) => {
 
 // Named export for programmatic file picker
 export { };
-export const UploadTrigger = ({ children, accountEmail, folderId }) => {
+export const UploadTrigger = ({ children, accountId, folderId }) => {
   const { uploadFiles } = useUpload();
 
   const handleClick = () => {
@@ -121,7 +122,7 @@ export const UploadTrigger = ({ children, accountEmail, folderId }) => {
     input.multiple = true;
     input.onchange = (e) => {
       if (e.target.files?.length) {
-        uploadFiles(Array.from(e.target.files), accountEmail, folderId);
+        uploadFiles(Array.from(e.target.files), accountId, folderId);
       }
     };
     input.click();

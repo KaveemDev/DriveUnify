@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { FileRow } from './FileRow';
 import { toggleFileSelection, selectAll, clearSelection } from '../../store/slices/driveSlice';
-import { openInGoogleDrive, downloadFile } from '../../utils/helpers';
+import { openInGoogleDrive, downloadFile, findAccountForFile } from '../../utils/helpers';
 import { Check, Cloud } from 'lucide-react';
 
 export const FileList = ({
@@ -17,7 +17,6 @@ export const FileList = ({
   const { selectedFiles, connectedAccounts } = useSelector((s) => s.drive);
   const { activeNav } = useSelector((s) => s.ui);
 
-  const getAccount = (email) => connectedAccounts?.find((a) => a.email === email);
   const allSelected = files.length > 0 && files.every((f) => selectedFiles.includes(f.id));
 
   const getEmptyState = () => {
@@ -161,7 +160,7 @@ export const FileList = ({
               onDelete={onDelete}
               onFileDetails={onFileDetails}
               onDownload={(f) => {
-                const account = getAccount(f.accountEmail);
+                const account = findAccountForFile(connectedAccounts, f);
                 if (account) {
                   const url = `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`;
                   downloadFile(url, f.name, account.accessToken);

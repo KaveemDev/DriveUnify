@@ -50,11 +50,27 @@ export const openInGoogleDrive = (file) => {
 export const getFolderLink = (folderId) =>
   `https://drive.google.com/drive/folders/${folderId}`;
 
+// ── Account identity ──────────────────────────────────────────
+// One email can own both a Drive and a Dropbox account, so identity is provider + email.
+// Matches the Firestore doc id in users/{uid}/connected_accounts.
+export const getAccountId = ({ provider, email }) =>
+  `${(provider || '').toLowerCase().includes('dropbox') ? 'dropbox_' : ''}${(email || '').replace(/[@.]/g, '_')}`;
+
+export const getFileAccountId = (file) =>
+  getAccountId({ provider: file.provider, email: file.accountEmail });
+
+export const findAccountById = (accounts, id) =>
+  accounts?.find((a) => getAccountId(a) === id);
+
+export const findAccountForFile = (accounts, file) =>
+  file ? findAccountById(accounts, getFileAccountId(file)) : undefined;
+
 // ── Group files by account ────────────────────────────────────
 export const groupByAccount = (files) => {
   return files.reduce((acc, file) => {
-    if (!acc[file.accountEmail]) acc[file.accountEmail] = [];
-    acc[file.accountEmail].push(file);
+    const id = getFileAccountId(file);
+    if (!acc[id]) acc[id] = [];
+    acc[id].push(file);
     return acc;
   }, {});
 };

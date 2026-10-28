@@ -7,6 +7,7 @@ import {
   Cloud, LogOut, Layers
 } from 'lucide-react';
 import { AccountItem } from './AccountItem';
+import { getAccountId } from '../../utils/helpers';
 import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../common/ProviderBadge';
 import { setSidebarOpen, setConnectModalOpen, setActiveNav } from '../../store/slices/uiSlice';
 import { setSelectedAccount, setCurrentFolder } from '../../store/slices/driveSlice';
@@ -218,7 +219,7 @@ export const Sidebar = ({ onSelectView }) => {
         {/* Google Drive accounts */}
         {connectedAccounts.map((account) => (
           <AccountItem
-            key={account.email}
+            key={getAccountId(account)}
             account={account}
             onDisconnect={disconnectAccount}
             onRefresh={refreshAccount}

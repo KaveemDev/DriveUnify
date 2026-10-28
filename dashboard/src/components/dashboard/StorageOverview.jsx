@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Database, ChevronRight } from 'lucide-react';
 import { formatFileSize } from '../../utils/formatters';
 import { GoogleDriveIcon, OneDriveIcon, DropboxIcon, CloudProviderIcon } from '../common/ProviderBadge';
+import { getAccountId } from '../../utils/helpers';
 
 export const StorageOverview = ({
   connectedAccounts = [],
@@ -108,8 +109,8 @@ export const StorageOverview = ({
 
             return (
               <div
-                key={account.email}
-                onClick={() => onSelectAccount?.(account.email)}
+                key={getAccountId(account)}
+                onClick={() => onSelectAccount?.(getAccountId(account))}
                 style={{
                   padding: '10px 14px',
                   borderRadius: 8,

@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { VIEW_MODES } from '../../config/constants';
+import { getAccountId, getFileAccountId } from '../../utils/helpers';
 
 const driveSlice = createSlice({
   name: 'drive',
@@ -22,22 +23,24 @@ const driveSlice = createSlice({
       state.connectedAccounts = action.payload;
     },
     addAccount(state, action) {
-      const exists = state.connectedAccounts.find(a => a.email === action.payload.email);
+      const exists = state.connectedAccounts.find(a => getAccountId(a) === getAccountId(action.payload));
       if (!exists) {
         state.connectedAccounts.push(action.payload);
       }
     },
+    // payload: account id (see getAccountId)
     removeAccount(state, action) {
       state.connectedAccounts = state.connectedAccounts.filter(
-        a => a.email !== action.payload
+        a => getAccountId(a) !== action.payload
       );
-      state.files = state.files.filter(f => f.accountEmail !== action.payload);
+      state.files = state.files.filter(f => getFileAccountId(f) !== action.payload);
       if (state.selectedAccount === action.payload) {
         state.selectedAccount = null;
       }
     },
+    // payload: { id, ...fields } where id is the account id (see getAccountId)
     updateAccount(state, action) {
-      const idx = state.connectedAccounts.findIndex(a => a.email === action.payload.email);
+      const idx = state.connectedAccounts.findIndex(a => getAccountId(a) === action.payload.id);
       if (idx !== -1) {
         state.connectedAccounts[idx] = { ...state.connectedAccounts[idx], ...action.payload };
       }

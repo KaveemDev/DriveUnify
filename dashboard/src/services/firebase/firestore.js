@@ -3,8 +3,7 @@ import {
   doc, setDoc, getDoc, collection,
   getDocs, deleteDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore';
-
-const sanitizeEmail = (email) => email.replace(/[@.]/g, '_');
+import { getAccountId } from '../../utils/helpers';
 
 // ── Local Storage Cache Helpers (Instant Refresh Resilience) ──
 const ACCOUNTS_CACHE_PREFIX = 'driveunify_connected_accounts_';
@@ -38,7 +37,7 @@ export const saveLocalConnectedAccount = (uid, accountData) => {
     const current = getLocalConnectedAccounts(uid);
     // eslint-disable-next-line no-unused-vars
     const { accessToken, ...safeData } = accountData;
-    const existsIdx = current.findIndex(a => a.email === safeData.email);
+    const existsIdx = current.findIndex(a => getAccountId(a) === getAccountId(safeData));
     let updated;
     if (existsIdx >= 0) {
       updated = [...current];
@@ -52,11 +51,11 @@ export const saveLocalConnectedAccount = (uid, accountData) => {
   }
 };
 
-export const removeLocalConnectedAccount = (uid, accountEmail) => {
+export const removeLocalConnectedAccount = (uid, accountId) => {
   if (typeof window === 'undefined' || !uid) return;
   try {
     const current = getLocalConnectedAccounts(uid);
-    const updated = current.filter(a => a.email !== accountEmail);
+    const updated = current.filter(a => getAccountId(a) !== accountId);
     setLocalConnectedAccounts(uid, updated);
   } catch (err) {
     console.warn('[DriveUnify] Could not remove account from local cache:', err);
@@ -122,7 +121,7 @@ export const addConnectedAccount = async (uid, accountData) => {
   saveLocalConnectedAccount(uid, accountData);
 
   if (!db) return;
-  const accountId = sanitizeEmail(accountData.email);
+  const accountId = getAccountId(accountData);
   const accountRef = doc(db, 'users', uid, 'connected_accounts', accountId);
 
   // IMPORTANT: Never store the access token in Firestore.
@@ -168,18 +167,16 @@ export const getConnectedAccounts = async (uid) => {
   }
 };
 
-export const removeConnectedAccount = async (uid, accountEmail) => {
-  removeLocalConnectedAccount(uid, accountEmail);
+export const removeConnectedAccount = async (uid, accountId) => {
+  removeLocalConnectedAccount(uid, accountId);
 
   if (!db) return;
-  const accountId = sanitizeEmail(accountEmail);
   const accountRef = doc(db, 'users', uid, 'connected_accounts', accountId);
   await withTimeout(deleteDoc(accountRef), 'removeConnectedAccount');
 };
 
-export const updateAccountTokens = async (uid, accountEmail, tokens) => {
+export const updateAccountTokens = async (uid, accountId, tokens) => {
   if (!db) return;
-  const accountId = sanitizeEmail(accountEmail);
   const accountRef = doc(db, 'users', uid, 'connected_accounts', accountId);
 
   // Only persist safe metadata — never the access token, and strip undefined fields

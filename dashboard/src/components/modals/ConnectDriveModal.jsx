@@ -7,6 +7,7 @@ import { useDrive } from '../../hooks/useDrive';
 import { getAccountColor } from '../../config/constants';
 import { getInitials } from '../../utils/formatters';
 import { DropboxIcon, CloudProviderIcon } from '../common/ProviderBadge';
+import { getAccountId } from '../../utils/helpers';
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 18 18">
@@ -220,7 +221,7 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {connectedAccounts.map((account) => (
                 <Box
-                  key={account.email}
+                  key={getAccountId(account)}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',

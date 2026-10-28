@@ -34,6 +34,7 @@ import { setConnectModalOpen } from '../../store/slices/uiSlice';
 import { setViewMode, setSortBy } from '../../store/slices/driveSlice';
 import { VIEW_MODES, SORT_OPTIONS } from '../../config/constants';
 import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../../components/common/ProviderBadge';
+import { getAccountId } from '../../utils/helpers';
 
 /* ── Section Wrapper ── */
 const Section = ({ title, description, children }) => (
@@ -616,7 +617,7 @@ const Settings = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {connectedAccounts.map((account) => (
                         <div
-                          key={account.email}
+                          key={getAccountId(account)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -713,7 +714,7 @@ const Settings = () => {
 
                           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                             <button
-                              onClick={() => refreshAccount(account.email)}
+                              onClick={() => refreshAccount(getAccountId(account))}
                               title="Sync files"
                               style={{
                                 width: 30,
@@ -731,7 +732,7 @@ const Settings = () => {
                               <RefreshCw size={13} />
                             </button>
                             <button
-                              onClick={() => disconnectAccount(account.email)}
+                              onClick={() => disconnectAccount(getAccountId(account))}
                               style={{
                                 padding: '4px 10px',
                                 borderRadius: 6,

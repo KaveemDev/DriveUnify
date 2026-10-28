@@ -42,6 +42,7 @@ import {
   removeConnectedAccount,
   updateAccountTokens,
 } from '../services/firebase/firestore';
+import { getAccountId, getFileAccountId, findAccountById, findAccountForFile } from '../utils/helpers';
 
 const isDropbox = (accountOrFile) =>
   (accountOrFile?.provider || '').toLowerCase().includes('dropbox');
@@ -75,7 +76,7 @@ export const useDrive = () => {
 
       if (!refreshed || refreshed.needsReconnect || refreshed.expired || !refreshed.accessToken) {
         dispatch(updateAccount({
-          email: account.email,
+          id: getAccountId(account),
           accessToken: null,
           needsReconnect: true,
           expired: true,
@@ -86,7 +87,7 @@ export const useDrive = () => {
       if (refreshed.accessToken !== account.accessToken) {
         const expiryDate = refreshed.expiryDate || (Date.now() + 3600 * 1000);
         dispatch(updateAccount({
-          email: account.email,
+          id: getAccountId(account),
           accessToken: refreshed.accessToken,
           expiryDate,
           needsReconnect: false,
@@ -94,7 +95,7 @@ export const useDrive = () => {
         }));
         if (user?.uid) {
           try {
-            await updateAccountTokens(user.uid, account.email, {
+            await updateAccountTokens(user.uid, getAccountId(account), {
               expiryDate,
             });
           } catch (err) {
@@ -156,7 +157,7 @@ export const useDrive = () => {
 
       // Fetch storage info
       const storage = await getAccountStorage(accountData);
-      dispatch(updateAccount({ email: accountData.email, storage }));
+      dispatch(updateAccount({ id: getAccountId(accountData), storage }));
 
       return accountData;
     } catch (err) {
@@ -171,10 +172,12 @@ export const useDrive = () => {
   }, [connectNewAccount]);
 
   // ── Disconnect an account ─────────────────────────────────────
-  const disconnectAccount = useCallback(async (email) => {
-    const account = connectedAccounts.find(a => a.email === email);
+  const disconnectAccount = useCallback(async (accountId) => {
+    const account = findAccountById(connectedAccounts, accountId);
+    if (!account) return;
+    const { email } = account;
     try {
-      dispatch(removeAccount(email));
+      dispatch(removeAccount(accountId));
 
       if (isDropbox(account)) {
         await revokeDropboxAccess(email, account?.accessToken);
@@ -184,7 +187,7 @@ export const useDrive = () => {
 
       if (user?.uid) {
         try {
-          await removeConnectedAccount(user.uid, email);
+          await removeConnectedAccount(user.uid, accountId);
         } catch (err) {
           console.warn('[DriveUnify] Direct Firestore removal skipped:', err.message);
         }
@@ -197,9 +200,10 @@ export const useDrive = () => {
   }, [dispatch, user?.uid, connectedAccounts]);
 
   // ── Re-connect an expired account ────────────────────────────
-  const reconnectAccount = useCallback(async (email) => {
-    const account = connectedAccounts.find(a => a.email === email);
+  const reconnectAccount = useCallback(async (accountId) => {
+    const account = findAccountById(connectedAccounts, accountId);
     if (!account) return;
+    const { email } = account;
 
     const isDbx = isDropbox(account);
 
@@ -209,7 +213,7 @@ export const useDrive = () => {
 
       if (refreshed && !refreshed.needsReconnect) {
         dispatch(updateAccount({
-          email: refreshed.email,
+          id: accountId,
           accessToken: refreshed.accessToken,
           expiryDate: refreshed.expiryDate,
           needsReconnect: false,
@@ -219,7 +223,7 @@ export const useDrive = () => {
 
         // Refresh files for this account
         const accountFiles = await getAccountFiles(refreshed);
-        const otherFiles = files.filter(f => f.accountEmail !== email);
+        const otherFiles = files.filter(f => getFileAccountId(f) !== accountId);
         dispatch(setFiles([...otherFiles, ...accountFiles]));
         return;
       }
@@ -244,7 +248,7 @@ export const useDrive = () => {
       }
 
       dispatch(updateAccount({
-        email,
+        id: accountId,
         accessToken: oauthData.accessToken,
         refreshToken: oauthData.refreshToken || account.refreshToken || null,
         clientId: oauthData.clientId || account.clientId || keyToUse || null,
@@ -256,7 +260,7 @@ export const useDrive = () => {
       toast.success(`Reconnected ${email}`);
 
       const accountFiles = await getAccountFiles({ ...account, accessToken: oauthData.accessToken });
-      const otherFiles = files.filter(f => f.accountEmail !== email);
+      const otherFiles = files.filter(f => getFileAccountId(f) !== accountId);
       dispatch(setFiles([...otherFiles, ...accountFiles]));
     } catch (err) {
       if (err.message?.includes('closed') || err.message?.includes('popup')) return;
@@ -305,7 +309,7 @@ export const useDrive = () => {
       );
       storageResults.forEach((result, i) => {
         if (result.status === 'fulfilled') {
-          dispatch(updateAccount({ email: validAccounts[i].email, storage: result.value }));
+          dispatch(updateAccount({ id: getAccountId(validAccounts[i]), storage: result.value }));
         }
       });
     } catch (err) {
@@ -316,11 +320,11 @@ export const useDrive = () => {
   }, [connectedAccounts, dispatch, getFreshAccount, getAccountFiles, getAccountStorage]);
 
   // ── Navigate to folder ────────────────────────────────────────
-  const navigateToFolder = useCallback(async (folder, accountEmail) => {
-    const account = connectedAccounts.find(a => a.email === accountEmail);
+  const navigateToFolder = useCallback(async (folder, accountId) => {
+    const account = findAccountById(connectedAccounts, accountId);
     if (!account) return;
 
-    dispatch(setCurrentFolder({ ...folder, accountEmail }));
+    dispatch(setCurrentFolder({ ...folder, accountEmail: account.email, provider: account.provider }));
     dispatch(setLoading(true));
 
     try {
@@ -347,14 +351,15 @@ export const useDrive = () => {
   }, [dispatch, fetchFilesForAllAccounts]);
 
   // ── Refresh single account ────────────────────────────────────
-  const refreshAccount = useCallback(async (email) => {
-    const account = connectedAccounts.find(a => a.email === email);
+  const refreshAccount = useCallback(async (accountId) => {
+    const account = findAccountById(connectedAccounts, accountId);
     if (!account) return;
+    const { email } = account;
 
     try {
       const freshAccount = await getFreshAccount(account);
       const accountFiles = await getAccountFiles(freshAccount);
-      const otherFiles = files.filter(f => f.accountEmail !== email);
+      const otherFiles = files.filter(f => getFileAccountId(f) !== accountId);
       dispatch(setFiles([...otherFiles, ...accountFiles]));
       toast.success(`Refreshed ${email}`);
     } catch (err) {
@@ -364,7 +369,7 @@ export const useDrive = () => {
 
   // ── Rename file ───────────────────────────────────────────────
   const renameFileAction = useCallback(async (file, newName) => {
-    const account = connectedAccounts.find(a => a.email === file.accountEmail);
+    const account = findAccountForFile(connectedAccounts, file);
     if (!account) return;
 
     dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, name: newName }));
@@ -387,7 +392,7 @@ export const useDrive = () => {
 
   // ── Delete file (trash / remove) ──────────────────────────────
   const deleteFileAction = useCallback(async (file) => {
-    const account = connectedAccounts.find(a => a.email === file.accountEmail);
+    const account = findAccountForFile(connectedAccounts, file);
     if (!account) return;
 
     dispatch(removeFile({ id: file.id, accountEmail: file.accountEmail }));
@@ -409,7 +414,7 @@ export const useDrive = () => {
 
   // ── Permanently delete ────────────────────────────────────────
   const permanentlyDeleteFileAction = useCallback(async (file) => {
-    const account = connectedAccounts.find(a => a.email === file.accountEmail);
+    const account = findAccountForFile(connectedAccounts, file);
     if (!account) return;
 
     dispatch(removeFile({ id: file.id, accountEmail: file.accountEmail }));
@@ -430,7 +435,7 @@ export const useDrive = () => {
 
   // ── Star/unstar ───────────────────────────────────────────────
   const toggleStar = useCallback(async (file) => {
-    const account = connectedAccounts.find(a => a.email === file.accountEmail);
+    const account = findAccountForFile(connectedAccounts, file);
     if (!account) return;
 
     const newStarred = !file.starred;
@@ -448,7 +453,7 @@ export const useDrive = () => {
 
   // ── Restore file from trash ───────────────────────────────────
   const restoreFileAction = useCallback(async (file) => {
-    const account = connectedAccounts.find(a => a.email === file.accountEmail);
+    const account = findAccountForFile(connectedAccounts, file);
     if (!account) return;
 
     dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, trashed: false }));
