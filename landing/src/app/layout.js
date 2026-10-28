@@ -1,7 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import { ClientLayout } from "@/components/layout/ClientLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,11 +11,11 @@ const inter = Inter({
 export const metadata = {
   metadataBase: new URL("https://driveunify.com"),
   title: {
-    default: "DriveUnify — Your Cloud Storage, Unified",
+    default: "DriveUnify, Cobalt — All your Drives, one place",
     template: "%s | DriveUnify",
   },
   description:
-    "Connect multiple Google Drive accounts and seamlessly access, search, and manage all your files from one unified, lightning-fast dashboard.",
+    "Browse, search and copy files across work, personal and school Drives without signing out once.",
   keywords: [
     "Google Drive manager",
     "cloud storage unification",
@@ -32,9 +31,9 @@ export const metadata = {
     locale: "en_US",
     url: "https://driveunify.com",
     siteName: "DriveUnify",
-    title: "DriveUnify — Your Cloud Storage, Unified",
+    title: "DriveUnify — All your Drives, one place",
     description:
-      "Connect multiple Google Drive accounts and seamlessly access, search, and manage all your files from one unified, lightning-fast dashboard.",
+      "Browse, search and copy files across work, personal and school Drives without signing out once.",
     images: [
       {
         url: "/og-image.png",
@@ -46,9 +45,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DriveUnify — Your Cloud Storage, Unified",
+    title: "DriveUnify — All your Drives, one place",
     description:
-      "Connect multiple Google Drive accounts and manage all your files in one place.",
+      "Browse, search and copy files across work, personal and school Drives without signing out once.",
     creator: "@driveunify",
   },
   robots: {
@@ -66,11 +65,32 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col bg-[#020617] text-slate-100 font-sans selection:bg-blue-500/30">
-        <Navbar />
-        <main className="flex-1 pt-24">{children}</main>
-        <Footer />
+    <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const saved = localStorage.getItem('du-theme');
+                if (saved) {
+                  document.documentElement.dataset.theme = saved;
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col font-sans">
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
