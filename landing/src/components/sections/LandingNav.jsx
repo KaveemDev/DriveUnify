@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion, useScroll, useSpring, useMotionValueEvent } from 'framer-motion';
 import { ease, springScroll, springUI } from '@/lib/motion';
 import { useDashboardUrl } from './shared';
@@ -10,9 +11,12 @@ const LINKS = [
   ['How it works', '#how'],
   ['Integrations', '#integrations'],
   ['Docs', '/docs'],
+  ['Blog', '/blog'],
+  ['About', '/about'],
 ];
 
-export function LandingNav() {
+export function LandingNav({ links = LINKS }) {
+  const pathname = usePathname();
   const { scrollY, scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, springScroll);
   const [pill, setPill] = useState(false);
@@ -50,10 +54,10 @@ export function LandingNav() {
             DriveUnify
           </Link>
           <ul className="hidden gap-7 text-sm md:flex" onMouseLeave={() => setHovered(null)}>
-            {LINKS.map(([label, href]) => (
+            {links.map(([label, href]) => (
               <li key={label} className="relative" onMouseEnter={() => setHovered(label)}>
-                <a href={href} className="block py-1 text-slate-300 transition-colors hover:text-white">{label}</a>
-                {hovered === label && (
+                <a href={href} aria-current={pathname === href ? 'page' : undefined} className={`block py-1 transition-colors hover:text-white ${pathname === href ? 'text-white' : 'text-slate-300'}`}>{label}</a>
+                {(hovered ?? links.find(([, h]) => h === pathname)?.[0]) === label && (
                   <motion.span layoutId="nav-underline" className="absolute inset-x-0 -bottom-0.5 h-px bg-blue-500" transition={{ type: 'spring', ...springUI }} />
                 )}
               </li>
