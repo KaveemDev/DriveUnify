@@ -166,7 +166,9 @@ describe('Unified Storage engine', () => {
 
   it('refuses to plan when known capacity is insufficient', async () => {
     smallPool(1000, 1000);
-    await assert.rejects(engine().startUpload(makeFile(3000).file), (err) => err.kind === ERR.CAPACITY);
+    accounts.push({ email: 'c@gmail.com', provider: 'google_drive', accessToken: null });
+    await assert.rejects(engine().startUpload(makeFile(3000).file), (err) =>
+      err.kind === ERR.CAPACITY && /a@gmail\.com: 0\.00 GB usable/.test(err.message) && /c@gmail\.com: not counted/.test(err.message));
     assert.equal((await repo.listFiles()).length, 0, 'nothing persisted');
   });
 

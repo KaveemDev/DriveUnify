@@ -125,7 +125,24 @@ export const createEngine = ({
   const planUpload = async ({ size }, { accountEmails } = {}) => {
     const chunks = planChunks(size, chunkSize);
     const capacities = await getCapacities({ allowed: accountEmails });
-    const plan = allocateChunks(chunks, capacities.filter((c) => c.usable > 0));
+    let plan;
+    try {
+      plan = allocateChunks(chunks, capacities.filter((c) => c.usable > 0));
+    } catch (err) {
+      if (err.kind !== ERR.CAPACITY) throw err;
+      // Say which drive contributed what, so a drive silently counted as 0 is obvious.
+      const gb = (b) => `${(b / 1e9).toFixed(2)} GB`;
+      const counted = new Set(capacities.map((c) => c.email));
+      const lines = capacities.map((c) => (c.error
+        ? `${c.email}: quota unavailable (${c.error})`
+        : `${c.email}: ${c.limit === null ? 'unlimited' : `${gb(c.usable)} usable of ${gb(Math.max(0, c.limit - c.used))} free`}`));
+      for (const a of await listAccounts()) {
+        if (!counted.has(a.email) && (!accountEmails || accountEmails.includes(a.email))) {
+          lines.push(`${a.email}: not counted (${a.needsReconnect ? 'needs reconnect' : 'not connected yet, try again in a moment'})`);
+        }
+      }
+      throw new UnifiedError(ERR.CAPACITY, `${err.message} ${lines.join('; ')}.`);
+    }
     return { chunks, plan, capacities, summary: summarizePlan(chunks, plan) };
   };
 
