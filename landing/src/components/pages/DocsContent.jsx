@@ -13,7 +13,7 @@ function Code({ children }) {
     });
   };
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#0b1222]">
+    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#ffffff]">
       <button onClick={copy} aria-label="Copy code" className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-white">
         {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
       </button>
@@ -155,7 +155,7 @@ export function DocsBrowser() {
               {shown.filter((d) => d.group === g).map((d) => (
                 <button key={d.id} onClick={() => open(d.id)} aria-current={id === d.id ? 'page' : undefined}
                   className={`relative rounded-lg px-3 py-2 text-left text-[14px] transition-colors ${id === d.id ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
-                  {id === d.id && <motion.span layoutId="docs-active" className="absolute inset-0 rounded-lg bg-slate-900 shadow-[inset_2px_0_0_#3b82f6]" transition={{ type: 'spring', ...springUI }} />}
+                  {id === d.id && <motion.span layoutId="docs-active" className="absolute inset-0 rounded-lg bg-slate-900 shadow-[inset_2px_0_0_#2348d8]" transition={{ type: 'spring', ...springUI }} />}
                   <span className="relative">{d.title}</span>
                 </button>
               ))}

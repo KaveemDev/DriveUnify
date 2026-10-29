@@ -23,7 +23,7 @@ const PROVIDERS = [
 export function Integrations() {
   const reduce = useReducedMotion();
   return (
-    <section id="integrations" aria-labelledby="int-h" className="border-t border-white/[0.06] bg-[#050b1a] px-4 py-24 md:px-8 md:py-32">
+    <section id="integrations" aria-labelledby="int-h" className="border-t border-white/[0.06] bg-[#eceef3] px-4 py-24 md:px-8 md:py-32">
       <div className="mx-auto grid max-w-[1120px] items-center gap-16 md:grid-cols-[5fr_7fr]">
         <div className="flex flex-col gap-4">
           <RevealHeading id="int-h" lines={['Works with the drives', 'you already pay for.']} />
@@ -32,12 +32,12 @@ export function Integrations() {
         </div>
         <div aria-hidden="true" className="relative mx-auto h-[420px] w-full max-w-[420px] scale-[0.8] md:scale-100">
           <svg className="absolute inset-0" viewBox="-210 -210 420 420">
-            <circle r={R} fill="none" stroke="rgba(255,255,255,0.12)" strokeDasharray="4 6" />
+            <circle r={R} fill="none" stroke="rgba(16,19,26,0.15)" strokeDasharray="4 6" />
             {PROVIDERS.map((p, i) => {
               const x = Math.cos((p.angle * Math.PI) / 180) * R;
               const y = Math.sin((p.angle * Math.PI) / 180) * R;
               return (
-                <motion.line key={p.name} x1="0" y1="0" x2={x} y2={y} stroke={p.live ? '#3b82f6' : '#334155'} strokeWidth="1.5" strokeDasharray={p.live ? undefined : '3 5'}
+                <motion.line key={p.name} x1="0" y1="0" x2={x} y2={y} stroke={p.live ? '#2348d8' : '#dfe2ea'} strokeWidth="1.5" strokeDasharray={p.live ? undefined : '3 5'}
                   initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.8, ease, delay: 0.2 + i * 0.15 }} />
               );
             })}

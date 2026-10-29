@@ -41,7 +41,7 @@ const CATEGORIES = ['All', ...new Set(POSTS.map((p) => p.category))];
 function Post({ post, open, onToggle, big }) {
   return (
     <motion.div layout transition={{ type: 'spring', ...springUI }} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}>
-      <SpotCard className={`h-full p-0 ${big ? 'bg-[#0b1222]' : ''}`}>
+      <SpotCard className={`h-full p-0 ${big ? 'bg-[#ffffff]' : ''}`}>
         <button onClick={onToggle} aria-expanded={open} className={`flex h-full w-full flex-col gap-4 text-left ${big ? 'p-8 md:p-12' : 'p-6'}`}>
           <span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-slate-500">
             <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-blue-300">{post.category}</span>

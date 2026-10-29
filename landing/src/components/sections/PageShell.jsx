@@ -29,7 +29,7 @@ export function PageHero({ eyebrow, lines, children }) {
   return (
     <section className="relative px-4 pb-16 pt-40 md:px-8 md:pb-24 md:pt-48">
       <div aria-hidden="true" className="du-dots absolute inset-0" />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[480px]" style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(59,130,246,0.18), rgba(2,6,23,0) 70%)' }} />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[480px]" style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(59,130,246,0.18), rgba(245,246,248,0) 70%)' }} />
       <div className="relative mx-auto flex max-w-[1120px] flex-col gap-6">
         <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}
           className="w-fit rounded-full border border-white/10 bg-slate-900/60 px-3 py-1 text-[13px] text-blue-300">

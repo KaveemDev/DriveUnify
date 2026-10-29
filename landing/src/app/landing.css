@@ -1,15 +1,32 @@
-/* Landing page (/) only. Dark-first regardless of the site theme. */
+/* Landing page (/) and shell pages. Cobalt light theme regardless of the site theme. */
 .du-landing {
   position: relative;
-  background: #020617;
-  color: #e2e8f0;
+  /* Sections are written in dark-theme Tailwind shades; remap them to the Cobalt light palette.
+     white = ink, slate-900/800 = surfaces, slate-400 = muted, blue-500 = accent. */
+  --color-white: #10131a;
+  --color-slate-950: #f5f6f8;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #eceef3;
+  --color-slate-700: #dfe2ea;
+  --color-slate-600: #6b7280;
+  --color-slate-500: #6b7280;
+  --color-slate-400: #545b6b;
+  --color-slate-300: #3a4150;
+  --color-slate-200: #262b36;
+  --color-slate-100: #10131a;
+  --color-blue-500: #2348d8;
+  --color-blue-400: #3a5ce6;
+  --color-blue-300: #2348d8;
+  --color-blue-200: #1d3bb5;
+  background: #f5f6f8;
+  color: #10131a;
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 17px;
   overflow-x: clip;
 }
 
-.du-landing ::selection { background: #3b82f6; color: #fff; }
-.du-landing :focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; border-radius: 6px; }
+.du-landing ::selection { background: #2348d8; color: #fff; }
+.du-landing :focus-visible { outline: 2px solid #2348d8; outline-offset: 3px; border-radius: 6px; }
 
 .du-display { font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
 
@@ -25,7 +42,7 @@
 }
 
 .du-dots {
-  background-image: radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(16, 19, 26, 0.12) 1px, transparent 1px);
   background-size: 24px 24px;
   -webkit-mask-image: radial-gradient(70% 60% at 50% 40%, #000 30%, transparent 80%);
   mask-image: radial-gradient(70% 60% at 50% 40%, #000 30%, transparent 80%);
@@ -58,7 +75,7 @@
   inset: -1px;
   z-index: -1;
   border-radius: inherit;
-  background: radial-gradient(260px circle at var(--x, -999px) var(--y, -999px), rgba(59, 130, 246, 0.16), transparent 70%);
+  background: radial-gradient(260px circle at var(--x, -999px) var(--y, -999px), rgba(35, 72, 216, 0.1), transparent 70%);
   opacity: 0;
   transition: opacity 300ms;
 }

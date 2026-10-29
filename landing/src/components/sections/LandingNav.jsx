@@ -73,7 +73,7 @@ export function LandingNav({ links = LINKS }) {
             ))}
           </ul>
           <div className="flex items-center gap-2">
-            <a href={dashUrl} className="flex min-h-11 items-center rounded-full bg-blue-500 px-3.5 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:px-[18px]">
+            <a href={dashUrl} className="flex min-h-11 items-center rounded-full bg-blue-500 px-3.5 text-sm font-medium text-[#fff] transition-colors hover:bg-blue-400 md:px-[18px]">
               Open dashboard
             </a>
             <button
@@ -100,7 +100,7 @@ export function LandingNav({ links = LINKS }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.97 }}
               transition={{ duration: 0.25, ease }}
-              className="mx-4 mt-2 origin-top rounded-2xl border border-white/[0.08] bg-slate-900 p-2 shadow-[0_24px_48px_-24px_rgba(0,0,0,0.6)] md:hidden"
+              className="mx-4 mt-2 origin-top rounded-2xl border border-white/[0.08] bg-slate-900 p-2 shadow-[0_24px_48px_-24px_rgba(16,19,26,0.35)] md:hidden"
             >
               <ul className="flex flex-col">
                 {links.map(([label, href], i) => (

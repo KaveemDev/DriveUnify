@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ease } from '@/lib/motion';
 
 // Fills with scaleX (not width) so it stays on the compositor.
-export function StorageBar({ value, color = '#3b82f6', height = 4, delay = 0 }) {
+export function StorageBar({ value, color = '#2348d8', height = 4, delay = 0 }) {
   return (
     <div className="overflow-hidden rounded-full bg-slate-800" style={{ height }}>
       <motion.div

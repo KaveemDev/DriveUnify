@@ -29,7 +29,7 @@ const PRINCIPLES = [
 
 export function Principles() {
   return (
-    <section aria-labelledby="principles-h" className="border-t border-white/[0.06] bg-[#050b1a] px-4 py-24 md:px-8 md:py-32">
+    <section aria-labelledby="principles-h" className="border-t border-white/[0.06] bg-[#eceef3] px-4 py-24 md:px-8 md:py-32">
       <div className="mx-auto max-w-[1120px]">
         <RevealHeading id="principles-h" lines={['What we hold', 'ourselves to.']} className="mb-12" />
         <motion.div initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }} className="grid gap-4 md:grid-cols-2">
@@ -72,7 +72,7 @@ export function Timeline() {
           <motion.span aria-hidden="true" className="absolute bottom-2 left-[7px] top-2 w-px origin-top bg-blue-500" style={{ scaleY: reduce ? 1 : fill }} />
           {MILESTONES.map(([date, title, body], i) => (
             <li key={title} className="relative">
-              <span aria-hidden="true" className={`absolute -left-8 top-6 h-[15px] w-[15px] rounded-full border-2 transition-colors ${active === i ? 'border-blue-400 bg-blue-500' : 'border-slate-700 bg-[#020617]'}`} />
+              <span aria-hidden="true" className={`absolute -left-8 top-6 h-[15px] w-[15px] rounded-full border-2 transition-colors ${active === i ? 'border-blue-400 bg-blue-500' : 'border-slate-700 bg-[#f5f6f8]'}`} />
               <button onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} onClick={() => setActive(i)}
                 className={`w-full rounded-2xl border p-5 text-left transition-colors ${active === i ? 'border-white/10 bg-slate-900' : 'border-transparent'}`}>
                 <span className="text-[13px] text-slate-500">{date}</span>

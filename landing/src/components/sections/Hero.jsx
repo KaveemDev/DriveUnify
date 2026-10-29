@@ -55,7 +55,7 @@ export function Hero() {
 
   return (
     <section ref={ref} aria-labelledby="hero-h" className="relative overflow-hidden px-4 pb-32 pt-36 md:px-8 md:pt-44">
-      <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ y: scrub ? lightY : 0, background: 'radial-gradient(60% 50% at 70% 70%, rgba(59,130,246,0.22), rgba(2,6,23,0) 70%)' }} />
+      <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ y: scrub ? lightY : 0, background: 'radial-gradient(60% 50% at 70% 70%, rgba(59,130,246,0.22), rgba(245,246,248,0) 70%)' }} />
       <div aria-hidden="true" className="du-dots pointer-events-none absolute inset-0" />
 
       <div className="relative mx-auto max-w-[1120px]">
@@ -63,13 +63,13 @@ export function Hero() {
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="mb-6 flex items-center gap-2 text-[13px] text-slate-400">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />Google Drive + Dropbox · OneDrive coming soon
           </motion.p>
-          <h1 id="hero-h" className="du-display max-w-[820px] text-[44px] text-white md:text-[92px]">
+          <h1 id="hero-h" className="du-display max-w-[820px] text-[44px] text-white md:text-[clamp(2.75rem,1.2rem+4vw,4.5rem)]">
             {LINE_1.map((w, i) => <Word key={w} i={i}>{w}&nbsp;</Word>)}
             <br />
             {LINE_2.map((w, i) => <Word key={w} i={LINE_1.length + i} muted>{w}&nbsp;</Word>)}
           </h1>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease, delay: WORDS_DONE }}>
-            <p className="mt-7 max-w-[520px] text-[17px] leading-[1.55] text-slate-400 md:text-lg">
+            <p className="mt-7 max-w-[520px] text-[17px] leading-[1.55] text-slate-400 md:text-[19px]">
               Connect every Google Drive and Dropbox account you own, then search, preview and move files between them without switching tabs.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
@@ -90,7 +90,7 @@ export function Hero() {
               <DashboardFrame className="shadow-[0_40px_120px_rgba(59,130,246,0.18)]" sidebar={<Sidebar revealDelay={WORDS_DONE + 0.5} />}>
                 <div className="flex items-center gap-3">
                   <div className="flex-1"><SearchBar /></div>
-                  <span className="rounded-lg bg-blue-500 px-3.5 py-2 text-[13px] text-white">Upload</span>
+                  <span className="rounded-lg bg-blue-500 px-3.5 py-2 text-[13px] text-[#fff]">Upload</span>
                 </div>
                 <div className="text-[13px] text-slate-400">All drives <span className="text-slate-600">/</span> <span className="text-slate-200">Recent</span></div>
                 <div className="hidden md:block"><FileGrid files={FILES} /></div>
