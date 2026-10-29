@@ -1,17 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { VIEW_MODES } from '../../config/constants';
-import { getAccountId, getFileAccountId } from '../../utils/helpers';
+import { getAccountId } from '../../utils/helpers';
 
 const driveSlice = createSlice({
   name: 'drive',
   initialState: {
     connectedAccounts: [],
-    files: [],
     folders: [],
     currentFolder: null,
     selectedAccount: null,
     loading: false,
-    error: null,
     viewMode: VIEW_MODES.GRID,
     sortBy: 'name',
     sortDir: 'asc',
@@ -33,7 +31,6 @@ const driveSlice = createSlice({
       state.connectedAccounts = state.connectedAccounts.filter(
         a => getAccountId(a) !== action.payload
       );
-      state.files = state.files.filter(f => getFileAccountId(f) !== action.payload);
       if (state.selectedAccount === action.payload) {
         state.selectedAccount = null;
       }
@@ -43,27 +40,6 @@ const driveSlice = createSlice({
       const idx = state.connectedAccounts.findIndex(a => getAccountId(a) === action.payload.id);
       if (idx !== -1) {
         state.connectedAccounts[idx] = { ...state.connectedAccounts[idx], ...action.payload };
-      }
-    },
-    setFiles(state, action) {
-      state.files = action.payload;
-    },
-    upsertFiles(state, action) {
-      const newFiles = action.payload;
-      const map = {};
-      state.files.forEach(f => { map[f.id + f.accountEmail] = f; });
-      newFiles.forEach(f => { map[f.id + f.accountEmail] = f; });
-      state.files = Object.values(map);
-    },
-    removeFile(state, action) {
-      state.files = state.files.filter(f => !(f.id === action.payload.id && f.accountEmail === action.payload.accountEmail));
-    },
-    updateFile(state, action) {
-      const idx = state.files.findIndex(
-        f => f.id === action.payload.id && f.accountEmail === action.payload.accountEmail
-      );
-      if (idx !== -1) {
-        state.files[idx] = { ...state.files[idx], ...action.payload };
       }
     },
     setFolders(state, action) {
@@ -78,10 +54,6 @@ const driveSlice = createSlice({
     },
     setLoading(state, action) {
       state.loading = action.payload;
-    },
-    setError(state, action) {
-      state.error = action.payload;
-      state.loading = false;
     },
     setViewMode(state, action) {
       state.viewMode = action.payload;
@@ -114,9 +86,8 @@ const driveSlice = createSlice({
 
 export const {
   setConnectedAccounts, addAccount, removeAccount, updateAccount,
-  setFiles, upsertFiles, removeFile, updateFile,
   setFolders, setCurrentFolder, setSelectedAccount,
-  setLoading, setError, setViewMode, setSortBy, setSortDir, setSearchQuery,
+  setLoading, setViewMode, setSortBy, setSortDir, setSearchQuery,
   toggleFileSelection, clearSelection, selectAll,
 } = driveSlice.actions;
 

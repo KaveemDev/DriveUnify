@@ -16,6 +16,8 @@ import { Button } from '../common/Button';
 import { transferFile, transferFolder, countFilesInFolder } from '../../services/google-drive/transfer';
 import { listFoldersInFolder } from '../../api/googleDriveApi';
 import { listDropboxFolders } from '../../api/dropboxApi';
+import { useQuery } from '@tanstack/react-query';
+import { useDriveFiles } from '../../hooks/useDrive';
 import { CloudProviderIcon, ProviderBadge } from '../common/ProviderBadge';
 import { setConnectModalOpen } from '../../store/slices/uiSlice';
 import { getAccountColor } from '../../config/constants';
@@ -159,34 +161,20 @@ const AccountChip = ({ account }) => (
 
 const FolderPicker = ({ destAccount, selectedFolder, onSelect }) => {
   const [path, setPath] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const isDestDropbox = (destAccount?.provider || '').toLowerCase().includes('dropbox');
   const currentId = path.length > 0 ? path[path.length - 1].id : (isDestDropbox ? '' : 'root');
 
-  useEffect(() => {
-    if (!destAccount?.accessToken) return;
-    setLoading(true);
-    setError(null);
-
-    if (isDestDropbox) {
-      listDropboxFolders(destAccount.accessToken, currentId)
-        .then((res) => setFolders(res || []))
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false));
-    } else {
-      listFoldersInFolder(destAccount.accessToken, currentId, destAccount.email)
-        .then((res) => setFolders(res?.files || []))
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false));
-    }
-  }, [currentId, destAccount?.accessToken, destAccount?.email, isDestDropbox]);
+  const { data: folders = [], isLoading: loading, error } = useQuery({
+    queryKey: ['folders', destAccount?.provider, destAccount?.email, currentId],
+    queryFn: () => isDestDropbox
+      ? listDropboxFolders(destAccount.accessToken, currentId).then((res) => res || [])
+      : listFoldersInFolder(destAccount.accessToken, currentId, destAccount.email).then((res) => res?.files || []),
+    enabled: !!destAccount?.accessToken,
+  });
 
   useEffect(() => {
     setPath([]);
-    setFolders([]);
   }, [destAccount?.email, destAccount?.provider]);
 
   const navigateInto = (folder) => {
@@ -318,7 +306,7 @@ const FolderPicker = ({ destAccount, selectedFolder, onSelect }) => {
           </Box>
         ) : error ? (
           <Typography variant="caption" color="error" sx={{ p: 2, display: 'block', textAlign: 'center' }}>
-            {error}
+            {error.message}
           </Typography>
         ) : folders.length === 0 ? (
           <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
@@ -422,7 +410,8 @@ const STATE = {
 
 export const TransferModal = ({ open, onOpenChange, file }) => {
   const dispatch = useDispatch();
-  const { connectedAccounts, files } = useSelector((s) => s.drive);
+  const { connectedAccounts } = useSelector((s) => s.drive);
+  const { files } = useDriveFiles();
 
   const [selectedFileId, setSelectedFileId] = useState(file?.id || '');
   const [destAccountId, setDestAccountId] = useState('');

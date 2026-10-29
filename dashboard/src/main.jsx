@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import store from './store';
+import { queryClient } from './config/queryClient';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { initAnalytics } from './utils/analytics';
 import './styles/globals.css';
@@ -21,6 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
         <ThemeContextProvider>
           <BrowserRouter>
             <App />
@@ -47,6 +50,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           />
         </BrowserRouter>
         </ThemeContextProvider>
+      </QueryClientProvider>
       </Provider>
     </ErrorBoundary>
   </React.StrictMode>

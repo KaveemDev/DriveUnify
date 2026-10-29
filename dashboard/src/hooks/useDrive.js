@@ -1,10 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-  addAccount, removeAccount, setFiles, upsertFiles,
-  removeFile, updateFile, setLoading, setError,
-  setCurrentFolder, setSelectedAccount, updateAccount,
+  addAccount, removeAccount, setCurrentFolder, updateAccount,
 } from '../store/slices/driveSlice';
 import { setConnectModalOpen } from '../store/slices/uiSlice';
 import {
@@ -43,32 +42,42 @@ import {
   updateAccountTokens,
 } from '../services/firebase/firestore';
 import { getAccountId, getFileAccountId, findAccountById, findAccountForFile } from '../utils/helpers';
+import { queryClient } from '../config/queryClient';
 
 const isDropbox = (accountOrFile) =>
   (accountOrFile?.provider || '').toLowerCase().includes('dropbox');
 
-export const useDrive = () => {
+const isUsable = (account) => !account.needsReconnect && !account.expired && !!account.accessToken;
+
+// Query keys: ['files', accountId, folderKey] and ['storage', accountId]
+const filesKey = (accountId, folderKey) => ['files', accountId, folderKey];
+
+const sameFile = (a, b) => a.id === b.id && a.accountEmail === b.accountEmail;
+
+// Patch every cached file list of the file's account (root + folders)
+const patchFiles = (file, fn, filters = {}) =>
+  queryClient.setQueriesData({ queryKey: ['files', getFileAccountId(file)], ...filters }, (old) => old && fn(old));
+
+const updateCachedFile = (file, fields) =>
+  patchFiles(file, (list) => list.map(f => (sameFile(f, file) ? { ...f, ...fields } : f)));
+const removeCachedFile = (file) =>
+  patchFiles(file, (list) => list.filter(f => !sameFile(f, file)));
+// Only the lists on screen, so an upload doesn't land in unrelated cached folders
+export const upsertCachedFile = (file) =>
+  patchFiles(file, (list) => [...list.filter(f => !sameFile(f, file)), file], { type: 'active' });
+
+const getAccountFiles = (account) =>
+  isDropbox(account) ? fetchAllDropboxFilesForAccount(account) : fetchAllDriveFiles(account);
+
+const getAccountStorage = (account) =>
+  isDropbox(account) ? fetchDropboxStorageInfo(account) : fetchDriveStorageInfo(account);
+
+// ── Get fresh account with token check ───────────────────────
+const useFreshAccount = () => {
   const dispatch = useDispatch();
-  const { connectedAccounts, files, loading, error, currentFolder } = useSelector(s => s.drive);
   const { user } = useSelector(s => s.auth);
 
-  // ── Unified Storage & Files Telemetry Wrappers ────────────────
-  const getAccountFiles = useCallback(async (account) => {
-    if (isDropbox(account)) {
-      return await fetchAllDropboxFilesForAccount(account);
-    }
-    return await fetchAllDriveFiles(account);
-  }, []);
-
-  const getAccountStorage = useCallback(async (account) => {
-    if (isDropbox(account)) {
-      return await fetchDropboxStorageInfo(account);
-    }
-    return await fetchDriveStorageInfo(account);
-  }, []);
-
-  // ── Get fresh account with token check ───────────────────────
-  const getFreshAccount = useCallback(async (account) => {
+  return useCallback(async (account) => {
     try {
       const refreshed = isDropbox(account)
         ? await checkAndRefreshDropboxToken(account)
@@ -110,6 +119,67 @@ export const useDrive = () => {
       return { ...account, accessToken: null };
     }
   }, [dispatch, user?.uid]);
+};
+
+const requireToken = (account) => {
+  if (!account.accessToken) throw new Error(`No valid token for ${account.email}`);
+  return account;
+};
+
+// ── Files for the current view: every account at root, or the open folder ──
+export const useDriveFiles = () => {
+  const { connectedAccounts, currentFolder } = useSelector(s => s.drive);
+  const getFreshAccount = useFreshAccount();
+
+  const folderAccount = currentFolder && findAccountById(connectedAccounts, getFileAccountId(currentFolder));
+  const accounts = currentFolder
+    ? (folderAccount ? [folderAccount] : [])
+    : connectedAccounts.filter(isUsable);
+
+  return useQueries({
+    queries: accounts.map(account => ({
+      queryKey: filesKey(getAccountId(account), currentFolder ? (currentFolder.pathLower || currentFolder.id) : 'root'),
+      queryFn: async () => {
+        const fresh = requireToken(await getFreshAccount(account));
+        if (!currentFolder) return getAccountFiles(fresh);
+        return isDropbox(account)
+          ? fetchDropboxFilesInFolder(fresh, currentFolder.pathLower || currentFolder.id)
+          : fetchDriveFilesInFolder(fresh, currentFolder.id);
+      },
+    })),
+    combine: (results) => ({
+      files: results.flatMap(r => r.data ?? []),
+      isFetching: results.some(r => r.isFetching),
+    }),
+  });
+};
+
+// ── Connected accounts with their storage quota merged in ────
+export const useAccountsWithStorage = () => {
+  const { connectedAccounts } = useSelector(s => s.drive);
+  const getFreshAccount = useFreshAccount();
+  const usable = connectedAccounts.filter(isUsable);
+
+  const storage = useQueries({
+    queries: usable.map(account => ({
+      queryKey: ['storage', getAccountId(account)],
+      queryFn: async () => getAccountStorage(requireToken(await getFreshAccount(account))),
+    })),
+  });
+
+  return useMemo(() => {
+    const byId = {};
+    usable.forEach((a, i) => { byId[getAccountId(a)] = storage[i].data; });
+    return connectedAccounts.map(a => ({ ...a, storage: byId[getAccountId(a)] ?? a.storage }));
+  }, [connectedAccounts, storage]); // eslint-disable-line react-hooks/exhaustive-deps
+};
+
+export const useDrive = () => {
+  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
+  const { connectedAccounts, currentFolder } = useSelector(s => s.drive);
+  const { user } = useSelector(s => s.auth);
+  const getFreshAccount = useFreshAccount();
 
   // ── Connect a new account (Google Drive or Dropbox) ───────────
   const connectNewAccount = useCallback(async (provider = 'google_drive', customAppKey = null) => {
@@ -159,21 +229,14 @@ export const useDrive = () => {
       toast.success(`Connected ${providerLabel} (${oauthData.email})`);
       dispatch(setConnectModalOpen(false));
 
-      // Fetch files for the new account
-      const filesData = await getAccountFiles(accountData);
-      dispatch(upsertFiles(filesData));
-
-      // Fetch storage info
-      const storage = await getAccountStorage(accountData);
-      dispatch(updateAccount({ id: getAccountId(accountData), storage }));
-
+      // useDriveFiles / useAccountsWithStorage start fetching once the account is in the store
       return accountData;
     } catch (err) {
       if (err.message?.includes('closed') || err.message?.includes('popup')) return;
       toast.error(`Failed to connect: ${err.message}`);
       throw err;
     }
-  }, [dispatch, user?.uid, connectedAccounts, getAccountFiles, getAccountStorage]);
+  }, [dispatch, user?.uid, connectedAccounts]);
 
   const connectDropboxAccount = useCallback(async (customAppKey = null) => {
     return connectNewAccount('dropbox', customAppKey);
@@ -186,6 +249,8 @@ export const useDrive = () => {
     const { email } = account;
     try {
       dispatch(removeAccount(accountId));
+      queryClient.removeQueries({ queryKey: ['files', accountId] });
+      queryClient.removeQueries({ queryKey: ['storage', accountId] });
 
       if (isDropbox(account)) {
         await revokeDropboxAccess(email, account?.accessToken);
@@ -205,7 +270,12 @@ export const useDrive = () => {
     } catch (err) {
       toast.error(`Failed to disconnect: ${err.message}`);
     }
-  }, [dispatch, user?.uid, connectedAccounts]);
+  }, [dispatch, queryClient, user?.uid, connectedAccounts]);
+
+  const invalidateAccount = useCallback((accountId) => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['files', accountId] }),
+    queryClient.invalidateQueries({ queryKey: ['storage', accountId] }),
+  ]), [queryClient]);
 
   // ── Re-connect an expired account ────────────────────────────
   const reconnectAccount = useCallback(async (accountId) => {
@@ -228,11 +298,7 @@ export const useDrive = () => {
           expired: false,
         }));
         toast.success(`Reconnected ${email}`);
-
-        // Refresh files for this account
-        const accountFiles = await getAccountFiles(refreshed);
-        const otherFiles = files.filter(f => getFileAccountId(f) !== accountId);
-        dispatch(setFiles([...otherFiles, ...accountFiles]));
+        invalidateAccount(accountId);
         return;
       }
 
@@ -266,222 +332,132 @@ export const useDrive = () => {
       }));
 
       toast.success(`Reconnected ${email}`);
-
-      const accountFiles = await getAccountFiles({ ...account, accessToken: oauthData.accessToken });
-      const otherFiles = files.filter(f => getFileAccountId(f) !== accountId);
-      dispatch(setFiles([...otherFiles, ...accountFiles]));
+      invalidateAccount(accountId);
     } catch (err) {
       if (err.message?.includes('closed') || err.message?.includes('popup')) return;
       toast.error(`Failed to reconnect ${email}: ${err.message}`);
     }
-  }, [dispatch, connectedAccounts, files, getAccountFiles]);
+  }, [dispatch, connectedAccounts, invalidateAccount]);
 
-  // ── Fetch files for all accounts ─────────────────────────────
-  const fetchFilesForAllAccounts = useCallback(async () => {
-    if (connectedAccounts.length === 0) return;
-    dispatch(setLoading(true));
-    dispatch(setError(null));
+  // ── Refetch the files on screen and storage quotas ───────────
+  const refreshFiles = useCallback(() => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['files'] }),
+    queryClient.invalidateQueries({ queryKey: ['storage'] }),
+  ]), [queryClient]);
 
-    try {
-      const checkedAccounts = await Promise.all(
-        connectedAccounts.map(account => getFreshAccount(account))
-      );
-
-      const validAccounts = checkedAccounts.filter(
-        a => !a.needsReconnect && !a.expired && a.accessToken
-      );
-
-      if (validAccounts.length === 0) {
-        dispatch(setLoading(false));
-        return;
-      }
-
-      const results = await Promise.allSettled(
-        validAccounts.map(account => getAccountFiles(account))
-      );
-
-      const allFiles = [];
-      results.forEach((result, i) => {
-        if (result.status === 'fulfilled') {
-          allFiles.push(...result.value);
-        } else {
-          console.warn(`[DriveUnify] Could not fetch files for ${validAccounts[i].email}:`, result.reason?.message);
-        }
-      });
-
-      dispatch(setFiles(allFiles));
-
-      // Fetch storage info in parallel
-      const storageResults = await Promise.allSettled(
-        validAccounts.map(account => getAccountStorage(account))
-      );
-      storageResults.forEach((result, i) => {
-        if (result.status === 'fulfilled') {
-          dispatch(updateAccount({ id: getAccountId(validAccounts[i]), storage: result.value }));
-        }
-      });
-    } catch (err) {
-      dispatch(setError(err.message));
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }, [connectedAccounts, dispatch, getFreshAccount, getAccountFiles, getAccountStorage]);
-
-  // ── Navigate to folder ────────────────────────────────────────
-  const navigateToFolder = useCallback(async (folder, accountId) => {
+  // ── Navigate to folder (useDriveFiles fetches it) ─────────────
+  const navigateToFolder = useCallback((folder, accountId) => {
     const account = findAccountById(connectedAccounts, accountId);
     if (!account) return;
-
     dispatch(setCurrentFolder({ ...folder, accountEmail: account.email, provider: account.provider }));
-    dispatch(setLoading(true));
-
-    try {
-      const freshAccount = await getFreshAccount(account);
-      let folderFiles = [];
-
-      if (isDropbox(account)) {
-        folderFiles = await fetchDropboxFilesInFolder(freshAccount, folder.pathLower || folder.id);
-      } else {
-        folderFiles = await fetchDriveFilesInFolder(freshAccount, folder.id);
-      }
-      dispatch(setFiles(folderFiles));
-    } catch (err) {
-      dispatch(setError(err.message));
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
+  }, [dispatch, connectedAccounts]);
 
   // ── Navigate to root ──────────────────────────────────────────
   const navigateToRoot = useCallback(() => {
     dispatch(setCurrentFolder(null));
-    fetchFilesForAllAccounts();
-  }, [dispatch, fetchFilesForAllAccounts]);
+  }, [dispatch]);
 
   // ── Refresh single account ────────────────────────────────────
   const refreshAccount = useCallback(async (accountId) => {
     const account = findAccountById(connectedAccounts, accountId);
     if (!account) return;
-    const { email } = account;
+    await invalidateAccount(accountId);
+    // invalidateQueries swallows fetch errors, so read the result back from the cache
+    const failed = queryClient.getQueryCache()
+      .findAll({ queryKey: ['files', accountId], type: 'active' })
+      .find(q => q.state.status === 'error');
+    if (failed) toast.error(`Failed to refresh ${account.email}: ${failed.state.error.message}`);
+    else toast.success(`Refreshed ${account.email}`);
+  }, [connectedAccounts, queryClient, invalidateAccount]);
 
-    try {
-      const freshAccount = await getFreshAccount(account);
-      const accountFiles = await getAccountFiles(freshAccount);
-      const otherFiles = files.filter(f => getFileAccountId(f) !== accountId);
-      dispatch(setFiles([...otherFiles, ...accountFiles]));
-      toast.success(`Refreshed ${email}`);
-    } catch (err) {
-      toast.error(`Failed to refresh ${email}: ${err.message}`);
-    }
-  }, [dispatch, connectedAccounts, files, getFreshAccount, getAccountFiles]);
-
-  // ── Rename file ───────────────────────────────────────────────
-  const renameFileAction = useCallback(async (file, newName) => {
+  // ── File mutations: optimistic cache patch, undone on error ───
+  const withAccount = async (file) => {
     const account = findAccountForFile(connectedAccounts, file);
-    if (!account) return;
+    return requireToken(await getFreshAccount(account));
+  };
 
-    dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, name: newName }));
-
-    try {
-      const freshAccount = await getFreshAccount(account);
-      if (isDropbox(file) || isDropbox(account)) {
+  const renameMutation = useMutation({
+    mutationFn: async ({ file, newName }) => {
+      const fresh = await withAccount(file);
+      if (isDropbox(file)) {
         const parentPath = file.parents?.[0] || 'root';
         const targetPath = resolveDropboxPath(parentPath, newName);
-        await renameDropboxItem(freshAccount.accessToken, file.pathLower || file.id, targetPath);
+        await renameDropboxItem(fresh.accessToken, file.pathLower || file.id, targetPath);
       } else {
-        await renameFile(freshAccount.accessToken, file.id, newName, file.accountEmail);
+        await renameFile(fresh.accessToken, file.id, newName, file.accountEmail);
       }
-      toast.success('File renamed');
-    } catch (err) {
-      dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, name: file.name }));
+    },
+    onMutate: ({ file, newName }) => updateCachedFile(file, { name: newName }),
+    onSuccess: () => toast.success('File renamed'),
+    onError: (err, { file }) => {
+      updateCachedFile(file, { name: file.name });
       toast.error(`Failed to rename: ${err.message}`);
-    }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
+    },
+  });
 
-  // ── Delete file (trash / remove) ──────────────────────────────
-  const deleteFileAction = useCallback(async (file) => {
-    const account = findAccountForFile(connectedAccounts, file);
-    if (!account) return;
-
-    dispatch(removeFile({ id: file.id, accountEmail: file.accountEmail }));
-
-    try {
-      const freshAccount = await getFreshAccount(account);
-      if (isDropbox(file) || isDropbox(account)) {
-        await deleteDropboxItem(freshAccount.accessToken, file.pathLower || file.id);
-        toast.success(`"${file.name}" deleted from Dropbox`);
-      } else {
-        await deleteFile(freshAccount.accessToken, file.id, file.accountEmail);
-        toast.success(`"${file.name}" moved to trash`);
+  const deleteMutation = useMutation({
+    mutationFn: async ({ file, permanent }) => {
+      const fresh = await withAccount(file);
+      if (isDropbox(file)) {
+        await deleteDropboxItem(fresh.accessToken, file.pathLower || file.id);
+        return `"${file.name}" ${permanent ? 'permanently deleted' : 'deleted from Dropbox'}`;
       }
-    } catch (err) {
-      dispatch(upsertFiles([file]));
+      if (permanent) {
+        await permanentlyDeleteFile(fresh.accessToken, file.id, file.accountEmail);
+        return `"${file.name}" permanently deleted`;
+      }
+      await deleteFile(fresh.accessToken, file.id, file.accountEmail);
+      return `"${file.name}" moved to trash`;
+    },
+    onMutate: ({ file }) => {
+      const snapshot = queryClient.getQueriesData({ queryKey: ['files', getFileAccountId(file)] });
+      removeCachedFile(file);
+      return snapshot;
+    },
+    onSuccess: (message) => toast.success(message),
+    onError: (err, _vars, snapshot) => {
+      snapshot?.forEach(([key, data]) => queryClient.setQueryData(key, data));
       toast.error(`Failed to delete: ${err.message}`);
-    }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
+    },
+  });
 
-  // ── Permanently delete ────────────────────────────────────────
-  const permanentlyDeleteFileAction = useCallback(async (file) => {
-    const account = findAccountForFile(connectedAccounts, file);
-    if (!account) return;
+  const starMutation = useMutation({
+    mutationFn: async ({ file, starred }) => {
+      const fresh = await withAccount(file);
+      if (!isDropbox(file)) await starFile(fresh.accessToken, file.id, starred, file.accountEmail);
+    },
+    onMutate: ({ file, starred }) => updateCachedFile(file, { starred }),
+    onError: (_err, { file }) => updateCachedFile(file, { starred: file.starred }),
+  });
 
-    dispatch(removeFile({ id: file.id, accountEmail: file.accountEmail }));
-
-    try {
-      const freshAccount = await getFreshAccount(account);
-      if (isDropbox(file) || isDropbox(account)) {
-        await deleteDropboxItem(freshAccount.accessToken, file.pathLower || file.id);
-      } else {
-        await permanentlyDeleteFile(freshAccount.accessToken, file.id, file.accountEmail);
-      }
-      toast.success(`"${file.name}" permanently deleted`);
-    } catch (err) {
-      dispatch(upsertFiles([file]));
-      toast.error(`Failed to delete: ${err.message}`);
-    }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
-
-  // ── Star/unstar ───────────────────────────────────────────────
-  const toggleStar = useCallback(async (file) => {
-    const account = findAccountForFile(connectedAccounts, file);
-    if (!account) return;
-
-    const newStarred = !file.starred;
-    dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, starred: newStarred }));
-
-    try {
-      const freshAccount = await getFreshAccount(account);
-      if (!isDropbox(account)) {
-        await starFile(freshAccount.accessToken, file.id, newStarred, file.accountEmail);
-      }
-    } catch {
-      dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, starred: file.starred }));
-    }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
-
-  // ── Restore file from trash ───────────────────────────────────
-  const restoreFileAction = useCallback(async (file) => {
-    const account = findAccountForFile(connectedAccounts, file);
-    if (!account) return;
-
-    dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, trashed: false }));
-
-    try {
-      const freshAccount = await getFreshAccount(account);
-      if (!isDropbox(account)) {
-        await restoreFile(freshAccount.accessToken, file.id, file.accountEmail);
-        toast.success(`Restored "${file.name}"`);
-      }
-    } catch (err) {
-      dispatch(updateFile({ id: file.id, accountEmail: file.accountEmail, trashed: true }));
+  const restoreMutation = useMutation({
+    mutationFn: async ({ file }) => {
+      const fresh = await withAccount(file);
+      if (!isDropbox(file)) await restoreFile(fresh.accessToken, file.id, file.accountEmail);
+      return !isDropbox(file);
+    },
+    onMutate: ({ file }) => updateCachedFile(file, { trashed: false }),
+    onSuccess: (restored, { file }) => restored && toast.success(`Restored "${file.name}"`),
+    onError: (err, { file }) => {
+      updateCachedFile(file, { trashed: true });
       toast.error(`Failed to restore: ${err.message}`);
-    }
-  }, [dispatch, connectedAccounts, getFreshAccount]);
+    },
+  });
+
+  // Callers fire-and-forget; errors are already toasted by the mutation
+  const run = (mutation, vars) =>
+    findAccountForFile(connectedAccounts, vars.file) ? mutation.mutateAsync(vars).catch(() => {}) : undefined;
+
+  const renameFileAction = (file, newName) => run(renameMutation, { file, newName });
+  const deleteFileAction = (file) => run(deleteMutation, { file, permanent: false });
+  const permanentlyDeleteFileAction = (file) => run(deleteMutation, { file, permanent: true });
+  const toggleStar = (file) => run(starMutation, { file, starred: !file.starred });
+  const restoreFileAction = (file) => run(restoreMutation, { file });
 
   return {
-    connectedAccounts, files, loading, error, currentFolder,
+    connectedAccounts, currentFolder,
     connectNewAccount, connectDropboxAccount, disconnectAccount, reconnectAccount,
-    fetchFilesForAllAccounts, refreshAccount,
+    refreshFiles, refreshAccount,
     navigateToFolder, navigateToRoot,
     renameFileAction, deleteFileAction, permanentlyDeleteFileAction, toggleStar,
     restoreFileAction,

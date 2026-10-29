@@ -11,14 +11,15 @@ import { getAccountId } from '../../utils/helpers';
 import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../common/ProviderBadge';
 import { setSidebarOpen, setConnectModalOpen, setActiveNav } from '../../store/slices/uiSlice';
 import { setSelectedAccount, setCurrentFolder } from '../../store/slices/driveSlice';
-import { useDrive } from '../../hooks/useDrive';
+import { useDrive, useAccountsWithStorage } from '../../hooks/useDrive';
 import { useColorMode } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
 
 export const Sidebar = ({ onSelectView }) => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { connectedAccounts, selectedAccount } = useSelector((s) => s.drive);
+  const { selectedAccount } = useSelector((s) => s.drive);
+  const connectedAccounts = useAccountsWithStorage();
   const { activeNav } = useSelector((s) => s.ui);
   const { disconnectAccount, refreshAccount, reconnectAccount } = useDrive();
   const { mode, toggleColorMode } = useColorMode();

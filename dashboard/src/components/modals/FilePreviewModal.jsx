@@ -17,6 +17,7 @@ import { formatFileSize, formatDateTime, getMimeLabel } from '../../utils/format
 import { openInGoogleDrive, isPreviewableImage, isPreviewableVideo, isGoogleAppsFile, findAccountForFile } from '../../utils/helpers';
 import { getDropboxTemporaryLink } from '../../api/dropboxApi';
 import { useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
 
 export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const { connectedAccounts } = useSelector((s) => s.drive);
@@ -32,7 +33,6 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [dbxMediaUrl, setDbxMediaUrl] = useState(null);
   const videoContainerRef = useRef(null);
 
   const handlePrev = useCallback(() => {
@@ -63,19 +63,13 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const isGApp = isGoogleAppsFile(file?.mimeType);
   const previewUrl = file?.webViewLink;
 
-  useEffect(() => {
-    let active = true;
-    if (file?.provider === 'dropbox' && account?.accessToken && (canPreviewImage || canPreviewVideo)) {
-      getDropboxTemporaryLink(account.accessToken, file.pathLower || file.id)
-        .then((url) => {
-          if (active && url) setDbxMediaUrl(url);
-        })
-        .catch(() => {});
-    }
-    return () => {
-      active = false;
-    };
-  }, [file, account, canPreviewImage, canPreviewVideo]);
+  // Temporary links expire after 4 hours
+  const { data: dbxMediaUrl } = useQuery({
+    queryKey: ['dropboxLink', file?.accountEmail, file?.pathLower || file?.id],
+    queryFn: () => getDropboxTemporaryLink(account.accessToken, file.pathLower || file.id),
+    enabled: file?.provider === 'dropbox' && !!account?.accessToken && (canPreviewImage || canPreviewVideo),
+    staleTime: 3 * 60 * 60 * 1000,
+  });
 
   if (!file) return null;
 

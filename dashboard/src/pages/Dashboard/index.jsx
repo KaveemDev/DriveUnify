@@ -32,7 +32,7 @@ import {
   setSelectedAccount,
 } from '../../store/slices/driveSlice';
 
-import { useDrive } from '../../hooks/useDrive';
+import { useDrive, useDriveFiles, useAccountsWithStorage } from '../../hooks/useDrive';
 import { useUpload } from '../../hooks/useUpload';
 import { useAuth } from '../../hooks/useAuth';
 import { VIEW_MODES } from '../../config/constants';
@@ -79,17 +79,20 @@ const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const {
-    connectedAccounts, files, loading, viewMode,
+    loading: accountsLoading, viewMode,
     sortBy, sortDir, selectedAccount, selectedFiles, currentFolder
   } = useSelector((s) => s.drive);
   const { activeNav } = useSelector((s) => s.ui);
 
   const {
-    fetchFilesForAllAccounts, navigateToFolder, navigateToRoot,
+    refreshFiles, navigateToFolder, navigateToRoot,
     renameFileAction, deleteFileAction, permanentlyDeleteFileAction, toggleStar,
     restoreFileAction, reconnectAccount,
   } = useDrive();
   const { uploadFiles } = useUpload();
+  const connectedAccounts = useAccountsWithStorage();
+  const { files, isFetching } = useDriveFiles();
+  const loading = accountsLoading || isFetching;
 
   // ── Local UI State ──
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'documents', 'spreadsheets', 'pdfs', 'images', 'starred'
@@ -145,13 +148,6 @@ const Dashboard = () => {
   // ── Hidden file & folder picker inputs ──
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
-
-  // Initial load
-  useEffect(() => {
-    if (connectedAccounts.length > 0) {
-      fetchFilesForAllAccounts();
-    }
-  }, [connectedAccounts.length]);
 
   // Global ⌘K / Ctrl+K keyboard shortcut listener
   useEffect(() => {
@@ -421,7 +417,7 @@ const Dashboard = () => {
         {/* 1. Top bar: search, sync, transfer, new */}
         <DashboardHeader
           loading={loading}
-          onRefresh={fetchFilesForAllAccounts}
+          onRefresh={refreshFiles}
           onUploadFiles={triggerFileUpload}
           onUploadFolder={triggerFolderUpload}
           onCreateFolder={() => setCreateFolderModal(true)}
@@ -580,7 +576,7 @@ const Dashboard = () => {
           onOpenChange={setCreateFolderModal}
           currentFolder={currentFolder}
           connectedAccounts={connectedAccounts}
-          onFolderCreated={() => fetchFilesForAllAccounts()}
+          onFolderCreated={() => refreshFiles()}
         />
 
         <FileContextMenu
