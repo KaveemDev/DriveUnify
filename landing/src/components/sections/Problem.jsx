@@ -60,7 +60,7 @@ export function Problem() {
   const mergedScale = useTransform(p, [0.7, 0.85], [0.92, 1]);
 
   const heading = (
-    <h2 id="problem-h" className="du-display text-[36px] text-white md:text-[56px]">
+    <h2 id="problem-h" className="du-display text-[clamp(2.25rem,1.4rem+2.8vw,3.75rem)] text-white">
       Five tabs. Three logins. Zero idea where that file is.
     </h2>
   );
@@ -76,7 +76,7 @@ export function Problem() {
               <p className="mt-1 text-[17px] text-slate-400">{s.body}</p>
             </motion.div>
           ))}
-          <div aria-hidden="true" className="rounded-2xl border border-white/[0.08] bg-[#0b1222] p-4"><FileGrid files={FILES.slice(0, 4)} columns={2} /></div>
+          <div aria-hidden="true" className="rounded-2xl border border-white/[0.08] bg-[#ffffff] p-4"><FileGrid files={FILES.slice(0, 4)} columns={2} /></div>
         </div>
       </section>
     );
@@ -106,7 +106,7 @@ export function Problem() {
         <div aria-hidden="true" className="relative h-[300px] md:h-[520px]">
           <div className="absolute left-1/2 top-1/2 h-[520px] w-[560px] -translate-x-1/2 -translate-y-1/2 scale-[0.6] md:static md:h-full md:w-full md:translate-x-0 md:translate-y-0 md:scale-100">
           {WINDOWS.map((w) => <BrowserWindow key={w.title} w={w} p={p} />)}
-          <motion.div style={{ opacity: mergedOpacity, scale: mergedScale }} className="absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#0b1222] p-5 shadow-[0_40px_120px_rgba(59,130,246,0.18)]">
+          <motion.div style={{ opacity: mergedOpacity, scale: mergedScale }} className="absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#ffffff] p-5 shadow-[0_40px_120px_rgba(59,130,246,0.18)]">
             <div className="mb-3 text-[13px] text-slate-400">All drives <span className="text-slate-600">/</span> <span className="text-slate-200">Everything</span></div>
             <FileGrid files={FILES} />
           </motion.div>

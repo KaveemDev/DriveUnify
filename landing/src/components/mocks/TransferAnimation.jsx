@@ -10,8 +10,8 @@ export function TransferAnimation() {
     <div className="relative flex h-[240px] items-end justify-between">
       <Panel color="#60a5fa" title="Work Drive" items={['Q3-report.pdf', 'client-assets/']} />
       <svg aria-hidden="true" className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2" width="320" height="130" viewBox="0 0 320 130" fill="none">
-        <path d={PATH} stroke="#1e293b" strokeWidth="2" />
-        <motion.path d={PATH} stroke="#3b82f6" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.1, ease }} />
+        <path d={PATH} stroke="#dfe2ea" strokeWidth="2" />
+        <motion.path d={PATH} stroke="#2348d8" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.1, ease }} />
       </svg>
       <motion.div
         className="absolute left-1/2 top-0 flex items-center gap-1.5 rounded-lg border border-blue-500/50 bg-slate-800 px-2.5 py-1.5 text-xs text-white shadow-xl shadow-blue-500/25"
@@ -34,8 +34,8 @@ function Panel({ color, title, items, ring }) {
       {ring && (
         <span className="flex items-center gap-2 text-slate-200">
           <svg width="16" height="16" viewBox="0 0 36 36" aria-hidden="true">
-            <circle cx="18" cy="18" r="15" fill="none" stroke="#1e293b" strokeWidth="4" />
-            <motion.circle cx="18" cy="18" r="15" fill="none" stroke="#3b82f6" strokeWidth="4" transform="rotate(-90 18 18)"
+            <circle cx="18" cy="18" r="15" fill="none" stroke="#dfe2ea" strokeWidth="4" />
+            <motion.circle cx="18" cy="18" r="15" fill="none" stroke="#2348d8" strokeWidth="4" transform="rotate(-90 18 18)"
               initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, ease, delay: 0.9 }} />
           </svg>
           budget-2026.xlsx

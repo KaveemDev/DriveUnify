@@ -13,11 +13,11 @@ export function Privacy() {
     <section aria-labelledby="privacy-h" className="px-4 py-32 md:px-8 md:py-44">
       <div className="mx-auto flex max-w-[820px] flex-col gap-14">
         <motion.div initial="open" whileInView="closed" viewport={{ once: true, amount: 0.6 }} className="flex items-start gap-6">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" className="shrink-0">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2348d8" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" className="shrink-0">
             <rect x="4" y="10" width="16" height="11" rx="2" />
             <motion.path d="M8 10V7a4 4 0 0 1 8 0v3" variants={{ open: { y: -3 }, closed: { y: 0, transition: { duration: 0.6, ease, delay: 0.4 } } }} />
           </svg>
-          <h2 id="privacy-h" className="du-display text-[36px] text-white md:text-[56px]">Your files never touch our servers.</h2>
+          <h2 id="privacy-h" className="du-display text-[clamp(2.25rem,1.4rem+2.8vw,3.75rem)] text-white">Your files never touch our servers.</h2>
         </motion.div>
         <dl className="border-t border-white/[0.08]">
           {FACTS.map(([term, desc], i) => (

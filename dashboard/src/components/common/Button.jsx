@@ -2,7 +2,7 @@ import { clsx } from 'clsx';
 
 const variants = {
   primary: 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm hover:shadow-blue-500/20 active:scale-[0.98]',
-  secondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700/60 active:scale-[0.98]',
+  secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 dark:border-zinc-700/60 active:scale-[0.98]',
   ghost: 'hover:bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100',
   danger: 'bg-red-600 hover:bg-red-500 text-white shadow-sm active:scale-[0.98]',
   outline: 'border border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-500/10 active:scale-[0.98]',

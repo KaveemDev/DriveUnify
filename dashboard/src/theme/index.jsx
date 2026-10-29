@@ -34,15 +34,15 @@ export const ThemeContextProvider = ({ children }) => {
           mode,
           ...(mode === 'light'
             ? {
-                primary: { main: '#18181b', light: '#3f3f46', dark: '#09090b', contrastText: '#fff' },
-                secondary: { main: '#71717a' },
-                background: { default: '#f4f4f5', paper: '#ffffff' },
-                text: { primary: '#09090b', secondary: '#71717a', disabled: '#a1a1aa' },
-                divider: 'rgba(0,0,0,0.07)',
+                primary: { main: '#0f172a', light: '#334155', dark: '#020617', contrastText: '#fff' },
+                secondary: { main: '#64748b' },
+                background: { default: '#f8fafc', paper: '#ffffff' },
+                text: { primary: '#0f172a', secondary: '#475569', disabled: '#94a3b8' },
+                divider: 'rgba(0,0,0,0.08)',
                 action: {
-                  hover: 'rgba(0,0,0,0.04)',
+                  hover: 'rgba(0,0,0,0.035)',
                   selected: 'rgba(0,0,0,0.06)',
-                  disabledBackground: 'rgba(0,0,0,0.05)',
+                  disabledBackground: 'rgba(0,0,0,0.04)',
                 },
               }
             : {
@@ -91,8 +91,9 @@ export const ThemeContextProvider = ({ children }) => {
                 borderRadius: '10px',
                 backgroundImage: 'none',
                 boxShadow: mode === 'light'
-                  ? '0 1px 2px 0 rgba(0,0,0,0.05)'
+                  ? '0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.02)'
                   : '0 1px 3px 0 rgba(0,0,0,0.4)',
+                border: mode === 'light' ? '1px solid rgba(0,0,0,0.07)' : '1px solid rgba(255,255,255,0.07)',
               },
             },
           },
@@ -101,9 +102,9 @@ export const ThemeContextProvider = ({ children }) => {
               root: {
                 borderRadius: '6px',
                 '&.Mui-selected': {
-                  backgroundColor: mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+                  backgroundColor: mode === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
                   '&:hover': {
-                    backgroundColor: mode === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)',
+                    backgroundColor: mode === 'light' ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.10)',
                   },
                 },
               },
@@ -121,7 +122,7 @@ export const ThemeContextProvider = ({ children }) => {
               tooltip: {
                 borderRadius: '6px',
                 fontSize: '0.75rem',
-                backgroundColor: mode === 'light' ? '#18181b' : '#27272a',
+                backgroundColor: mode === 'light' ? '#0f172a' : '#27272a',
               },
             },
           },
@@ -129,9 +130,9 @@ export const ThemeContextProvider = ({ children }) => {
             styleOverrides: {
               paper: {
                 borderRadius: '10px',
-                border: `1px solid ${mode === 'light' ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.07)'}`,
+                border: `1px solid ${mode === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.07)'}`,
                 boxShadow: mode === 'light'
-                  ? '0 10px 38px -10px rgba(0,0,0,0.2), 0 2px 8px -4px rgba(0,0,0,0.1)'
+                  ? '0 10px 30px -8px rgba(0,0,0,0.12), 0 2px 6px -2px rgba(0,0,0,0.06)'
                   : '0 10px 38px -10px rgba(0,0,0,0.6), 0 2px 8px -4px rgba(0,0,0,0.4)',
               },
             },

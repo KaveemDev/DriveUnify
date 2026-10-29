@@ -27,7 +27,7 @@ export function PrimaryButton({ children, className = '', size = 'md' }) {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.97 }}
       transition={{ duration: dur.micro }}
-      className={`du-btn relative inline-flex items-center overflow-hidden bg-blue-500 font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(59,130,246,0.35)] hover:bg-blue-400 ${pad} ${className}`}
+      className={`du-btn relative inline-flex items-center overflow-hidden bg-blue-500 font-medium text-[#fff] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(59,130,246,0.35)] hover:bg-blue-400 ${pad} ${className}`}
     >
       <span className="relative">{children}</span>
     </motion.a>
@@ -72,7 +72,7 @@ export function Magnetic({ children }) {
 // Section heading: each line slides up out of a mask when 30% in view.
 export function RevealHeading({ id, lines, className = '', as: Tag = 'h2' }) {
   return (
-    <Tag id={id} className={`du-display text-[36px] md:text-[56px] text-white ${className}`}>
+    <Tag id={id} className={`du-display text-[clamp(2.25rem,1.4rem+2.8vw,3.75rem)] text-white ${className}`}>
       <motion.span initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.3 }} className="block">
         {lines.map((line, i) => (
           <span key={i} className="block overflow-hidden pb-[0.08em]">

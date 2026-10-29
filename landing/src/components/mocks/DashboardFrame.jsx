@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 // Browser chrome + app shell. Children fill the main pane.
 export function DashboardFrame({ sidebar, children, className = '' }) {
   return (
-    <div className={`overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1222] ${className}`}>
+    <div className={`overflow-hidden rounded-2xl border border-white/[0.08] bg-[#ffffff] ${className}`}>
       <div className="flex h-10 items-center gap-2 border-b border-white/[0.06] px-4">
         <span className="h-2.5 w-2.5 rounded-full bg-slate-700" />
         <span className="h-2.5 w-2.5 rounded-full bg-slate-700" />

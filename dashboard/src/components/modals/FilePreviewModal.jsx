@@ -149,7 +149,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(5, 5, 7, 0.88)',
+        background: 'rgba(15, 23, 42, 0.65)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
@@ -170,7 +170,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
+          boxShadow: 'var(--shadow-popup, 0 24px 60px rgba(0, 0, 0, 0.25))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -297,7 +297,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#070709',
+            background: canPreviewVideo ? '#000000' : 'var(--color-bg-base)',
             overflow: 'hidden',
           }}
         >

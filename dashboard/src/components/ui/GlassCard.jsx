@@ -16,12 +16,13 @@ export const GlassCard = ({
       className={`
         relative overflow-hidden rounded-2xl p-6 md:p-8
         glass
-        ${hoverEffect ? 'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer' : ''}
+        shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-glass
+        ${hoverEffect ? 'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-2xl cursor-pointer' : ''}
         ${className}
       `}
     >
-      {/* Top highlight line — only visible in dark mode */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent dark:via-white/10 pointer-events-none" />
+      {/* Top highlight line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent dark:via-white/10 pointer-events-none" />
       {children}
     </motion.div>
   );

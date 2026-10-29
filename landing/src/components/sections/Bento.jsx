@@ -33,10 +33,10 @@ function Tile({ i, className = '', children, onHover }) {
 }
 
 const DONUT = [
-  { label: 'Video', gb: 8.0, color: '#3b82f6' },
+  { label: 'Video', gb: 8.0, color: '#2348d8' },
   { label: 'Images', gb: 5.1, color: '#93c5fd' },
   { label: 'Documents', gb: 3.3, color: '#f59e0b' },
-  { label: 'Other', gb: 1.8, color: '#334155' },
+  { label: 'Other', gb: 1.8, color: '#dfe2ea' },
 ];
 const DONUT_TOTAL = DONUT.reduce((s, d) => s + d.gb, 0);
 const ARCS = DONUT.map((d, i) => ({ ...d, len: d.gb / DONUT_TOTAL, start: DONUT.slice(0, i).reduce((s, x) => s + x.gb, 0) / DONUT_TOTAL }));
@@ -49,7 +49,7 @@ function StorageTile() {
       <p className="text-[15px] text-slate-400">Per-account and combined storage, broken down by file type.</p>
       <div className="mt-auto flex flex-wrap items-center gap-8">
         <svg key={k} width="160" height="160" viewBox="0 0 42 42" role="img" aria-label="Storage by file type" className="-rotate-90">
-          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#1e293b" strokeWidth="5" />
+          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#dfe2ea" strokeWidth="5" />
           {ARCS.map(({ label, color, len, start }) => (
             <motion.circle key={label} cx="21" cy="21" r="15.9" fill="none" stroke={color} strokeWidth="5"
               initial={{ pathLength: 0, pathOffset: start }} whileInView={{ pathLength: len - 0.01, pathOffset: start }}
@@ -110,7 +110,7 @@ export function Bento() {
           <Tile i={1} className="md:col-span-3">
             <h3 className="text-lg font-semibold text-white">Starred, Shared, Trash</h3>
             <div className="flex flex-wrap gap-2 text-[13px]">
-              <span className="rounded-full bg-blue-500 px-3 py-1.5 text-white">Starred</span>
+              <span className="rounded-full bg-blue-500 px-3 py-1.5 text-[#fff]">Starred</span>
               <span className="rounded-full bg-slate-800 px-3 py-1.5 text-slate-300">Shared with me</span>
               <span className="rounded-full bg-slate-800 px-3 py-1.5 text-slate-300">Trash</span>
             </div>

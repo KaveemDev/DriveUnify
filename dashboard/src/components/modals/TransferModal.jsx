@@ -142,7 +142,7 @@ const AccountChip = ({ account }) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
     <Avatar
       src={account.picture}
-      sx={{ width: 22, height: 22, bgcolor: getAccountColor(account.email), fontSize: 10, flexShrink: 0 }}
+      sx={{ width: 22, height: 22, bgcolor: getAccountColor(account), fontSize: 10, flexShrink: 0 }}
     >
       {!account.picture && getInitials(account.email)}
     </Avatar>
@@ -660,7 +660,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                 >
                   <Avatar
                     src={connectedAccounts[0].picture}
-                    sx={{ width: 34, height: 34, bgcolor: getAccountColor(connectedAccounts[0].email), fontSize: 12, flexShrink: 0 }}
+                    sx={{ width: 34, height: 34, bgcolor: getAccountColor(connectedAccounts[0]), fontSize: 12, flexShrink: 0 }}
                   >
                     {!connectedAccounts[0].picture && getInitials(connectedAccounts[0].email)}
                   </Avatar>
@@ -979,7 +979,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                       sx={{
                         width: 32,
                         height: 32,
-                        bgcolor: getAccountColor(srcAccount.email),
+                        bgcolor: getAccountColor(srcAccount),
                         fontSize: 11,
                         flexShrink: 0,
                         boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
@@ -1077,7 +1077,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, mt: 0.25 }}>
                           <Avatar
                             src={acc.picture}
-                            sx={{ width: 32, height: 32, bgcolor: getAccountColor(acc.email), fontSize: 11, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,0,0,0.12)' }}
+                            sx={{ width: 32, height: 32, bgcolor: getAccountColor(acc), fontSize: 11, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,0,0,0.12)' }}
                           >
                             {!acc.picture && getInitials(acc.email)}
                           </Avatar>
@@ -1107,7 +1107,7 @@ export const TransferModal = ({ open, onOpenChange, file }) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
                           <Avatar
                             src={acc.picture}
-                            sx={{ width: 30, height: 30, bgcolor: getAccountColor(acc.email), fontSize: 11, flexShrink: 0 }}
+                            sx={{ width: 30, height: 30, bgcolor: getAccountColor(acc), fontSize: 11, flexShrink: 0 }}
                           >
                             {!acc.picture && getInitials(acc.email)}
                           </Avatar>

@@ -134,7 +134,7 @@ export const CreateFolderModal = ({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
                         <Avatar
                           src={a.picture}
-                          sx={{ width: 24, height: 24, bgcolor: getAccountColor(a.email), fontSize: 10 }}
+                          sx={{ width: 24, height: 24, bgcolor: getAccountColor(a), fontSize: 10 }}
                         >
                           {!a.picture && getInitials(a.email)}
                         </Avatar>

@@ -187,6 +187,7 @@ export const QuickActions = ({
                 borderRadius: 9,
                 border: '1px solid var(--color-border)',
                 background: 'var(--color-bg-elevated)',
+                boxShadow: 'var(--shadow-card)',
                 cursor: 'pointer',
                 transition: 'all var(--transition-fast)',
                 position: 'relative',
@@ -195,12 +196,12 @@ export const QuickActions = ({
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-border-strong)';
                 e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-border)';
                 e.currentTarget.style.transform = 'none';
-                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.boxShadow = 'var(--shadow-card)';
               }}
             >
               <div

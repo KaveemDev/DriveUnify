@@ -71,23 +71,28 @@
   /* Surfaces */
   --color-bg-base:      #f8fafc;
   --color-bg-surface:   #ffffff;
-  --color-bg-elevated:  #f1f5f9;
-  --color-bg-overlay:   #e2e8f0;
+  --color-bg-elevated:  #f8fafc;
+  --color-bg-overlay:   #f1f5f9;
   --color-bg-sidebar:   #ffffff;
 
   /* Borders */
   --color-border:       rgba(0, 0, 0, 0.08);
   --color-border-subtle: rgba(0, 0, 0, 0.04);
-  --color-border-strong: rgba(0, 0, 0, 0.16);
+  --color-border-strong: rgba(0, 0, 0, 0.14);
 
   /* Text */
-  --color-text-primary:   #09090b;
-  --color-text-secondary: #64748b;
+  --color-text-primary:   #0f172a;
+  --color-text-secondary: #475569;
   --color-text-muted:     #94a3b8;
 
   /* Glass / Backdrops */
-  --glass-bg:     rgba(255, 255, 255, 0.92);
+  --glass-bg:     rgba(255, 255, 255, 0.90);
   --glass-border: rgba(0, 0, 0, 0.08);
+
+  /* Shadows */
+  --shadow-glass: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+  --shadow-card:  0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  --shadow-popup: 0 12px 36px -8px rgba(0, 0, 0, 0.14), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
 
   /* Skeleton */
   --skeleton-base:  rgba(226, 232, 240, 0.8);
@@ -121,6 +126,10 @@
   --glass-bg:     rgba(17, 17, 19, 0.88);
   --glass-border: rgba(255, 255, 255, 0.08);
 
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  --shadow-card:  0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-popup: 0 10px 38px -10px rgba(0, 0, 0, 0.6), 0 2px 8px -4px rgba(0, 0, 0, 0.4);
+
   --skeleton-base:  rgba(26, 26, 30, 0.9);
   --skeleton-shine: rgba(38, 38, 44, 0.85);
 
@@ -151,6 +160,7 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
   }
 
   /* Custom thin scrollbar */
@@ -170,7 +180,13 @@ body {
 
   /* Gradient text */
   .gradient-text {
-    background: linear-gradient(135deg, #a1a1aa, #52525b);
+    background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .dark .gradient-text {
+    background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -204,15 +220,17 @@ body {
     border: 1px solid var(--color-border);
     border-radius: 10px;
     cursor: pointer;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-card);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
     position: relative;
   }
   .qa-card:hover {
     border-color: var(--color-border-strong);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
   }
   .dark .qa-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
   }
   .qa-card-icon {
     width: 38px;
@@ -264,11 +282,18 @@ body {
     border: 1px solid var(--color-border);
     border-radius: 8px;
     cursor: pointer;
-    transition: border-color var(--transition-fast);
+    box-shadow: var(--shadow-card);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     min-width: 0;
     flex: 1;
   }
-  .recmod-card:hover { border-color: var(--color-border-strong); }
+  .recmod-card:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .dark .recmod-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
 
   /* Filter tabs */
   .filter-tabs {
@@ -294,11 +319,12 @@ body {
   .filter-tab.active {
     background: var(--color-bg-surface);
     color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid var(--color-border-strong);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
   .dark .filter-tab.active {
     box-shadow: none;
+    border-color: var(--color-border);
   }
 
   /* File table row */
@@ -461,3 +487,246 @@ body {
   .qa-card-icon { width: 32px; height: 32px; }
 }
 
+
+/* ── Home redesign: shared pieces ─────────────────────────────── */
+:root {
+  --color-warning: #b45309;
+  --color-warning-bg: rgba(245, 158, 11, 0.08);
+  --color-warning-border: rgba(245, 158, 11, 0.32);
+  --color-warning-solid: #f59e0b;
+}
+.dark {
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.07);
+  --color-warning-border: rgba(251, 191, 36, 0.22);
+  --color-warning-solid: #fbbf24;
+}
+
+/* In the components layer so Tailwind utilities (hidden, sm:inline-flex…) can override display. */
+@layer components {
+.du-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 32px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.du-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+.du-btn {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-primary);
+  transition: background var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast);
+}
+.du-btn:hover { background: var(--color-bg-overlay); border-color: var(--color-border-strong); }
+.du-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.du-btn:focus-visible, .du-icon-btn:focus-visible, .du-recent-card:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+.du-btn-primary { background: var(--color-accent); color: var(--color-accent-fg); border-color: transparent; font-weight: 600; }
+.du-btn-primary:hover { background: var(--color-accent); border-color: transparent; opacity: 0.88; }
+.du-btn-warning { background: var(--color-warning-solid); color: #1a1608; border-color: transparent; font-weight: 600; }
+.du-btn-warning:hover { background: var(--color-warning-solid); border-color: transparent; opacity: 0.88; }
+.du-btn-lg { height: 40px; border-radius: 10px; }
+.du-icon-btn {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.du-icon-btn:hover { background: var(--color-bg-overlay); color: var(--color-text-primary); }
+.du-icon-btn-outline { border-color: var(--color-border); }
+.du-section-title { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text-primary); }
+.du-link-btn {
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.du-link-btn:hover { color: var(--color-text-primary); }
+.du-recent-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+.du-recent-card:hover { border-color: var(--color-border-strong); transform: translateY(-1px); }
+
+}
+
+/* ── File browser ─────────────────────────────────────────────── */
+@layer components {
+  .du-browser {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 32px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    container: files / inline-size;
+  }
+  .du-chip {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  }
+  .du-chip:hover { background: var(--color-bg-overlay); color: var(--color-text-primary); }
+  .du-chip[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+  .du-chip:focus-visible, .du-seg button:focus-visible, .du-row-btn:focus-visible, .du-file-card:focus-visible, .du-folder-tile:focus-visible {
+    outline: 2px solid var(--color-text-primary);
+    outline-offset: 2px;
+  }
+  .du-input {
+    height: 36px;
+    width: 100%;
+    padding: 0 30px 0 32px;
+    border-radius: 9px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-surface);
+    color: var(--color-text-primary);
+    font-size: 0.8125rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+  }
+  .du-input:focus { border-color: var(--color-border-strong); }
+  .du-seg { display: flex; padding: 2px; gap: 2px; border: 1px solid var(--color-border); border-radius: 10px; }
+  .du-seg button {
+    width: 34px; height: 30px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--color-text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .du-seg button[aria-pressed="true"] { background: var(--color-bg-overlay); color: var(--color-text-primary); }
+  .du-check { width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--color-accent); }
+
+  /* Table: cells are checkbox, name, [drive md+], [modified, size sm+], actions */
+  .du-table-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 0 12px;
+    padding: 0 12px 0 14px;
+    min-height: 52px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    font-size: 0.8125rem;
+  }
+  /* Columns follow the browser's own width (it shrinks when the details panel opens), not the viewport */
+  .du-col-sm, .du-col-md { display: none; }
+  @container files (min-width: 540px) {
+    .du-table-row { grid-template-columns: 36px minmax(0, 3fr) minmax(0, 1.3fr) 84px 104px; }
+    .du-col-sm { display: block; }
+    .du-only-narrow { display: none; }
+  }
+  @container files (min-width: 760px) {
+    .du-table-row { grid-template-columns: 36px minmax(0, 3fr) minmax(0, 2fr) minmax(0, 1.3fr) 84px 104px; }
+    .du-col-md { display: flex; }
+  }
+  .du-table-head {
+    min-height: 40px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-surface);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .du-table-body .du-table-row { cursor: pointer; user-select: none; transition: background var(--transition-fast); }
+  .du-table-body .du-table-row:last-child { border-bottom: 0; }
+  .du-table-body .du-table-row:hover { background: var(--color-bg-overlay); }
+  .du-table-body .du-table-row[data-selected="true"] { background: var(--color-bg-elevated); }
+  .du-row-actions { display: flex; justify-content: flex-end; gap: 2px; }
+  .du-row-btn {
+    width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--color-text-secondary); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .du-row-btn:hover { background: var(--color-bg-surface); color: var(--color-text-primary); }
+  /* Narrow tables keep only the More button; Details and Download live in its menu */
+  .du-row-btn-secondary { display: none; opacity: 0; transition: opacity var(--transition-fast); }
+  @container files (min-width: 540px) { .du-row-btn-secondary { display: inline-flex; } }
+  .du-table-row:hover .du-row-btn-secondary, .du-table-row:focus-within .du-row-btn-secondary { opacity: 1; }
+  @media (hover: none) { .du-row-btn-secondary { display: none; } }
+
+  /* Grid */
+  .du-folder-tile, .du-file-card {
+    position: relative;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    user-select: none;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+  }
+  .du-folder-tile:hover, .du-file-card:hover { border-color: var(--color-border-strong); }
+  .du-folder-tile[data-selected="true"], .du-file-card[data-selected="true"] {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+  .du-folder-tile { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 6px 0 14px; border-radius: 12px; }
+  .du-file-card { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; }
+  .du-card-check { position: absolute; top: 10px; left: 10px; opacity: 0; transition: opacity var(--transition-fast); }
+  .du-file-card:hover .du-card-check, .du-file-card:focus-within .du-card-check, .du-file-card[data-selected="true"] .du-card-check { opacity: 1; }
+  /* Folder tiles: the checkbox takes the folder icon's slot on hover, focus or selection */
+  .du-tile-lead { width: 18px; display: flex; justify-content: center; flex-shrink: 0; }
+  .du-tile-lead .du-check { display: none; }
+  .du-folder-tile:hover .du-tile-lead .du-check, .du-folder-tile:focus-within .du-tile-lead .du-check, .du-folder-tile[data-selected="true"] .du-tile-lead .du-check { display: block; }
+  .du-folder-tile:hover .du-tile-icon, .du-folder-tile:focus-within .du-tile-icon, .du-folder-tile[data-selected="true"] .du-tile-icon { display: none; }
+  @media (hover: none) {
+    .du-card-check { opacity: 1; }
+    .du-tile-lead .du-check { display: block; }
+    .du-tile-icon { display: none; }
+  }
+  /* Buttons sitting on the inverted (accent) selection bar */
+  .du-on-accent { border-color: transparent; color: inherit; }
+  .du-on-accent:hover { border-color: transparent; color: inherit; background: color-mix(in srgb, currentColor 12%, transparent); }
+  .du-group-label { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-secondary); }
+}
+
+@media (max-width: 639px) {
+  .du-page { padding: 20px 16px 8px; gap: 20px; }
+  .du-topbar { padding: 10px 16px !important; }
+  .du-browser { padding: 16px 16px 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .du-recent-card:hover { transform: none; }
+}

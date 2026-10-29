@@ -21,15 +21,15 @@ export const UploadProgressItem = ({
   return (
     <div className={clsx(
       'flex items-center gap-3 px-3 py-2.5 rounded-xl',
-      'bg-slate-800/50 border border-slate-700/50',
+      'bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 shadow-sm',
       'transition-all duration-200'
     )}>
       {/* Icon */}
       <div className="shrink-0">
         {isComplete ? (
-          <CheckCircle2 size={18} className="text-emerald-400" />
+          <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400" />
         ) : isFailed ? (
-          <XCircle size={18} className="text-red-400" />
+          <XCircle size={18} className="text-red-500 dark:text-red-400" />
         ) : (
           <FileIcon category={category} size={18} />
         )}
@@ -37,33 +37,33 @@ export const UploadProgressItem = ({
 
       {/* Info + Progress */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-slate-300 truncate">{upload.fileName}</p>
-        <p className="text-[10px] text-slate-600 mb-1">{formatFileSize(upload.fileSize)}</p>
+        <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">{upload.fileName}</p>
+        <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">{formatFileSize(upload.fileSize)}</p>
 
         {(isUploading) && (
-          <div className="relative h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <div className="relative h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-300"
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
               style={{ width: `${progress || 0}%` }}
             />
           </div>
         )}
 
         {isFailed && error && (
-          <p className="text-[10px] text-red-400 truncate">{error}</p>
+          <p className="text-[10px] text-red-500 dark:text-red-400 truncate">{error}</p>
         )}
         {isCancelled && (
-          <p className="text-[10px] text-slate-600">Cancelled</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400">Cancelled</p>
         )}
       </div>
 
       {/* Percent / Status */}
       <div className="shrink-0 text-right">
         {isUploading && (
-          <span className="text-xs text-slate-500">{progress || 0}%</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">{progress || 0}%</span>
         )}
         {isComplete && (
-          <span className="text-xs text-emerald-500">Done</span>
+          <span className="text-xs text-emerald-600 dark:text-emerald-500 font-medium">Done</span>
         )}
       </div>
 
@@ -71,7 +71,7 @@ export const UploadProgressItem = ({
       <div className="shrink-0 flex items-center gap-1">
         {isUploading && (
           <button
-            className="p-1 rounded-md hover:bg-slate-700 text-slate-500 hover:text-slate-300 cursor-pointer"
+            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
             onClick={() => onCancel?.(upload.id)}
             title="Cancel"
           >
@@ -81,14 +81,14 @@ export const UploadProgressItem = ({
         {isFailed && (
           <>
             <button
-              className="p-1 rounded-md hover:bg-slate-700 text-slate-500 hover:text-blue-400 cursor-pointer"
+              className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-blue-500 cursor-pointer"
               onClick={() => onRetry?.(upload)}
               title="Retry"
             >
               <RotateCcw size={12} />
             </button>
             <button
-              className="p-1 rounded-md hover:bg-slate-700 text-slate-500 hover:text-slate-300 cursor-pointer"
+              className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
               onClick={() => onRemove?.(upload.id)}
               title="Dismiss"
             >
@@ -98,7 +98,7 @@ export const UploadProgressItem = ({
         )}
         {(isComplete || isCancelled) && (
           <button
-            className="p-1 rounded-md hover:bg-slate-700 text-slate-500 hover:text-slate-300 cursor-pointer"
+            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
             onClick={() => onRemove?.(upload.id)}
             title="Dismiss"
           >

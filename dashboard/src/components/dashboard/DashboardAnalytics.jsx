@@ -152,6 +152,7 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
             borderRadius: 8,
             border: '1px solid var(--color-border)',
             background: 'var(--color-bg-elevated)',
+            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
@@ -178,6 +179,7 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
             borderRadius: 8,
             border: '1px solid var(--color-border)',
             background: 'var(--color-bg-elevated)',
+            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
@@ -204,6 +206,7 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
             borderRadius: 8,
             border: '1px solid var(--color-border)',
             background: 'var(--color-bg-elevated)',
+            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
@@ -230,6 +233,7 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
             borderRadius: 8,
             border: '1px solid var(--color-border)',
             background: 'var(--color-bg-elevated)',
+            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
@@ -258,6 +262,7 @@ export const DashboardAnalytics = ({ files = [], connectedAccounts = [] }) => {
             borderRadius: 8,
             border: '1px solid var(--color-border)',
             background: 'var(--color-bg-elevated)',
+            boxShadow: 'var(--shadow-card)',
           }}
         >
           <div

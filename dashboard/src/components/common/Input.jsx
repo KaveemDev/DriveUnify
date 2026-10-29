@@ -11,18 +11,18 @@ export const Input = ({
   return (
     <div className={clsx('flex flex-col gap-1.5', className)}>
       {label && (
-        <label className="text-sm font-medium text-slate-300">{label}</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
       )}
       <div className="relative">
         {Icon && (
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
             <Icon size={16} />
           </div>
         )}
         <input
           className={clsx(
-            'w-full bg-slate-800 border border-slate-700 rounded-lg',
-            'text-slate-100 placeholder-slate-500 text-sm',
+            'w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg',
+            'text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm shadow-sm',
             'transition-all duration-150',
             'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
             'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -33,7 +33,7 @@ export const Input = ({
           {...props}
         />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
     </div>
   );
 };
