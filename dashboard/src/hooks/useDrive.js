@@ -142,6 +142,14 @@ export const useDrive = () => {
       if (user?.uid) {
         try {
           await addConnectedAccount(user.uid, accountData);
+          // An older Cloud Function stored Dropbox metadata under the bare email id, overwriting a
+          // same-email Drive record; rewrite those siblings so they survive a reload.
+          const siblings = connectedAccounts.filter(
+            a => a.email === accountData.email && getAccountId(a) !== getAccountId(accountData)
+          );
+          await Promise.all(siblings.map(({ email, name, picture, provider, clientId }) =>
+            addConnectedAccount(user.uid, { email, name, picture, provider, clientId: clientId || null })
+          ));
         } catch (err) {
           console.warn('[DriveUnify] Note: CF already stored metadata. Direct Firestore write skipped:', err.message);
         }
@@ -165,7 +173,7 @@ export const useDrive = () => {
       toast.error(`Failed to connect: ${err.message}`);
       throw err;
     }
-  }, [dispatch, user?.uid, getAccountFiles, getAccountStorage]);
+  }, [dispatch, user?.uid, connectedAccounts, getAccountFiles, getAccountStorage]);
 
   const connectDropboxAccount = useCallback(async (customAppKey = null) => {
     return connectNewAccount('dropbox', customAppKey);
