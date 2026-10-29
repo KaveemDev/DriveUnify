@@ -730,3 +730,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .du-recent-card:hover { transform: none; }
 }
+
+/* ── Transfer page ────────────────────────────────────────────── */
+.du-transfer-grid { display: grid; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); gap: 0; align-items: stretch; }
+.du-transfer-drives { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.du-transfer-flow { position: relative; display: flex; align-items: center; justify-content: center; }
+.du-transfer-track { position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: linear-gradient(90deg, var(--from), var(--to)); opacity: 0.6; }
+.du-transfer-dot { position: absolute; top: -3px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; }
+@media (max-width: 900px) {
+  .du-transfer-grid { grid-template-columns: minmax(0, 1fr); }
+  .du-transfer-flow { height: 56px; }
+  .du-transfer-track { left: 50%; right: auto; top: 0; bottom: 0; width: 2px; height: auto; background: linear-gradient(180deg, var(--from), var(--to)); }
+  .du-transfer-track .du-transfer-dot { display: none; }
+}

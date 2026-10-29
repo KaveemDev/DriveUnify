@@ -29,6 +29,7 @@ import {
   cancelResumableUpload,
   listFolderContents,
   createFolder,
+  exportGoogleFile,
 } from '../../api/googleDriveApi.js';
 
 import {
@@ -62,6 +63,14 @@ const GOOGLE_APPS_MIME_TYPES = new Set([
 
 export const isGoogleAppsFile = (mimeType) => GOOGLE_APPS_MIME_TYPES.has(mimeType);
 
+// Google-native files have no bytes to stream, so they are exported to these formats instead
+const GOOGLE_EXPORT_FORMATS = {
+  'application/vnd.google-apps.document': { mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ext: 'docx' },
+  'application/vnd.google-apps.spreadsheet': { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ext: 'xlsx' },
+  'application/vnd.google-apps.presentation': { mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', ext: 'pptx' },
+  'application/vnd.google-apps.drawing': { mime: 'application/pdf', ext: 'pdf' },
+};
+
 /**
  * Drive API adapter object to facilitate clean testing and dependency injection.
  */
@@ -76,6 +85,7 @@ export const driveApiAdapter = {
   cancelResumableUpload,
   listFolderContents,
   createFolder,
+  exportGoogleFile,
 };
 
 /**
@@ -170,24 +180,15 @@ export const transferFile = async (
     } catch (copyErr) {
       if (signal?.aborted) throw copyErr;
 
-      // Google Workspace files (Docs/Sheets) cannot be streamed via raw media download
-      if (isGoogleAppsFile(mimeType)) {
-        throw new Error(
-          `Cloud-side copy failed for "${fileName}": ${copyErr.message}. Google Docs/Sheets cannot be streamed as raw binary.`,
-          { cause: copyErr }
-        );
-      }
-
-      // For binary files, gracefully fallback to Strategy B (Method 2: 8 MiB streaming)
       console.info(
-        `[DriveUnify] Cloud-side copy rejected for "${fileName}" (${copyErr.message}). Falling back to memory-safe 8 MiB streaming.`
+        `[DriveUnify] Cloud-side copy rejected for "${fileName}" (${copyErr.message}). Falling back to browser transfer.`
       );
     }
-  } else if (isGoogleAppsFile(mimeType)) {
-    // If transferring Google Workspace doc to Dropbox, raw media cannot be downloaded directly
-    throw new Error(
-      `Cannot transfer Google Doc "${fileName}" to Dropbox. Google Docs must be converted or copied within Google Drive.`
-    );
+  }
+
+  // Google Docs/Sheets/Slides have no raw bytes: export them, then upload the export
+  if (!srcIsDropbox && isGoogleAppsFile(mimeType)) {
+    return await _transferViaExport(srcAccount, destAccount, file, destFolderId, onProgress, signal);
   }
 
   // ── Strategy B (Method 2): Memory-Bounded 8 MiB Streaming Transfer ──
@@ -242,6 +243,48 @@ async function _transferViaCloudCopy(
         console.warn('[DriveUnify] Failed to remove temporary share permission:', cleanupErr.message);
       }
     }
+  }
+}
+
+/**
+ * Google-native files: export to Office/PDF, then upload. Drive destinations
+ * convert the upload back into a native Google file.
+ */
+async function _transferViaExport(srcAccount, destAccount, file, destFolderId, onProgress = null, signal = null) {
+  const format = GOOGLE_EXPORT_FORMATS[file.mimeType];
+  if (!format) {
+    throw new Error(`"${file.name}" is a Google file type that can't be exported, so it can only be copied between Google Drive accounts.`);
+  }
+  const progress = createThrottledProgress(onProgress);
+  progress(0, { mode: 'export' });
+
+  const blob = await driveApiAdapter.exportGoogleFile(srcAccount.accessToken, file.id, format.mime, signal, srcAccount.email);
+  progress(50, { mode: 'export' });
+
+  if (isDropboxAccount(destAccount)) {
+    const name = file.name.toLowerCase().endsWith(`.${format.ext}`) ? file.name : `${file.name}.${format.ext}`;
+    const res = await dropboxApiAdapter.uploadDropboxFileDirect(destAccount.accessToken, blob, resolveDropboxPath(destFolderId, name), signal);
+    progress(100, { mode: 'export' });
+    return { ...(res || {}), transferMode: 'export' };
+  }
+
+  // Setting the Google mime type in metadata makes Drive convert the Office file back
+  const uploadUrl = await driveApiAdapter.initiateResumableUpload(
+    destAccount.accessToken,
+    { name: file.name, mimeType: file.mimeType, parents: [destFolderId === '' ? 'root' : destFolderId] },
+    format.mime,
+    blob.size,
+    signal,
+    destAccount.email
+  );
+  try {
+    const result = await driveApiAdapter.uploadResumableChunk(uploadUrl, blob, 0, blob.size - 1, blob.size, signal);
+    if (!result.complete) throw new Error('Upload of exported file did not complete.');
+    progress(100, { mode: 'export' });
+    return { ...(result.data || {}), transferMode: 'export' };
+  } catch (err) {
+    await driveApiAdapter.cancelResumableUpload(uploadUrl);
+    throw err;
   }
 }
 

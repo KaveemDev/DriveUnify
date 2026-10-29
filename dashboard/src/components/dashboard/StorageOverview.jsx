@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, ArrowLeftRight } from 'lucide-react';
+import { Plus, ArrowLeftRight, BarChart3 } from 'lucide-react';
 import { formatFileSize } from '../../utils/formatters';
 import { getAccountColor } from '../../config/constants';
 import { getAccountId } from '../../utils/helpers';
@@ -11,6 +11,7 @@ export const StorageOverview = ({
   onConnectDrive,
   onSelectAccount,
   onTransferFiles,
+  onOpenAnalytics,
 }) => {
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
 
@@ -46,7 +47,10 @@ export const StorageOverview = ({
       <section
         aria-labelledby="storage-heading"
         className="du-card"
-        style={{ flex: '2 1 480px', minWidth: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}
+        // Clicks on the card's own buttons keep their action; anywhere else opens analytics
+        onClick={(e) => !e.target.closest('button') && onOpenAnalytics?.()}
+        title="Open storage analytics"
+        style={{ flex: '2 1 480px', minWidth: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 20, cursor: onOpenAnalytics ? 'pointer' : undefined }}
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
@@ -67,6 +71,9 @@ export const StorageOverview = ({
                 {formatFileSize(totalFree)}
               </div>
             </div>
+            <button className="du-icon-btn du-icon-btn-outline" onClick={onOpenAnalytics} aria-label="Storage analytics" title="Storage analytics">
+              <BarChart3 size={16} />
+            </button>
             <button className="du-icon-btn du-icon-btn-outline" onClick={onConnectDrive} aria-label="Connect another drive" title="Connect another drive">
               <Plus size={16} />
             </button>
@@ -132,7 +139,7 @@ export const StorageOverview = ({
             Move large files to {providerLabel(suggestion.to)} · {suggestion.to.email}, which has {formatFileSize(suggestion.freeOnTarget)} free.
           </p>
           <div style={{ marginTop: 'auto', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <button className="du-btn du-btn-primary" onClick={onTransferFiles}>Move files</button>
+            <button className="du-btn du-btn-primary" onClick={() => onTransferFiles?.({ sourceId: getAccountId(suggestion.from), destId: getAccountId(suggestion.to) })}>Move files</button>
             <button className="du-btn" onClick={() => setSuggestionDismissed(true)}>Not now</button>
           </div>
         </section>

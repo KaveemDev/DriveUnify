@@ -9,6 +9,7 @@ const Login = lazy(() => import('../pages/Login'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Settings = lazy(() => import('../pages/Settings'));
 const Support = lazy(() => import('../pages/Support'));
+const Transfer = lazy(() => import('../pages/Transfer'));
 const OAuthCallback = lazy(() => import('../pages/OAuthCallback'));
 
 // ── Protected route ───────────────────────────────────────────
@@ -80,6 +81,17 @@ export const AppRoutes = () => (
           <ProtectedRoute>
             <DashboardLayout>
               <Support />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/transfer"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <Transfer />
             </DashboardLayout>
           </ProtectedRoute>
         }

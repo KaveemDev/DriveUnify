@@ -135,7 +135,7 @@ export const listFiles = (accessToken, {
 
 /**
  * List only subfolders of a given folder.
- * Used by the destination folder picker in TransferModal.
+ * Used by the destination folder picker on the Transfer page.
  */
 export const listFoldersInFolder = (accessToken, folderId = 'root', accountEmail = 'default') => {
   return withRateLimit(accountEmail, () => {
@@ -364,6 +364,24 @@ export const uploadMultipartToDrive = async (destAccessToken, blob, fileName, mi
     xhr.onerror = () => reject(new Error('Network error during upload'));
     xhr.send(bodyBlob);
   }));
+};
+
+/**
+ * Export a Google Docs/Sheets/Slides/Drawings file to a downloadable format.
+ * Google caps exports at 10 MB.
+ */
+export const exportGoogleFile = async (accessToken, fileId, exportMimeType, signal = null, accountEmail = 'default') => {
+  return withRateLimit(accountEmail, async () => {
+    const res = await fetch(
+      `${DRIVE_API_BASE}/files/${fileId}/export?mimeType=${encodeURIComponent(exportMimeType)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` }, signal }
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `Export failed: HTTP ${res.status}`);
+    }
+    return res.blob();
+  });
 };
 
 // ── Bounded Streaming & Resumable Transfer API ─────────────────
