@@ -16,7 +16,7 @@ export const StorageBar = () => {
     id:      getAccountId(a),
     email:   a.email,
     percent: totalLimit > 0 ? ((a.storage?.used || 0) / totalLimit) * 100 : 0,
-    color:   getAccountColor(a.email),
+    color:   getAccountColor(a),
   }));
 
   return (

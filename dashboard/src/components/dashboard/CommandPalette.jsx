@@ -160,7 +160,7 @@ export const CommandPalette = ({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.65)',
+            background: 'rgba(15, 23, 42, 0.45)',
             backdropFilter: 'blur(4px)',
           }}
         />

@@ -57,7 +57,7 @@ export const FileBreadcrumb = ({ onNavigateRoot }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{
                   width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                  background: getAccountColor(currentFolder.accountEmail),
+                  background: getAccountColor(currentFolder),
                 }} />
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
                   {currentFolder.accountEmail.split('@')[0]}

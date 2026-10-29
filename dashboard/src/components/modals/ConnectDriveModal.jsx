@@ -238,7 +238,7 @@ export const ConnectDriveModal = ({ open, onOpenChange }) => {
                     sx={{
                       width: 32,
                       height: 32,
-                      bgcolor: getAccountColor(account.email),
+                      bgcolor: getAccountColor(account),
                       fontSize: 11,
                       flexShrink: 0,
                     }}

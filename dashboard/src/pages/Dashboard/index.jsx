@@ -8,8 +8,6 @@ import { Cloud, Plus, ArrowLeft, AlertTriangle, RefreshCw } from 'lucide-react';
 
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { StorageOverview } from '../../components/dashboard/StorageOverview';
-import { DashboardAnalytics } from '../../components/dashboard/DashboardAnalytics';
-import { QuickActions } from '../../components/dashboard/QuickActions';
 import { RecentFiles } from '../../components/dashboard/RecentFiles';
 import { FileToolbar } from '../../components/dashboard/FileToolbar';
 import { FileDetailsPanel } from '../../components/dashboard/FileDetailsPanel';
@@ -243,6 +241,11 @@ const Dashboard = () => {
   const handlePermanentDelete = (file) => setDeleteConfirm({ open: true, file, permanent: true });
   const handleRename = (file) => setRenameModal({ open: true, file });
   const handleCopyToDrive = useCallback((file) => setTransferModal({ open: true, file }), []);
+  const openTransfer = () => setTransferModal({ open: true, file: files[0] || null });
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const displayName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   const confirmDelete = async () => {
     const { file, permanent } = deleteConfirm;
@@ -415,68 +418,16 @@ const Dashboard = () => {
           style={{ display: 'none' }}
         />
 
-        {/* 1. Contextual Dashboard Header */}
+        {/* 1. Top bar: search, sync, transfer, new */}
         <DashboardHeader
-          user={user}
           loading={loading}
           onRefresh={fetchFilesForAllAccounts}
           onUploadFiles={triggerFileUpload}
           onUploadFolder={triggerFolderUpload}
+          onCreateFolder={() => setCreateFolderModal(true)}
+          onTransferFiles={connectedAccounts.length > 1 ? openTransfer : undefined}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          unreadCount={0}
-          title={VIEW_META[activeNav]?.title}
-          subtitle={VIEW_META[activeNav]?.subtitle}
         />
-
-        {/* Expired / Reconnect Required Accounts Banner */}
-        {expiredAccounts.length > 0 && (
-          <div
-            style={{
-              margin: '12px 24px 0',
-              padding: '10px 16px',
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <AlertTriangle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
-                {[...new Set(expiredAccounts.map((a) => (a.provider === 'dropbox' ? 'Dropbox' : 'Google Drive')))].join(' & ')} session expired for{' '}
-                <strong>{expiredAccounts.map((a) => a.email).join(', ')}</strong>.
-                Re-authenticate to resume syncing your files.
-              </span>
-            </div>
-            <button
-              onClick={() => reconnectAccount(getAccountId(expiredAccounts[0]))}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '5px 12px',
-                fontSize: 12,
-                fontWeight: 600,
-                background: '#ef4444',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#dc2626')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#ef4444')}
-            >
-              <RefreshCw size={13} />
-              Reconnect Account
-            </button>
-          </div>
-        )}
 
         {/* Scrollable Center Work Area */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
@@ -492,67 +443,74 @@ const Dashboard = () => {
             id="dashboard-main-scroll"
             className="scrollbar-thin"
           >
-            {/* 2. Prominent Quick Actions Module (shown on Home view when at root) */}
-            {activeNav === 'home' && !currentFolder && (
-              <QuickActions
-                onUploadFiles={triggerFileUpload}
-                onCreateFolder={() => setCreateFolderModal(true)}
-                onConnectDrive={() => dispatch(setConnectModalOpen(true))}
-                onTransferFiles={() => setTransferModal({ open: true, file: files[0] || null })}
-                onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-                onNavigateView={(view) => dispatch(setActiveNav(view))}
-              />
-            )}
+            <div className="du-page">
+              {/* 2. Page title */}
+              <div>
+                <h1 style={{ margin: 0, fontSize: '1.625rem', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--color-text-primary)' }}>
+                  {VIEW_META[activeNav]?.title || `${greeting}, ${displayName}`}
+                </h1>
+                <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                  {VIEW_META[activeNav]?.subtitle ||
+                    `${connectedAccounts.length} ${connectedAccounts.length === 1 ? 'drive' : 'drives'} connected`}
+                </p>
+              </div>
 
-            {/* 3. Real-time Storage & Content Analytics Module */}
-            {activeNav === 'home' && !currentFolder && (
-              <DashboardAnalytics
-                files={files}
-                connectedAccounts={connectedAccounts}
-              />
-            )}
+              {/* 3. Expired / reconnect-required accounts */}
+              {expiredAccounts.length > 0 && (
+                <div
+                  role="status"
+                  style={{
+                    padding: '10px 10px 10px 16px',
+                    background: 'var(--color-warning-bg)',
+                    border: '1px solid var(--color-warning-border)',
+                    borderRadius: 12,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <AlertTriangle size={18} aria-hidden="true" style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+                  <p style={{ margin: 0, flex: '1 1 320px', fontSize: '0.875rem', color: 'var(--color-text-primary)' }}>
+                    <strong style={{ fontWeight: 600 }}>
+                      {[...new Set(expiredAccounts.map((a) => (a.provider === 'dropbox' ? 'Dropbox' : 'Google Drive')))].join(' & ')} needs you to sign in again.
+                    </strong>{' '}
+                    <span style={{ color: 'var(--color-text-secondary)' }}>
+                      Files from {expiredAccounts.map((a) => a.email).join(', ')} are hidden until it reconnects.
+                    </span>
+                  </p>
+                  <button
+                    className="du-btn du-btn-warning"
+                    onClick={() => reconnectAccount(getAccountId(expiredAccounts[0]))}
+                  >
+                    <RefreshCw size={14} />
+                    Reconnect
+                  </button>
+                </div>
+              )}
 
-            {/* 4. Compact Multi-Drive Storage Overview (shown on Home view when at root) */}
-            {activeNav === 'home' && !currentFolder && (
-              <StorageOverview
-                connectedAccounts={connectedAccounts}
-                onConnectDrive={() => dispatch(setConnectModalOpen(true))}
-                onSelectAccount={(accountId) => dispatch(setSelectedAccount(accountId))}
-              />
-            )}
-
-            {/* 5. Short & Compact Recent Activity (Top 3 files) */}
-            {activeNav === 'home' && !currentFolder && (
-              <RecentFiles
-                files={files}
-                onFileClick={handleFileClick}
-                onFileDetails={(f) => setSelectedInspectorFile(f)}
-                onDownload={handleDownload}
-                onShare={(f) => {
-                  const link = `${window.location.origin}/dashboard?share=${f.id}`;
-                  navigator.clipboard.writeText(link);
-                  toast.success('Share link copied');
-                }}
-                onRename={handleRename}
-                onDelete={handleDelete}
-                onContextMenu={handleContextMenu}
-                onViewAllRecent={() => dispatch(setActiveNav('recent'))}
-              />
-            )}
+              {/* 4. Home overview: unified storage + suggestion, then recent files */}
+              {activeNav === 'home' && !currentFolder && (
+                <>
+                  <StorageOverview
+                    connectedAccounts={connectedAccounts}
+                    onConnectDrive={() => dispatch(setConnectModalOpen(true))}
+                    onSelectAccount={(accountId) => dispatch(setSelectedAccount(accountId))}
+                    onTransferFiles={openTransfer}
+                  />
+                  <RecentFiles
+                    files={files}
+                    onFileClick={handleFileClick}
+                    onContextMenu={handleContextMenu}
+                    onViewAllRecent={() => dispatch(setActiveNav('recent'))}
+                  />
+                </>
+              )}
+            </div>
 
             {/* 5. File Browser Section */}
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: 400,
-                background: 'var(--color-bg-surface)',
-              }}
-            >
-              {/* File Toolbar */}
+            <section aria-label="Files" className="du-browser">
               <FileToolbar
-                currentFolder={currentFolder}
                 onNavigateRoot={navigateToRoot}
                 searchQuery={inViewSearch}
                 onSearchChange={setInViewSearch}
@@ -568,30 +526,24 @@ const Dashboard = () => {
                 onSelectAll={() => dispatch(selectAll(processedFiles.map((f) => f.id)))}
                 onClearSelection={() => dispatch(clearSelection())}
                 onBatchDelete={() => setBatchDeleteConfirm(true)}
-                onCreateFolder={() => setCreateFolderModal(true)}
               />
 
-              {/* File View (Grid or List) */}
-              <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                {viewMode === VIEW_MODES.GRID ? (
-                  <FileGrid
-                    files={processedFiles}
-                    onFileClick={handleFileClick}
-                    onContextMenu={handleContextMenu}
-                    onMenuClick={(e, file) => handleContextMenu(e, file)}
-                  />
-                ) : (
-                  <FileList
-                    files={processedFiles}
-                    onFileClick={handleFileClick}
-                    onContextMenu={handleContextMenu}
-                    onRename={handleRename}
-                    onDelete={handleDelete}
-                    onFileDetails={(f) => setSelectedInspectorFile(f)}
-                  />
-                )}
-              </div>
-            </div>
+              {viewMode === VIEW_MODES.GRID ? (
+                <FileGrid
+                  files={processedFiles}
+                  onFileClick={handleFileClick}
+                  onContextMenu={handleContextMenu}
+                  onMenuClick={(e, file) => handleContextMenu(e, file)}
+                />
+              ) : (
+                <FileList
+                  files={processedFiles}
+                  onFileClick={handleFileClick}
+                  onContextMenu={handleContextMenu}
+                  onFileDetails={(f) => setSelectedInspectorFile(f)}
+                />
+              )}
+            </section>
           </div>
 
           {/* 6. Right-Side File Details Panel (Inspector) */}

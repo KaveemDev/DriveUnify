@@ -1,14 +1,9 @@
-import React, { useState } from 'react';
-import {
-  Download, Pencil, Trash2, MoreHorizontal, Info,
-  Folder, Check, Share2
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import React from 'react';
+import { Download, MoreHorizontal, Info, Folder, Star } from 'lucide-react';
 import { FileIcon } from './FileIcon';
-import { ProviderBadge } from '../common/ProviderBadge';
-import { formatFileSize, formatRelativeDate, getMimeLabel } from '../../utils/formatters';
-import { isFolder, copyToClipboard } from '../../utils/helpers';
-import toast from 'react-hot-toast';
+import { getAccountColor } from '../../config/constants';
+import { formatFileSize, formatRelativeDate } from '../../utils/formatters';
+import { isFolder } from '../../utils/helpers';
 
 export const FileRow = ({
   file,
@@ -17,224 +12,106 @@ export const FileRow = ({
   onClick,
   onContextMenu,
   onDownload,
-  onRename,
-  onDelete,
   onFileDetails,
 }) => {
-  const [hovered, setHovered] = useState(false);
   const isDir = isFolder(file);
+  const driveLabel = `${file.provider === 'dropbox' ? 'Dropbox' : 'Drive'} · ${file.accountEmail || ''}`;
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="du-table-row"
+      data-selected={selected}
       onClick={(e) => {
-        if (e.ctrlKey || e.metaKey) {
-          onSelect?.(file);
-        } else {
-          onClick?.(file);
-        }
+        if (e.ctrlKey || e.metaKey) onSelect?.(file);
+        else onClick?.(file);
       }}
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenu?.(e, file);
       }}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '36px 30px minmax(200px, 3fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(80px, 0.8fr) 120px',
-        alignItems: 'center',
-        padding: '0 16px',
-        height: 42,
-        borderBottom: '1px solid var(--color-border-subtle)',
-        background: selected
-          ? 'var(--color-bg-elevated)'
-          : hovered
-          ? 'var(--color-bg-overlay)'
-          : 'transparent',
-        cursor: 'pointer',
-        fontSize: '0.8125rem',
-        transition: 'background var(--transition-fast)',
-        userSelect: 'none',
-      }}
-      className="file-table-row-grid"
     >
-      {/* 1. Checkbox */}
-      <div
-        style={{ display: 'flex', alignItems: 'center' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect?.(file);
-        }}
-      >
-        <div
-          style={{
-            width: 16,
-            height: 16,
-            borderRadius: 4,
-            border: `1.5px solid ${selected ? 'var(--color-accent)' : 'var(--color-border-strong)'}`,
-            background: selected ? 'var(--color-accent)' : 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: selected || hovered ? 1 : 0,
-            transition: 'opacity var(--transition-fast), background var(--transition-fast)',
-            cursor: 'pointer',
-          }}
-        >
-          {selected && <Check size={10} strokeWidth={2.5} color="var(--color-accent-fg)" />}
-        </div>
-      </div>
-
-      {/* 2. File Icon */}
-      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-        {isDir ? (
-          <Folder size={17} fill="#f59e0b" color="#f59e0b" />
-        ) : (
-          <FileIcon category={file.category} size={17} />
-        )}
-      </div>
-
-      {/* 3. File Name */}
-      <div style={{ minWidth: 0, paddingRight: 12 }}>
-        <div
-          style={{
-            fontWeight: 500,
-            color: 'var(--color-text-primary)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-          title={file.name}
-        >
-          {file.name}
-        </div>
-      </div>
-
-      {/* 4. Provider / Account */}
-      <div className="hidden md:block">
-        <ProviderBadge
-          provider={file.provider || 'google_drive'}
-          accountEmail={file.accountEmail}
-          compact
+      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          className="du-check"
+          checked={selected}
+          onChange={() => onSelect?.(file)}
+          aria-label={`Select ${file.name}`}
         />
       </div>
 
-      {/* 5. Last Modified */}
-      <div
-        style={{
-          color: 'var(--color-text-secondary)',
-          fontSize: '0.78rem',
-          whiteSpace: 'nowrap',
-        }}
-        className="hidden sm:block"
-      >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <span
+          aria-hidden="true"
+          style={{
+            width: 32,
+            height: 32,
+            flexShrink: 0,
+            borderRadius: 8,
+            background: 'var(--color-bg-overlay)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {isDir ? (
+            <Folder size={16} style={{ color: 'var(--color-text-secondary)' }} />
+          ) : (
+            <FileIcon category={file.category} size={16} />
+          )}
+        </span>
+        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <button
+            type="button"
+            title={file.name}
+            style={{
+              padding: 0,
+              border: 0,
+              background: 'transparent',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: 'inherit',
+              fontWeight: 500,
+              color: 'var(--color-text-primary)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {file.name}
+          </button>
+          {/* Phones hide the meta columns, so show them under the name */}
+          <span className="du-only-narrow" style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {formatRelativeDate(file.modifiedTime)}{isDir ? '' : ` · ${formatFileSize(file.size)}`}
+          </span>
+        </span>
+        {file.starred && <Star size={13} fill="#f59e0b" color="#f59e0b" aria-label="Starred" style={{ flexShrink: 0 }} />}
+      </div>
+
+      <div className="du-col-md" style={{ alignItems: 'center', gap: 8, minWidth: 0, color: 'var(--color-text-secondary)' }}>
+        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, flexShrink: 0, background: getAccountColor(file) }} />
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={driveLabel}>{driveLabel}</span>
+      </div>
+
+      <div className="du-col-sm" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {formatRelativeDate(file.modifiedTime)}
       </div>
 
-      {/* 6. Size */}
-      <div
-        style={{
-          color: 'var(--color-text-secondary)',
-          fontSize: '0.78rem',
-          whiteSpace: 'nowrap',
-        }}
-        className="hidden sm:block"
-      >
+      <div className="du-col-sm" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
         {isDir ? '—' : formatFileSize(file.size)}
       </div>
 
-      {/* 7. Hover Actions */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: 3,
-          opacity: hovered ? 1 : 0,
-          transition: 'opacity var(--transition-fast)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => onFileDetails?.(file)}
-          title="Details"
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 5,
-            border: '1px solid var(--color-border)',
-            background: 'var(--color-bg-surface)',
-            color: 'var(--color-text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <Info size={12} />
+      <div className="du-row-actions" onClick={(e) => e.stopPropagation()}>
+        <button className="du-row-btn du-row-btn-secondary" onClick={() => onFileDetails?.(file)} aria-label={`Details for ${file.name}`} title="Details">
+          <Info size={15} />
         </button>
-
         {!isDir && (
-          <button
-            onClick={() => onDownload?.(file)}
-            title="Download"
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 5,
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-bg-surface)',
-              color: 'var(--color-text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Download size={12} />
+          <button className="du-row-btn du-row-btn-secondary" onClick={() => onDownload?.(file)} aria-label={`Download ${file.name}`} title="Download">
+            <Download size={15} />
           </button>
         )}
-
-        <button
-          onClick={() => {
-            const link = `${window.location.origin}/dashboard?share=${file.id}`;
-            copyToClipboard(link);
-            toast.success('Share link copied');
-          }}
-          title="Copy link"
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 5,
-            border: '1px solid var(--color-border)',
-            background: 'var(--color-bg-surface)',
-            color: 'var(--color-text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <Share2 size={12} />
-        </button>
-
-        <button
-          onClick={(e) => onContextMenu?.(e, file)}
-          title="More actions"
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 5,
-            border: '1px solid var(--color-border)',
-            background: 'var(--color-bg-surface)',
-            color: 'var(--color-text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <MoreHorizontal size={13} />
+        <button className="du-row-btn" onClick={(e) => onContextMenu?.(e, file)} aria-label={`More actions for ${file.name}`} title="More actions">
+          <MoreHorizontal size={16} />
         </button>
       </div>
     </div>

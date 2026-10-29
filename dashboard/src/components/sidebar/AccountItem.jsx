@@ -164,13 +164,13 @@ export const AccountItem = ({ account, onDisconnect, onRefresh, onReconnect }) =
                     width: `${usedPct}%`,
                     height: '100%',
                     borderRadius: 99,
-                    background: usedPct > 80 ? '#ef4444' : '#34A853',
+                    background: getAccountColor(account),
                     transition: 'width 0.4s',
                   }}
                 />
               </div>
-              <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-                {formatFileSize(storage.used)}
+              <span style={{ fontSize: '0.65rem', color: usedPct > 80 ? 'var(--color-warning)' : 'var(--color-text-muted)', fontWeight: usedPct > 80 ? 600 : 400, flexShrink: 0 }}>
+                {usedPct > 80 ? `${usedPct}%` : formatFileSize(storage.used)}
               </span>
             </div>
           )}

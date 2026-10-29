@@ -29,7 +29,7 @@ export const Modal = ({
         backdrop: {
           sx: {
             backdropFilter: 'blur(8px)',
-            backgroundColor: 'rgba(5, 5, 8, 0.65)',
+            backgroundColor: (theme) => theme.palette.mode === 'light' ? 'rgba(15, 23, 42, 0.35)' : 'rgba(5, 5, 8, 0.65)',
           },
         },
       }}
@@ -38,10 +38,12 @@ export const Modal = ({
         sx: {
           borderRadius: { xs: 3, sm: 3.5 },
           bgcolor: 'background.paper',
-          backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)',
+          backgroundImage: (theme) => theme.palette.mode === 'light' ? 'none' : 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)',
           border: '1px solid',
           borderColor: 'divider',
-          boxShadow: '0 24px 70px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+          boxShadow: (theme) => theme.palette.mode === 'light'
+            ? '0 20px 40px -15px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05)'
+            : '0 24px 70px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05)',
           m: { xs: 1.5, sm: 2 },
           maxHeight: { xs: 'calc(100dvh - 24px)', sm: 'calc(100vh - 48px)' },
           overflow: 'hidden',
