@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { ease, springScroll, springUI, useIsDesktop } from '@/lib/motion';
@@ -113,9 +113,20 @@ export function HowItWorks() {
   const ref = useRef(null);
   const reduce = useReducedMotion();
   const desktop = useIsDesktop();
-  const pinned = desktop && !reduce;
+  const pinned = !reduce;
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
-  const x = useTransform(useSpring(scrollYProgress, springScroll), [0, 1], ['0%', '-50%']);
+  // Desktop keeps its -50% track; phones move by however far the track overflows the screen.
+  const track = useRef(null);
+  const overflow = useRef(0);
+  useEffect(() => {
+    const measure = () => { if (track.current) overflow.current = track.current.scrollWidth - window.innerWidth; };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [pinned]);
+  const desktopRef = useRef(desktop);
+  desktopRef.current = desktop;
+  const x = useTransform(useSpring(scrollYProgress, springScroll), (v) => (desktopRef.current ? `${-50 * v}%` : -v * overflow.current));
   const [active, setActive] = useState(0);
   useMotionValueEvent(scrollYProgress, 'change', (v) => setActive(Math.min(2, Math.floor(v * 3))));
   const [seen, setSeen] = useState([false, false, false]);
@@ -137,11 +148,11 @@ export function HowItWorks() {
 
   return (
     <section ref={ref} id="how" aria-labelledby="how-h" className="relative h-[300vh] border-y border-white/[0.06] bg-[#050b1a]">
-      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
-        <div className="mx-auto mb-12 w-full max-w-[1120px] px-8">{heading}</div>
+      <div className="sticky top-0 flex h-svh flex-col justify-center overflow-hidden md:h-screen">
+        <div className="mx-auto mb-8 w-full max-w-[1120px] px-4 md:mb-12 md:px-8">{heading}</div>
         {/* Track is 150% of the viewport wide: three 50%-ish panels, scrolled left by half its width. */}
-        <motion.div style={{ x }} className="flex w-[150vw] gap-6 pl-[max(32px,calc((100vw-1120px)/2))]">
-          {PANELS.map((_, i) => <Panel key={i} i={i} active={active >= i} className="w-[min(560px,42vw)] shrink-0" />)}
+        <motion.div ref={track} style={{ x }} className="flex w-max gap-4 px-4 md:w-[150vw] md:gap-6 md:pl-[max(32px,calc((100vw-1120px)/2))] md:pr-0">
+          {PANELS.map((_, i) => <Panel key={i} i={i} active={active >= i} className="w-[85vw] shrink-0 md:w-[min(560px,42vw)]" />)}
         </motion.div>
       </div>
     </section>

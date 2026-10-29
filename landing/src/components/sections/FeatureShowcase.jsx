@@ -124,6 +124,7 @@ export function FeatureShowcase() {
   const { scrollYProgress } = useScroll({ target: listRef, offset: ['start center', 'end center'] });
   const line = useSpring(scrollYProgress, springScroll);
   const State = STATES[active];
+  const [seen, setSeen] = useState([]);
 
   return (
     <section id="features" aria-labelledby="features-h" className="px-4 py-24 md:px-8 md:py-36">
@@ -137,12 +138,15 @@ export function FeatureShowcase() {
             {FEATURES.map((f, i) => (
               <motion.div
                 key={f.title}
-                onViewportEnter={() => setActive(i)}
+                onViewportEnter={() => { setActive(i); setSeen((s) => (s.includes(i) ? s : [...s, i])); }}
                 viewport={{ amount: 0.6 }}
                 className="flex flex-col justify-center gap-2.5 py-10 md:min-h-[70vh] md:py-0"
               >
                 <h3 className={`text-2xl font-semibold tracking-[-0.02em] transition-colors duration-300 ${active === i ? 'text-white' : 'text-slate-500'}`}>{f.title}</h3>
                 <p className="text-[17px] leading-[1.55] text-slate-400">{f.body}</p>
+                <div aria-hidden="true" className="mt-4 min-h-[300px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1222] p-4 md:hidden">
+                  {seen.includes(i) && (() => { const S = STATES[i]; return <motion.div initial={{ opacity: 0, filter: 'blur(6px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.3 }}><S /></motion.div>; })()}
+                </div>
               </motion.div>
             ))}
           </div>

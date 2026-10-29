@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clipReveal, ease, springUI } from '@/lib/motion';
 import { RevealHeading } from './shared';
@@ -11,11 +11,18 @@ function Tile({ i, className = '', children, onHover }) {
     e.currentTarget.style.setProperty('--x', `${e.clientX - r.left}px`);
     e.currentTarget.style.setProperty('--y', `${e.clientY - r.top}px`);
   };
+  const tapped = useRef(false);
+  const onTap = (e) => {
+    if (e.pointerType === 'mouse' || !onHover) return;
+    tapped.current = !tapped.current;
+    onHover(tapped.current);
+  };
   return (
     <motion.div
       variants={clipReveal}
       custom={i}
       onMouseMove={onMove}
+      onPointerUp={onTap}
       onHoverStart={() => onHover?.(true)}
       onHoverEnd={() => onHover?.(false)}
       className={`du-spot flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-slate-900 p-6 ${className}`}

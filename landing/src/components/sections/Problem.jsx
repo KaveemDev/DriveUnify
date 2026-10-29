@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValueEvent, useReducedMotion } from 'framer-motion';
-import { ease, springScroll, useIsDesktop } from '@/lib/motion';
+import { ease, springScroll } from '@/lib/motion';
 import { FileGrid } from '@/components/mocks/FileGrid';
 import { FILES } from '@/components/mocks/data';
 
@@ -51,8 +51,7 @@ function WindowCard({ w }) {
 export function Problem() {
   const ref = useRef(null);
   const reduce = useReducedMotion();
-  const desktop = useIsDesktop();
-  const pinned = desktop && !reduce;
+  const pinned = !reduce;
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
   const p = useSpring(scrollYProgress, springScroll);
   const [step, setStep] = useState(0);
@@ -84,9 +83,9 @@ export function Problem() {
   }
 
   return (
-    <section ref={ref} aria-labelledby="problem-h" className="relative h-[250vh] px-8">
-      <div className="sticky top-0 mx-auto grid h-screen max-w-[1120px] grid-cols-[5fr_7fr] items-center gap-16">
-        <div className="flex flex-col gap-10">
+    <section ref={ref} aria-labelledby="problem-h" className="relative h-[250vh] px-4 md:px-8">
+      <div className="sticky top-0 mx-auto grid h-svh max-w-[1120px] content-center items-center gap-6 md:h-screen md:grid-cols-[5fr_7fr] md:content-normal md:gap-16">
+        <div className="flex flex-col gap-4 md:gap-10">
           {heading}
           <div className="relative h-[120px]">
             <AnimatePresence mode="wait">
@@ -104,12 +103,14 @@ export function Problem() {
             </AnimatePresence>
           </div>
         </div>
-        <div aria-hidden="true" className="relative h-[520px]">
+        <div aria-hidden="true" className="relative h-[300px] md:h-[520px]">
+          <div className="absolute left-1/2 top-1/2 h-[520px] w-[560px] -translate-x-1/2 -translate-y-1/2 scale-[0.6] md:static md:h-full md:w-full md:translate-x-0 md:translate-y-0 md:scale-100">
           {WINDOWS.map((w) => <BrowserWindow key={w.title} w={w} p={p} />)}
           <motion.div style={{ opacity: mergedOpacity, scale: mergedScale }} className="absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#0b1222] p-5 shadow-[0_40px_120px_rgba(59,130,246,0.18)]">
             <div className="mb-3 text-[13px] text-slate-400">All drives <span className="text-slate-600">/</span> <span className="text-slate-200">Everything</span></div>
             <FileGrid files={FILES} />
           </motion.div>
+          </div>
         </div>
       </div>
     </section>

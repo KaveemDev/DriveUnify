@@ -31,7 +31,8 @@ export function Hero() {
   const ref = useRef(null);
   const reduce = useReducedMotion();
   const desktop = useIsDesktop();
-  const scrub = desktop && !reduce;
+  const scrub = !reduce;
+  const tilt = desktop && !reduce;
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const p = useSpring(scrollYProgress, springScroll);
@@ -45,7 +46,7 @@ export function Hero() {
   const tiltX = useSpring(useMotionValue(0), springUI);
   const tiltY = useSpring(useMotionValue(0), springUI);
   const onMove = (e) => {
-    if (!scrub) return;
+    if (!tilt) return;
     const r = e.currentTarget.getBoundingClientRect();
     tiltY.set(((e.clientX - r.left) / r.width - 0.5) * 8);
     tiltX.set(-((e.clientY - r.top) / r.height - 0.5) * 8);
