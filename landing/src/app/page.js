@@ -4,6 +4,7 @@ import { Hero } from '@/components/sections/Hero';
 import { Problem } from '@/components/sections/Problem';
 import { HowItWorks } from '@/components/sections/HowItWorks';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
+import { UnifiedStorage } from '@/components/sections/UnifiedStorage';
 import { Speed } from '@/components/sections/Speed';
 import { Bento } from '@/components/sections/Bento';
 import { Integrations } from '@/components/sections/Integrations';
@@ -20,6 +21,7 @@ export default function LandingPage() {
         <Problem />
         <HowItWorks />
         <FeatureShowcase />
+        <UnifiedStorage />
         <Speed />
         <Bento />
         <Integrations />
