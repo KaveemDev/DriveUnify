@@ -3,7 +3,7 @@ import { getMimeTypeCategory } from '../../config/constants';
 
 // ── Normalize a Drive file to unified schema ──────────────────
 
-const normalizeFile = (file, accountEmail) => ({
+export const normalizeFile = (file, accountEmail) => ({
   id: file.id,
   name: file.name,
   mimeType: file.mimeType,

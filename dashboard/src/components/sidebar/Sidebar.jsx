@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Folder, Clock, Star, Users, Trash2,
   Plus, Settings, HelpCircle, ChevronLeft, Sun, Moon,
-  Cloud, LogOut
+  Cloud, LogOut, ArrowLeftRight
 } from 'lucide-react';
 import { AccountItem } from './AccountItem';
 import { getAccountId } from '../../utils/helpers';
@@ -35,6 +35,7 @@ export const Sidebar = ({ onSelectView }) => {
     { id: 'starred', label: 'Starred', icon: Star, to: '/dashboard' },
     { id: 'shared', label: 'Shared', icon: Users, to: '/dashboard' },
     { id: 'trash', label: 'Trash', icon: Trash2, to: '/dashboard' },
+    { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight, to: '/transfer' },
   ];
 
   const handleNavClick = (itemId) => {
@@ -141,13 +142,15 @@ export const Sidebar = ({ onSelectView }) => {
       <div style={{ padding: '12px 10px 6px', display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === '/dashboard' && !selectedAccount && activeNav === item.id;
+          const isActive = item.to === '/dashboard'
+            ? location.pathname === '/dashboard' && !selectedAccount && activeNav === item.id
+            : location.pathname === item.to;
 
           return (
             <Link
               key={item.id}
               to={item.to}
-              onClick={() => handleNavClick(item.id)}
+              onClick={() => item.to === '/dashboard' && handleNavClick(item.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

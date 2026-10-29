@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 
@@ -8,6 +8,7 @@ import { Cloud, Plus, ArrowLeft, AlertTriangle, RefreshCw } from 'lucide-react';
 
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { StorageOverview } from '../../components/dashboard/StorageOverview';
+import { StorageAnalyticsModal } from '../../components/dashboard/StorageAnalyticsModal';
 import { RecentFiles } from '../../components/dashboard/RecentFiles';
 import { FileToolbar } from '../../components/dashboard/FileToolbar';
 import { FileDetailsPanel } from '../../components/dashboard/FileDetailsPanel';
@@ -19,7 +20,6 @@ import { FileContextMenu } from '../../components/explorer/FileContextMenu';
 
 import { RenameModal } from '../../components/modals/RenameModal';
 import { FilePreviewModal } from '../../components/modals/FilePreviewModal';
-import { TransferModal } from '../../components/modals/TransferModal';
 import { CreateFolderModal } from '../../components/modals/CreateFolderModal';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -77,6 +77,7 @@ const VIEW_META = {
 const Dashboard = () => {
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const {
     loading: accountsLoading, viewMode,
@@ -142,8 +143,8 @@ const Dashboard = () => {
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, file: null, permanent: false });
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
-  const [transferModal, setTransferModal] = useState({ open: false, file: null });
   const [createFolderModal, setCreateFolderModal] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   // ── Hidden file & folder picker inputs ──
   const fileInputRef = useRef(null);
@@ -236,8 +237,8 @@ const Dashboard = () => {
   const handleDelete = (file) => setDeleteConfirm({ open: true, file, permanent: false });
   const handlePermanentDelete = (file) => setDeleteConfirm({ open: true, file, permanent: true });
   const handleRename = (file) => setRenameModal({ open: true, file });
-  const handleCopyToDrive = useCallback((file) => setTransferModal({ open: true, file }), []);
-  const openTransfer = () => setTransferModal({ open: true, file: files[0] || null });
+  const handleCopyToDrive = useCallback((file) => navigate('/transfer', { state: { files: [file] } }), [navigate]);
+  const openTransfer = (preset) => navigate('/transfer', { state: preset });
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -421,7 +422,7 @@ const Dashboard = () => {
           onUploadFiles={triggerFileUpload}
           onUploadFolder={triggerFolderUpload}
           onCreateFolder={() => setCreateFolderModal(true)}
-          onTransferFiles={connectedAccounts.length > 1 ? openTransfer : undefined}
+          onTransferFiles={connectedAccounts.length > 1 ? () => openTransfer() : undefined}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         />
 
@@ -493,6 +494,7 @@ const Dashboard = () => {
                     onConnectDrive={() => dispatch(setConnectModalOpen(true))}
                     onSelectAccount={(accountId) => dispatch(setSelectedAccount(accountId))}
                     onTransferFiles={openTransfer}
+                    onOpenAnalytics={() => setAnalyticsOpen(true)}
                   />
                   <RecentFiles
                     files={files}
@@ -636,11 +638,8 @@ const Dashboard = () => {
           />
         )}
 
-        <TransferModal
-          open={transferModal.open}
-          onOpenChange={(o) => setTransferModal((prev) => ({ ...prev, open: o }))}
-          file={transferModal.file}
-        />
+        <StorageAnalyticsModal open={analyticsOpen} onOpenChange={setAnalyticsOpen} />
+
       </div>
     </UploadZone>
   );

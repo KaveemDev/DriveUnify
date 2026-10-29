@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   addAccount, removeAccount, setCurrentFolder, updateAccount,
@@ -29,8 +29,9 @@ import {
   fetchDropboxStorageInfo,
 } from '../services/dropbox/files';
 import {
-  renameFile, deleteFile, permanentlyDeleteFile, starFile, restoreFile,
+  renameFile, deleteFile, permanentlyDeleteFile, starFile, restoreFile, listFiles,
 } from '../api/googleDriveApi';
+import { normalizeFile as normalizeDriveFile } from '../services/google-drive/files';
 import {
   renameDropboxItem,
   deleteDropboxItem,
@@ -154,8 +155,61 @@ export const useDriveFiles = () => {
   });
 };
 
+// ── One account's folder (null = root); shares cache keys with useDriveFiles ──
+export const useFolderFiles = (account, folder) => {
+  const getFreshAccount = useFreshAccount();
+  const folderKey = folder ? (folder.pathLower || folder.id) : 'root';
+  return useQuery({
+    queryKey: filesKey(account ? getAccountId(account) : '', folderKey),
+    queryFn: async () => {
+      const fresh = requireToken(await getFreshAccount(account));
+      if (!folder) return getAccountFiles(fresh);
+      return isDropbox(account) ? fetchDropboxFilesInFolder(fresh, folderKey) : fetchDriveFilesInFolder(fresh, folder.id);
+    },
+    enabled: !!account && isUsable(account),
+  });
+};
+
+// Every file the account owns, at any depth (Dropbox's listing is already recursive)
+const getAccountFilesDeep = async (account) => {
+  if (isDropbox(account)) return fetchAllDropboxFilesForAccount(account);
+  const all = [];
+  let pageToken = null;
+  do {
+    const res = await listFiles(account.accessToken, {
+      folderId: null, pageSize: 1000, pageToken, orderBy: 'modifiedTime desc', query: "'me' in owners",
+    }, account.email);
+    all.push(...(res?.files || []).map(f => normalizeDriveFile(f, account.email)));
+    pageToken = res?.nextPageToken || null;
+  } while (pageToken);
+  return all;
+};
+
+// ── Full per-account listings for the storage analytics view ──
+export const useAllAccountFiles = ({ enabled = true, refetchInterval } = {}) => {
+  const { connectedAccounts } = useSelector(s => s.drive);
+  const getFreshAccount = useFreshAccount();
+  const usable = connectedAccounts.filter(isUsable);
+
+  return useQueries({
+    queries: usable.map(account => ({
+      queryKey: ['allFiles', getAccountId(account)],
+      queryFn: async () => getAccountFilesDeep(requireToken(await getFreshAccount(account))),
+      enabled,
+      refetchInterval,
+    })),
+    combine: (results) => ({
+      byAccount: Object.fromEntries(usable.map((a, i) => [getAccountId(a), results[i]])),
+      files: results.flatMap(r => r.data ?? []),
+      isFetching: results.some(r => r.isFetching),
+      isLoading: results.some(r => r.isLoading),
+      updatedAt: Math.max(0, ...results.map(r => r.dataUpdatedAt || 0)),
+    }),
+  });
+};
+
 // ── Connected accounts with their storage quota merged in ────
-export const useAccountsWithStorage = () => {
+export const useAccountsWithStorage = ({ refetchInterval } = {}) => {
   const { connectedAccounts } = useSelector(s => s.drive);
   const getFreshAccount = useFreshAccount();
   const usable = connectedAccounts.filter(isUsable);
@@ -164,6 +218,7 @@ export const useAccountsWithStorage = () => {
     queries: usable.map(account => ({
       queryKey: ['storage', getAccountId(account)],
       queryFn: async () => getAccountStorage(requireToken(await getFreshAccount(account))),
+      refetchInterval,
     })),
   });
 
@@ -251,6 +306,7 @@ export const useDrive = () => {
       dispatch(removeAccount(accountId));
       queryClient.removeQueries({ queryKey: ['files', accountId] });
       queryClient.removeQueries({ queryKey: ['storage', accountId] });
+      queryClient.removeQueries({ queryKey: ['allFiles', accountId] });
 
       if (isDropbox(account)) {
         await revokeDropboxAccess(email, account?.accessToken);
@@ -343,6 +399,7 @@ export const useDrive = () => {
   const refreshFiles = useCallback(() => Promise.all([
     queryClient.invalidateQueries({ queryKey: ['files'] }),
     queryClient.invalidateQueries({ queryKey: ['storage'] }),
+    queryClient.invalidateQueries({ queryKey: ['allFiles'] }),
   ]), [queryClient]);
 
   // ── Navigate to folder (useDriveFiles fetches it) ─────────────
