@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import store from './store';
+import { queryClient } from './config/queryClient';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { initAnalytics } from './utils/analytics';
 import './styles/globals.css';
@@ -21,6 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
         <ThemeContextProvider>
           <BrowserRouter>
             <App />
@@ -29,23 +32,25 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#1e293b',
-                color: '#f1f5f9',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--color-bg-surface, #ffffff)',
+                color: 'var(--color-text-primary, #0f172a)',
+                border: '1px solid var(--color-border, rgba(0,0,0,0.08))',
+                boxShadow: 'var(--shadow-popup, 0 10px 30px rgba(0,0,0,0.12))',
                 borderRadius: '12px',
                 fontSize: '14px',
                 padding: '12px 16px',
               },
               success: {
-                iconTheme: { primary: '#10b981', secondary: '#1e293b' },
+                iconTheme: { primary: '#10b981', secondary: 'var(--color-bg-surface, #ffffff)' },
               },
               error: {
-                iconTheme: { primary: '#ef4444', secondary: '#1e293b' },
+                iconTheme: { primary: '#ef4444', secondary: 'var(--color-bg-surface, #ffffff)' },
               },
             }}
           />
         </BrowserRouter>
         </ThemeContextProvider>
+      </QueryClientProvider>
       </Provider>
     </ErrorBoundary>
   </React.StrictMode>

@@ -7,7 +7,7 @@ import { springUI } from '@/lib/motion';
 // `revealDelay` lets the hero pop accounts in one by one after the frame assembles.
 export function Sidebar({ revealDelay = 0 }) {
   return (
-    <div className="hidden w-[232px] shrink-0 flex-col gap-4 border-r border-white/[0.06] bg-[#0a101e] px-3.5 py-4 md:flex">
+    <div className="hidden w-[232px] shrink-0 flex-col gap-4 border-r border-white/[0.06] bg-[#eceef3] px-3.5 py-4 md:flex">
       <div className="text-[11px] uppercase tracking-[0.06em] text-slate-400">Accounts</div>
       <div className="flex flex-col gap-1.5">
         {ACCOUNTS.map((a, i) => (

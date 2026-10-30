@@ -18,7 +18,7 @@ function BrowseDemo() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2 text-[13px]">
-        {[{ id: 'all', short: 'All drives', color: '#3b82f6' }, ...ACCOUNTS].map((a) => (
+        {[{ id: 'all', short: 'All drives', color: '#2348d8' }, ...ACCOUNTS].map((a) => (
           <button key={a.id} onClick={() => setAccount(a.id)}
             className={`relative flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${account === a.id ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
             {account === a.id && <motion.span layoutId="browse-chip" className="absolute inset-0 rounded-full bg-slate-800" transition={{ type: 'spring', ...springUI }} />}
@@ -104,7 +104,7 @@ function UploadDemo() {
   const add = () => setFiles((f) => [...f, `scan-${f.length + 1}.pdf`].slice(-4));
   return (
     <div className="flex flex-col gap-4">
-      <button onClick={add} className="flex h-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 text-[14px] text-slate-400 transition-colors hover:border-blue-500/60 hover:bg-blue-500/5 hover:text-white">
+      <button onClick={add} className="flex h-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 text-[14px] text-slate-400 transition-colors hover:border-blue-500/60 hover:bg-blue-500/5 hover:text-[#fff]">
         <UploadCloud size={22} /> Drop files here — or click to fake one
       </button>
       <ul className="flex flex-col gap-2">
@@ -174,7 +174,7 @@ export function FeatureExplorer() {
               </button>
             ))}
           </div>
-          <SpotCard role="tabpanel" className="min-h-[460px] bg-[#0b1222] p-6 md:p-8">
+          <SpotCard role="tabpanel" className="min-h-[460px] bg-[#ffffff] p-6 md:p-8">
             <AnimatePresence mode="wait">
               <motion.div key={tab} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3, ease }}>
                 <current.Demo />
@@ -210,7 +210,7 @@ export function Shortcuts() {
     return () => { window.removeEventListener('keydown', onKey); clearTimeout(t); };
   }, []);
   return (
-    <section aria-labelledby="keys-h" className="border-t border-white/[0.06] bg-[#050b1a] px-4 py-24 md:px-8 md:py-32">
+    <section aria-labelledby="keys-h" className="border-t border-white/[0.06] bg-[#eceef3] px-4 py-24 md:px-8 md:py-32">
       <div className="mx-auto max-w-[1120px]">
         <RevealHeading id="keys-h" lines={['Hands stay', 'on the keyboard.']} className="mb-4" />
         <p className="mb-12 text-[17px] text-slate-400">Press any of these keys now — they light up.</p>

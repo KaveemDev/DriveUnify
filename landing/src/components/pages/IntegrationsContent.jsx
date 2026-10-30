@@ -39,7 +39,7 @@ export function ProviderMatrix() {
             </button>
           ))}
         </div>
-        <SpotCard role="tabpanel" className="grid gap-8 bg-[#0b1222] p-6 md:grid-cols-[5fr_7fr] md:p-10">
+        <SpotCard role="tabpanel" className="grid gap-8 bg-[#ffffff] p-6 md:grid-cols-[5fr_7fr] md:p-10">
           <AnimatePresence mode="wait">
             <motion.div key={id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3, ease }} className="flex flex-col gap-4">
               <span className="grid h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-slate-900"><p.Logo /></span>
@@ -81,7 +81,7 @@ const STEPS = [
 export function ConnectSteps() {
   const [open, setOpen] = useState(0);
   return (
-    <section aria-labelledby="connect-h" className="border-t border-white/[0.06] bg-[#050b1a] px-4 py-24 md:px-8 md:py-32">
+    <section aria-labelledby="connect-h" className="border-t border-white/[0.06] bg-[#eceef3] px-4 py-24 md:px-8 md:py-32">
       <div className="mx-auto grid max-w-[1120px] gap-12 md:grid-cols-[5fr_7fr]">
         <div className="flex flex-col gap-4">
           <RevealHeading id="connect-h" lines={['Connected in', 'under a minute.']} />

@@ -105,7 +105,7 @@ function PreviewState() {
               <div className="flex h-[150px] w-[190px] flex-col gap-1.5 rounded-sm bg-slate-50 p-4">
                 <span className="h-2 w-[70%] rounded-sm bg-slate-900" />
                 <span className="h-1 rounded-sm bg-slate-300" /><span className="h-1 rounded-sm bg-slate-300" /><span className="h-1 w-4/5 rounded-sm bg-slate-300" />
-                <span className="mt-auto h-10 rounded-sm bg-blue-200" />
+                <span className="mt-auto h-10 rounded-sm bg-blue-100" />
               </div>
             </div>
           </motion.div>
@@ -124,6 +124,7 @@ export function FeatureShowcase() {
   const { scrollYProgress } = useScroll({ target: listRef, offset: ['start center', 'end center'] });
   const line = useSpring(scrollYProgress, springScroll);
   const State = STATES[active];
+  const [seen, setSeen] = useState([]);
 
   return (
     <section id="features" aria-labelledby="features-h" className="px-4 py-24 md:px-8 md:py-36">
@@ -133,22 +134,25 @@ export function FeatureShowcase() {
             <motion.div className="absolute inset-0 origin-top rounded-full bg-blue-500" style={{ scaleY: reduce ? 1 : line }} />
           </div>
           <div ref={listRef} className="flex flex-col">
-            <h2 id="features-h" className="du-display mb-10 text-[36px] text-white md:mb-0 md:text-[56px]">Built for people with too many drives.</h2>
+            <h2 id="features-h" className="du-display mb-10 text-[clamp(2.25rem,1.4rem+2.8vw,3.75rem)] text-white md:mb-0">Built for people with too many drives.</h2>
             {FEATURES.map((f, i) => (
               <motion.div
                 key={f.title}
-                onViewportEnter={() => setActive(i)}
+                onViewportEnter={() => { setActive(i); setSeen((s) => (s.includes(i) ? s : [...s, i])); }}
                 viewport={{ amount: 0.6 }}
                 className="flex flex-col justify-center gap-2.5 py-10 md:min-h-[70vh] md:py-0"
               >
                 <h3 className={`text-2xl font-semibold tracking-[-0.02em] transition-colors duration-300 ${active === i ? 'text-white' : 'text-slate-500'}`}>{f.title}</h3>
                 <p className="text-[17px] leading-[1.55] text-slate-400">{f.body}</p>
+                <div aria-hidden="true" className="mt-4 min-h-[300px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#ffffff] p-4 md:hidden">
+                  {seen.includes(i) && (() => { const S = STATES[i]; return <motion.div initial={{ opacity: 0, filter: 'blur(6px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.3 }}><S /></motion.div>; })()}
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
         <div aria-hidden="true" className="hidden md:block">
-          <div className="sticky top-[20vh] min-h-[340px] rounded-2xl border border-white/[0.08] bg-[#0b1222] p-5">
+          <div className="sticky top-[20vh] min-h-[340px] rounded-2xl border border-white/[0.08] bg-[#ffffff] p-5">
             <AnimatePresence mode="wait">
               <motion.div key={active} initial={{ opacity: 0, filter: 'blur(6px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} exit={{ opacity: 0, filter: 'blur(6px)' }} transition={{ duration: 0.3 }}>
                 <State />

@@ -11,7 +11,7 @@ const TOPICS = [
   { id: 'security', label: 'Security & privacy', email: 'security@driveunify.com', hint: 'Tokens, data handling, or reporting a vulnerability.' },
 ];
 
-const field = 'w-full rounded-xl border border-white/[0.08] bg-[#020617] px-4 py-3 text-[15px] text-white outline-none transition-colors placeholder:text-slate-500 focus:border-blue-500/60';
+const field = 'w-full rounded-xl border border-white/[0.08] bg-[#f5f6f8] px-4 py-3 text-[15px] text-white outline-none transition-colors placeholder:text-slate-500 focus:border-blue-500/60';
 
 export function ContactForm() {
   const [topic, setTopic] = useState(TOPICS[0]);
@@ -35,7 +35,7 @@ export function ContactForm() {
   return (
     <section aria-label="Contact form" className="px-4 pb-28 md:px-8">
       <div className="mx-auto grid max-w-[1120px] gap-6 md:grid-cols-[7fr_5fr]">
-        <SpotCard className="bg-[#0b1222] p-6 md:p-10">
+        <SpotCard className="bg-[#ffffff] p-6 md:p-10">
           <form onSubmit={submit} className="flex flex-col gap-6">
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-3 text-[14px] text-slate-400">What’s it about?</legend>
@@ -62,7 +62,7 @@ export function ContactForm() {
             </label>
             <div className="flex flex-wrap items-center gap-4">
               <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                className="du-btn relative inline-flex items-center gap-2 overflow-hidden rounded-[10px] bg-blue-500 px-[22px] py-3.5 text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(59,130,246,0.35)] hover:bg-blue-400">
+                className="du-btn relative inline-flex items-center gap-2 overflow-hidden rounded-[10px] bg-blue-500 px-[22px] py-3.5 text-[15px] font-medium text-[#fff] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(59,130,246,0.35)] hover:bg-blue-400">
                 <Mail size={16} className="relative" /><span className="relative">Open in my email app</span>
               </motion.button>
               <AnimatePresence>

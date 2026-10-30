@@ -1,3 +1,5 @@
+import { getAccountId } from '../utils/helpers.js';
+
 // Google Drive API Scopes
 export const GOOGLE_DRIVE_SCOPES = [
   'https://www.googleapis.com/auth/drive',
@@ -83,17 +85,20 @@ export const ACCOUNT_COLORS = [
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#ec4899', // pink
-  '#f59e0b', // amber
   '#10b981', // emerald
   '#3b82f6', // blue
-  '#ef4444', // red
   '#14b8a6', // teal
 ];
 
-export const getAccountColor = (email) => {
+// Keyed by provider + email so a Drive and a Dropbox on the same email get different colors.
+// Accepts an account, a file (accountEmail) or a plain string key.
+export const getAccountColor = (account) => {
+  const key = typeof account === 'string'
+    ? account
+    : getAccountId({ provider: account?.provider, email: account?.email ?? account?.accountEmail });
   let hash = 0;
-  for (let i = 0; i < email.length; i++) {
-    hash = email.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < key.length; i++) {
+    hash = key.charCodeAt(i) + ((hash << 5) - hash);
   }
   return ACCOUNT_COLORS[Math.abs(hash) % ACCOUNT_COLORS.length];
 };

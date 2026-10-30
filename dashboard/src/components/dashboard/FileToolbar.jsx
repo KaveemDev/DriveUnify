@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
-import {
-  Search, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
-  LayoutGrid, List, CheckSquare, Square, Trash2, Download,
-  FolderPlus, X, Star, FileText, Table2, FileType2, Image as ImageIcon
-} from 'lucide-react';
+import { Search, ArrowUp, ArrowDown, LayoutGrid, List, Trash2, X, Check } from 'lucide-react';
 import { FileBreadcrumb } from '../explorer/FileBreadcrumb';
 import { VIEW_MODES, SORT_OPTIONS } from '../../config/constants';
 
 const FILTER_TABS = [
-  { id: 'all', label: 'All Files' },
+  { id: 'all', label: 'All' },
   { id: 'documents', label: 'Documents' },
   { id: 'spreadsheets', label: 'Spreadsheets' },
   { id: 'pdfs', label: 'PDFs' },
@@ -16,8 +12,41 @@ const FILTER_TABS = [
   { id: 'starred', label: 'Starred' },
 ];
 
+const SelectionBar = ({ selectedCount, totalCount, onSelectAll, onClearSelection, onBatchDelete }) => (
+  <div
+    role="toolbar"
+    aria-label={`${selectedCount} selected`}
+    style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 4,
+      padding: '6px 6px 6px 14px',
+      borderRadius: 12,
+      background: 'var(--color-accent)',
+      color: 'var(--color-accent-fg)',
+    }}
+  >
+    <span style={{ fontSize: '0.875rem', fontWeight: 600, marginRight: 'auto' }}>
+      {selectedCount} selected
+    </span>
+    {selectedCount < totalCount && (
+      <button className="du-btn du-on-accent" onClick={onSelectAll}>
+        <Check size={15} /> Select all {totalCount}
+      </button>
+    )}
+    {onBatchDelete && (
+      <button className="du-btn du-on-accent" onClick={onBatchDelete}>
+        <Trash2 size={15} /> Move to trash
+      </button>
+    )}
+    <button className="du-icon-btn du-on-accent" onClick={onClearSelection} aria-label="Clear selection" title="Clear selection">
+      <X size={16} />
+    </button>
+  </div>
+);
+
 export const FileToolbar = ({
-  currentFolder,
   onNavigateRoot,
   searchQuery,
   onSearchChange,
@@ -33,370 +62,145 @@ export const FileToolbar = ({
   onSelectAll,
   onClearSelection,
   onBatchDelete,
-  onCreateFolder,
 }) => {
   const [sortOpen, setSortOpen] = useState(false);
-  const currentSort = SORT_OPTIONS.find(o => o.value === sortBy) || SORT_OPTIONS[0];
+  const currentSort = SORT_OPTIONS.find((o) => o.value === sortBy) || SORT_OPTIONS[0];
 
   return (
-    <div
-      className="dashboard-filetoolbar-container"
-      style={{
-        padding: '12px 24px',
-        borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-bg-surface)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        flexShrink: 0,
-      }}
-    >
-      {/* ── Top row: Breadcrumbs + Title + Action Count ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Row 1: location + count, controls */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0, marginRight: 'auto' }}>
           <FileBreadcrumb onNavigateRoot={onNavigateRoot} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-            ({totalCount} {totalCount === 1 ? 'item' : 'items'})
+          <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+            {totalCount} {totalCount === 1 ? 'item' : 'items'}
           </span>
         </div>
 
-        {/* Batch action bar when items are selected */}
-        {selectedCount > 0 ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '4px 10px',
-              borderRadius: 6,
-              background: 'var(--color-bg-elevated)',
-              border: '1px solid var(--color-border-strong)',
-            }}
-          >
-            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-              {selectedCount} selected
-            </span>
-            <div style={{ height: 12, width: 1, background: 'var(--color-border)' }} />
-            <button
-              onClick={onClearSelection}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <X size={12} />
-              <span>Deselect</span>
-            </button>
-            {onBatchDelete && (
-              <button
-                onClick={onBatchDelete}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <Trash2 size={12} />
-                <span>Delete</span>
-              </button>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              onClick={onCreateFolder}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '5px 10px',
-                borderRadius: 6,
-                border: '1px solid var(--color-border)',
-                background: 'transparent',
-                color: 'var(--color-text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'background var(--transition-fast), color var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--color-bg-overlay)';
-                e.currentTarget.style.color = 'var(--color-text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--color-text-secondary)';
-              }}
-            >
-              <FolderPlus size={13} />
-              <span>New folder</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── Bottom row: Category Tabs + Search + Sort + View Mode ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        {/* Category Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            overflowX: 'auto',
-          }}
-          className="scrollbar-thin"
-        >
-          {FILTER_TABS.map((tab) => {
-            const isActive = activeFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onFilterChange(tab.id)}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: 6,
-                  border: isActive ? '1px solid var(--color-border-strong)' : '1px solid transparent',
-                  background: isActive ? 'var(--color-bg-elevated)' : 'transparent',
-                  color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                  fontSize: '0.78rem',
-                  fontWeight: isActive ? 600 : 500,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'background var(--transition-fast), color var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.background = 'var(--color-bg-overlay)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Controls: Search in view + Sort + Grid/List */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Quick in-view search */}
-          <div style={{ position: 'relative' }}>
-            <Search
-              size={13}
-              style={{
-                position: 'absolute',
-                left: 9,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--color-text-muted)',
-                pointerEvents: 'none',
-              }}
-            />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'flex-end', minWidth: 0 }}>
+          <div style={{ position: 'relative', flex: '0 1 220px', minWidth: 120 }}>
+            <Search size={14} aria-hidden="true" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)', pointerEvents: 'none' }} />
             <input
-              type="text"
-              placeholder="Filter current view…"
+              type="search"
+              aria-label="Filter this view"
+              placeholder="Filter this view"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              style={{
-                width: 170,
-                padding: '5px 10px 5px 28px',
-                borderRadius: 6,
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-elevated)',
-                color: 'var(--color-text-primary)',
-                fontSize: '0.78rem',
-                outline: 'none',
-                transition: 'border-color var(--transition-fast)',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = 'var(--color-border-strong)')}
-              onBlur={(e) => (e.target.style.borderColor = 'var(--color-border)')}
+              className="du-input"
             />
             {searchQuery && (
               <button
                 onClick={() => onSearchChange('')}
-                style={{
-                  position: 'absolute',
-                  right: 6,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--color-text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
+                aria-label="Clear filter"
+                className="du-row-btn"
+                style={{ position: 'absolute', right: 2, top: 2, width: 32, height: 32 }}
               >
-                <X size={11} />
+                <X size={13} />
               </button>
             )}
           </div>
 
-          {/* Sort Dropdown */}
           <div style={{ position: 'relative' }}>
             <button
+              className="du-btn"
               onClick={() => setSortOpen(!sortOpen)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '5px 9px',
-                borderRadius: 6,
-                border: '1px solid var(--color-border)',
-                background: 'transparent',
-                color: 'var(--color-text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'background var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-overlay)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              aria-haspopup="menu"
+              aria-expanded={sortOpen}
+              style={{ color: 'var(--color-text-secondary)' }}
             >
-              {sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-              <span>{currentSort.label}</span>
+              {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+              <span className="hidden sm:inline">{currentSort.label}</span>
             </button>
-
             {sortOpen && (
               <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setSortOpen(false)} />
                 <div
-                  style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-                  onClick={() => setSortOpen(false)}
-                />
-                <div
+                  role="menu"
                   style={{
                     position: 'absolute',
                     right: 0,
-                    top: 'calc(100% + 4px)',
+                    top: 'calc(100% + 6px)',
                     zIndex: 50,
-                    width: 160,
-                    borderRadius: 8,
+                    width: 180,
+                    borderRadius: 12,
                     background: 'var(--color-bg-surface)',
                     border: '1px solid var(--color-border)',
                     boxShadow: 'var(--shadow-popup)',
                     padding: 4,
                   }}
                 >
-                  {SORT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => {
-                        onSortChange(opt.value);
-                        setSortOpen(false);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        padding: '6px 10px',
-                        borderRadius: 5,
-                        border: 'none',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        fontSize: '0.78rem',
-                        color:
-                          sortBy === opt.value
-                            ? 'var(--color-text-primary)'
-                            : 'var(--color-text-secondary)',
-                        fontWeight: sortBy === opt.value ? 600 : 400,
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-overlay)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <span>{opt.label}</span>
-                      {sortBy === opt.value && (
-                        <span>{sortDir === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </button>
-                  ))}
+                  {SORT_OPTIONS.map((opt) => {
+                    const active = sortBy === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => {
+                          onSortChange(opt.value);
+                          setSortOpen(false);
+                        }}
+                        className="hover:bg-[var(--color-bg-overlay)]"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          height: 36,
+                          padding: '0 10px',
+                          borderRadius: 7,
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.8125rem',
+                          color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                          fontWeight: active ? 600 : 400,
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span>{opt.label}</span>
+                        {active && (sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />)}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
           </div>
 
-          {/* View Mode Toggle: Grid vs List */}
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--color-bg-elevated)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 6,
-              padding: 2,
-              gap: 2,
-            }}
-          >
-            <button
-              onClick={() => onViewModeChange(VIEW_MODES.LIST)}
-              title="List view"
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 5,
-                border: 'none',
-                cursor: 'pointer',
-                background: viewMode === VIEW_MODES.LIST ? 'var(--color-bg-surface)' : 'transparent',
-                color: viewMode === VIEW_MODES.LIST ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: viewMode === VIEW_MODES.LIST ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              }}
-            >
-              <List size={13} />
+          <div role="group" aria-label="View" className="du-seg">
+            <button aria-label="List view" aria-pressed={viewMode === VIEW_MODES.LIST} onClick={() => onViewModeChange(VIEW_MODES.LIST)}>
+              <List size={15} />
             </button>
-            <button
-              onClick={() => onViewModeChange(VIEW_MODES.GRID)}
-              title="Grid view"
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 5,
-                border: 'none',
-                cursor: 'pointer',
-                background: viewMode === VIEW_MODES.GRID ? 'var(--color-bg-surface)' : 'transparent',
-                color: viewMode === VIEW_MODES.GRID ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: viewMode === VIEW_MODES.GRID ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              }}
-            >
-              <LayoutGrid size={13} />
+            <button aria-label="Grid view" aria-pressed={viewMode === VIEW_MODES.GRID} onClick={() => onViewModeChange(VIEW_MODES.GRID)}>
+              <LayoutGrid size={15} />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Row 2: selection bar replaces the type filters while items are selected */}
+      {selectedCount > 0 ? (
+        <SelectionBar
+          selectedCount={selectedCount}
+          totalCount={totalCount}
+          onSelectAll={onSelectAll}
+          onClearSelection={onClearSelection}
+          onBatchDelete={onBatchDelete}
+        />
+      ) : (
+        <div role="group" aria-label="Filter by type" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }} className="scrollbar-thin">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className="du-chip"
+              aria-pressed={activeFilter === tab.id}
+              onClick={() => onFilterChange(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

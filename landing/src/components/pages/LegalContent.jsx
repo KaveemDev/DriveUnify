@@ -33,7 +33,7 @@ export function LegalBody() {
         <nav aria-label="On this page" className="hidden flex-col gap-1 md:sticky md:top-24 md:flex md:self-start">
           {SECTIONS.map(([id, title], i) => (
             <a key={id} href={`#${id}`} className={`relative rounded-lg px-3 py-2 text-[14px] transition-colors ${active === id ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
-              {active === id && <motion.span layoutId="legal-active" className="absolute inset-0 rounded-lg bg-slate-900 shadow-[inset_2px_0_0_#3b82f6]" transition={{ type: 'spring', ...springUI }} />}
+              {active === id && <motion.span layoutId="legal-active" className="absolute inset-0 rounded-lg bg-slate-900 shadow-[inset_2px_0_0_#2348d8]" transition={{ type: 'spring', ...springUI }} />}
               <span className="relative"><span className="mr-2 text-slate-600">{String(i + 1).padStart(2, '0')}</span>{title}</span>
             </a>
           ))}

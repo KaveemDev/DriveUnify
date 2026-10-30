@@ -6,8 +6,8 @@ import {
   addUpload, updateUploadProgress, completeUpload,
   failUpload, cancelUpload, clearCompleted,
 } from '../store/slices/uploadSlice';
-import { upsertFiles } from '../store/slices/driveSlice';
 import { uploadFile } from '../services/google-drive/upload';
+import { upsertCachedFile } from './useDrive';
 import { uploadDropboxFile } from '../services/dropbox/upload';
 import { UPLOAD_MAX_SIZE } from '../config/constants';
 import { findAccountById } from '../utils/helpers';
@@ -47,7 +47,7 @@ export const useUpload = () => {
       });
 
       dispatch(completeUpload({ id: uploadId, result }));
-      dispatch(upsertFiles([result]));
+      upsertCachedFile(result);
       toast.success(`"${file.name}" uploaded`);
     } catch (err) {
       if (err.message === 'Upload cancelled') {

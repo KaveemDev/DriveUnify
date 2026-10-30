@@ -26,14 +26,14 @@ export function Speed() {
   }, [inView, reduce]);
 
   return (
-    <section ref={ref} aria-labelledby="speed-h" className="bg-white px-4 py-24 text-slate-950 md:px-8 md:py-36">
+    <section ref={ref} aria-labelledby="speed-h" className="bg-slate-900 px-4 py-24 text-white md:px-8 md:py-36">
       <div className="mx-auto grid max-w-[1120px] items-center gap-16 md:grid-cols-[5fr_7fr]">
         <div className="flex flex-col gap-5">
           <p className="du-display text-[64px] tabular-nums md:text-[120px]" aria-hidden="true"><span ref={countRef}>10,000</span></p>
           <h2 id="speed-h" className="du-display text-[36px] md:text-[44px]"><span className="sr-only">10,000 </span>files. No lag.</h2>
-          <p className="max-w-[380px] text-[17px] leading-[1.55] text-slate-600">We only render what&apos;s on screen, so huge drives stay instant.</p>
+          <p className="max-w-[380px] text-[17px] leading-[1.55] text-slate-400">We only render what&apos;s on screen, so huge drives stay instant.</p>
         </div>
-        <div aria-hidden="true" className="du-fade-y h-[380px] overflow-hidden rounded-2xl bg-[#0b1222] px-5">
+        <div aria-hidden="true" className="du-fade-y h-[380px] overflow-hidden rounded-2xl bg-slate-800 px-5">
           <div className="du-scroll-loop" style={{ animationPlayState: inView && !reduce ? 'running' : 'paused' }}>
             {[...ROWS, ...ROWS].map((r, i) => (
               <div key={i} className="flex h-[38px] items-center gap-3.5 border-b border-white/5 text-[13px] text-slate-300">

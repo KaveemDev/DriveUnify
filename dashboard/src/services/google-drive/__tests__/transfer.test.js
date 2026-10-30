@@ -115,21 +115,44 @@ describe('Google Drive Cross-Account Transfer Service', () => {
       assert.equal(deletePermCalled, true);
     });
 
-    it('should reject Google Apps files when cloud copy fails without falling back to stream', async () => {
+    it('should export a Google Doc and upload it as a native Doc when cloud copy fails', async () => {
       driveApiAdapter.addPermission = async () => {
         throw new Error('External sharing disabled by domain policy');
       };
-
-      const file = {
-        id: 'doc-1',
-        name: 'Project Plan',
-        mimeType: 'application/vnd.google-apps.document',
+      let exportedAs;
+      let uploadMeta;
+      driveApiAdapter.exportGoogleFile = async (token, fileId, mime) => {
+        assert.equal(token, srcAccount.accessToken);
+        assert.equal(fileId, 'doc-1');
+        exportedAs = mime;
+        return new Blob(['docx bytes']);
+      };
+      driveApiAdapter.initiateResumableUpload = async (token, meta, mime) => {
+        assert.equal(token, destAccount.accessToken);
+        assert.equal(mime, exportedAs);
+        uploadMeta = meta;
+        return 'https://upload/session';
+      };
+      driveApiAdapter.uploadResumableChunk = async () => ({ complete: true, data: { id: 'new-doc' } });
+      driveApiAdapter.downloadFileRange = async () => {
+        throw new Error('Google Docs must not be range-downloaded');
       };
 
-      await assert.rejects(
-        () => transferFile(srcAccount, destAccount, file, 'root'),
-        /Google Docs\/Sheets cannot be streamed as raw binary/
-      );
+      const file = { id: 'doc-1', name: 'Project Plan', mimeType: 'application/vnd.google-apps.document' };
+      const result = await transferFile(srcAccount, destAccount, file, 'root');
+
+      assert.match(exportedAs, /wordprocessingml/);
+      assert.equal(uploadMeta.mimeType, 'application/vnd.google-apps.document');
+      assert.equal(result.id, 'new-doc');
+      assert.equal(result.transferMode, 'export');
+    });
+
+    it('should reject Google file types that cannot be exported', async () => {
+      driveApiAdapter.addPermission = async () => {
+        throw new Error('Sharing disabled');
+      };
+      const file = { id: 'f', name: 'Survey', mimeType: 'application/vnd.google-apps.form' };
+      await assert.rejects(() => transferFile(srcAccount, destAccount, file, 'root'), /can't be exported/);
     });
   });
 
@@ -365,6 +388,28 @@ describe('Google Drive Cross-Account Transfer Service', () => {
       assert.equal(driveDownloadCalled, true);
       assert.equal(dropboxUploadCalled, true);
       assert.equal(result.transferMode, 'stream');
+    });
+
+    it('should export a Google Sheet to .xlsx and upload it to Dropbox', async () => {
+      driveApiAdapter.addPermission = async () => {
+        throw new Error('Strategy A must be skipped for Dropbox');
+      };
+      driveApiAdapter.exportGoogleFile = async (_t, _id, mime) => {
+        assert.match(mime, /spreadsheetml/);
+        return new Blob(['xlsx bytes']);
+      };
+      let uploadedPath;
+      dropboxApiAdapter.uploadDropboxFileDirect = async (token, _blob, path) => {
+        assert.equal(token, dropboxAccount.accessToken);
+        uploadedPath = path;
+        return { id: 'id:sheet' };
+      };
+
+      const file = { id: 'sheet-1', name: 'Twitter Backup Code', mimeType: 'application/vnd.google-apps.spreadsheet', size: 0 };
+      const result = await transferFile(srcAccount, dropboxAccount, file, '/Backups');
+
+      assert.equal(uploadedPath, '/Backups/Twitter Backup Code.xlsx');
+      assert.equal(result.transferMode, 'export');
     });
 
     it('should stream Dropbox file directly to Google Drive via resumable upload', async () => {

@@ -17,6 +17,7 @@ import { formatFileSize, formatDateTime, getMimeLabel } from '../../utils/format
 import { openInGoogleDrive, isPreviewableImage, isPreviewableVideo, isGoogleAppsFile, findAccountForFile } from '../../utils/helpers';
 import { getDropboxTemporaryLink } from '../../api/dropboxApi';
 import { useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
 
 export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const { connectedAccounts } = useSelector((s) => s.drive);
@@ -32,7 +33,6 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [dbxMediaUrl, setDbxMediaUrl] = useState(null);
   const videoContainerRef = useRef(null);
 
   const handlePrev = useCallback(() => {
@@ -63,19 +63,13 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
   const isGApp = isGoogleAppsFile(file?.mimeType);
   const previewUrl = file?.webViewLink;
 
-  useEffect(() => {
-    let active = true;
-    if (file?.provider === 'dropbox' && account?.accessToken && (canPreviewImage || canPreviewVideo)) {
-      getDropboxTemporaryLink(account.accessToken, file.pathLower || file.id)
-        .then((url) => {
-          if (active && url) setDbxMediaUrl(url);
-        })
-        .catch(() => {});
-    }
-    return () => {
-      active = false;
-    };
-  }, [file, account, canPreviewImage, canPreviewVideo]);
+  // Temporary links expire after 4 hours
+  const { data: dbxMediaUrl } = useQuery({
+    queryKey: ['dropboxLink', file?.accountEmail, file?.pathLower || file?.id],
+    queryFn: () => getDropboxTemporaryLink(account.accessToken, file.pathLower || file.id),
+    enabled: file?.provider === 'dropbox' && !!account?.accessToken && (canPreviewImage || canPreviewVideo),
+    staleTime: 3 * 60 * 60 * 1000,
+  });
 
   if (!file) return null;
 
@@ -149,7 +143,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(5, 5, 7, 0.88)',
+        background: 'rgba(15, 23, 42, 0.65)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
@@ -170,7 +164,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
+          boxShadow: 'var(--shadow-popup, 0 24px 60px rgba(0, 0, 0, 0.25))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -297,7 +291,7 @@ export const FilePreviewModal = ({ file, files, onClose, onNavigate }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#070709',
+            background: canPreviewVideo ? '#000000' : 'var(--color-bg-base)',
             overflow: 'hidden',
           }}
         >

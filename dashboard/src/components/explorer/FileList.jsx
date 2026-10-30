@@ -2,15 +2,13 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { FileRow } from './FileRow';
 import { toggleFileSelection, selectAll, clearSelection } from '../../store/slices/driveSlice';
-import { openInGoogleDrive, downloadFile, findAccountForFile } from '../../utils/helpers';
-import { Check, Cloud } from 'lucide-react';
+import { downloadFile, findAccountForFile } from '../../utils/helpers';
+import { Cloud } from 'lucide-react';
 
 export const FileList = ({
   files,
   onFileClick,
   onContextMenu,
-  onRename,
-  onDelete,
   onFileDetails,
 }) => {
   const dispatch = useDispatch();
@@ -57,77 +55,31 @@ export const FileList = ({
     }
   };
 
+  const someSelected = !allSelected && files.some((f) => selectedFiles.includes(f.id));
+  const empty = getEmptyState();
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: 'var(--color-bg-surface)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* ── Sticky Table Header ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '36px 30px minmax(200px, 3fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(80px, 0.8fr) 120px',
-          alignItems: 'center',
-          padding: '0 16px',
-          height: 36,
-          borderBottom: '1px solid var(--color-border)',
-          background: 'var(--color-bg-elevated)',
-          flexShrink: 0,
-          fontSize: '0.72rem',
-          fontWeight: 600,
-          color: 'var(--color-text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-        }}
-        className="file-table-row-grid"
-      >
-        {/* Select All Checkbox */}
+    <div className="du-card" style={{ overflow: 'clip' }}>
+      <div className="du-table-row du-table-head">
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div
-            onClick={handleToggleSelectAll}
-            style={{
-              width: 16,
-              height: 16,
-              borderRadius: 4,
-              border: `1.5px solid ${allSelected ? 'var(--color-accent)' : 'var(--color-border-strong)'}`,
-              background: allSelected ? 'var(--color-accent)' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-            title={allSelected ? 'Deselect all' : 'Select all'}
-          >
-            {allSelected && <Check size={10} strokeWidth={2.5} color="var(--color-accent-fg)" />}
-          </div>
+          <input
+            type="checkbox"
+            className="du-check"
+            checked={allSelected}
+            ref={(el) => { if (el) el.indeterminate = someSelected; }}
+            onChange={handleToggleSelectAll}
+            disabled={files.length === 0}
+            aria-label={allSelected ? 'Deselect all' : 'Select all'}
+          />
         </div>
-
-        {/* Icon placeholder */}
+        <div>Name</div>
+        <div className="du-col-md">Drive</div>
+        <div className="du-col-sm">Modified</div>
+        <div className="du-col-sm" style={{ textAlign: 'right' }}>Size</div>
         <div />
-
-        {/* Name */}
-        <div>File name</div>
-
-        {/* Provider */}
-        <div className="hidden md:block">Provider</div>
-
-        {/* Last Modified */}
-        <div className="hidden sm:block">Modified</div>
-
-        {/* Size */}
-        <div className="hidden sm:block">Size</div>
-
-        {/* Actions header */}
-        <div style={{ textAlign: 'right' }}>Actions</div>
       </div>
 
-      {/* ── Table Rows ── */}
-      <div style={{ flex: 1, overflowY: 'auto' }} className="scrollbar-thin">
+      <div className="du-table-body">
         {files.length === 0 ? (
           <div
             style={{
@@ -136,16 +88,13 @@ export const FileList = ({
               alignItems: 'center',
               padding: '64px 24px',
               gap: 8,
-              color: 'var(--color-text-muted)',
+              textAlign: 'center',
+              color: 'var(--color-text-secondary)',
             }}
           >
-            <Cloud size={32} style={{ opacity: 0.3 }} />
-            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text-secondary)' }}>
-              {getEmptyState().title}
-            </div>
-            <div style={{ fontSize: '0.78rem' }}>
-              {getEmptyState().desc}
-            </div>
+            <Cloud size={32} style={{ opacity: 0.4 }} aria-hidden="true" />
+            <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{empty.title}</div>
+            <div style={{ fontSize: '0.8125rem' }}>{empty.desc}</div>
           </div>
         ) : (
           files.map((file) => (
@@ -156,8 +105,6 @@ export const FileList = ({
               onSelect={() => dispatch(toggleFileSelection(file.id))}
               onClick={onFileClick}
               onContextMenu={onContextMenu}
-              onRename={onRename}
-              onDelete={onDelete}
               onFileDetails={onFileDetails}
               onDownload={(f) => {
                 const account = findAccountForFile(connectedAccounts, f);
@@ -166,7 +113,6 @@ export const FileList = ({
                   downloadFile(url, f.name, account.accessToken);
                 }
               }}
-              onOpenInDrive={(f) => openInGoogleDrive(f)}
             />
           ))
         )}

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { useDrive } from '../../hooks/useDrive';
+import { useDrive, useAccountsWithStorage } from '../../hooks/useDrive';
 import { useAuth } from '../../hooks/useAuth';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { formatFileSize } from '../../utils/formatters';
@@ -225,7 +225,8 @@ const TextInput = ({ value, onChange, disabled, type = 'text', placeholder }) =>
 const Settings = () => {
   const dispatch = useDispatch();
   const { user, signOut } = useAuth();
-  const { connectedAccounts, viewMode, sortBy } = useSelector((s) => s.drive);
+  const { viewMode, sortBy } = useSelector((s) => s.drive);
+  const connectedAccounts = useAccountsWithStorage();
   const { disconnectAccount, refreshAccount } = useDrive();
 
   const [signOutConfirm, setSignOutConfirm] = useState(false);

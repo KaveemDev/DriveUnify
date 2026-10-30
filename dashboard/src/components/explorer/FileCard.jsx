@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { MoreHorizontal, Star, Folder, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MoreHorizontal, Star, Folder } from 'lucide-react';
 import { FileIcon } from './FileIcon';
-import { CloudProviderIcon } from '../common/ProviderBadge';
+import { getAccountColor } from '../../config/constants';
 import { formatFileSize, formatRelativeDate } from '../../utils/formatters';
 import { isFolder } from '../../utils/helpers';
+
+const nameStyle = {
+  fontSize: '0.875rem',
+  fontWeight: 500,
+  color: 'var(--color-text-primary)',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
 
 export const FileCard = ({
   file,
@@ -15,232 +23,102 @@ export const FileCard = ({
   onMenuClick,
 }) => {
   const [imgError, setImgError] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const isDir = isFolder(file);
   const hasThumbnail = file.thumbnailLink && !imgError && (file.category === 'image' || file.category === 'video');
+  const driveLabel = `${file.provider === 'dropbox' ? 'Dropbox' : 'Drive'} · ${file.accountEmail || ''}`;
+
+  const handleClick = (e) => {
+    if (e.ctrlKey || e.metaKey) onSelect?.(file);
+    else onClick?.(file);
+  };
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    onContextMenu?.(e, file);
+  };
+  const menuButton = (
+    <button
+      className="du-row-btn"
+      onClick={(e) => {
+        e.stopPropagation();
+        onMenuClick?.(e, file);
+      }}
+      aria-label={`More actions for ${file.name}`}
+      title="More actions"
+      style={{ flexShrink: 0 }}
+    >
+      <MoreHorizontal size={16} />
+    </button>
+  );
+  const checkbox = (
+    <input
+      type="checkbox"
+      className="du-check"
+      checked={selected}
+      onClick={(e) => e.stopPropagation()}
+      onChange={() => onSelect?.(file)}
+      aria-label={`Select ${file.name}`}
+    />
+  );
+
+  if (isDir) {
+    return (
+      <div className="du-folder-tile" data-selected={selected} onClick={handleClick} onContextMenu={handleContextMenu} title={driveLabel}>
+        <span className="du-tile-lead">
+          <Folder size={18} aria-hidden="true" className="du-tile-icon" style={{ color: 'var(--color-text-secondary)' }} />
+          {checkbox}
+        </span>
+        <button type="button" style={{ ...nameStyle, flex: 1, minWidth: 0, padding: 0, border: 0, background: 'transparent', textAlign: 'left', cursor: 'pointer' }}>
+          {file.name}
+        </button>
+        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, flexShrink: 0, background: getAccountColor(file) }} />
+        {file.starred && <Star size={13} fill="#f59e0b" color="#f59e0b" aria-label="Starred" style={{ flexShrink: 0 }} />}
+        {menuButton}
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.16 }}
-    >
+    <div className="du-file-card" data-selected={selected} onClick={handleClick} onContextMenu={handleContextMenu}>
       <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onClick={(e) => {
-          if (e.ctrlKey || e.metaKey) {
-            onSelect?.(file);
-          } else {
-            onClick?.(file);
-          }
-        }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onContextMenu?.(e, file);
-        }}
         style={{
-          position: 'relative',
-          borderRadius: 8,
-          border: selected
-            ? '1.5px solid var(--color-accent)'
-            : '1px solid var(--color-border)',
-          background: selected
-            ? 'var(--color-bg-elevated)'
-            : hovered
-            ? 'var(--color-bg-elevated)'
-            : 'var(--color-bg-surface)',
-          padding: 10,
-          cursor: 'pointer',
-          transition: 'all var(--transition-fast)',
+          height: 120,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          userSelect: 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--color-bg-elevated)',
+          borderBottom: '1px solid var(--color-border-subtle)',
         }}
       >
-        {/* Top Header Row inside Card: Selection checkbox, Type/Thumbnail, More menu */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-          {/* Checkbox (visible on hover or when selected) */}
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect?.(file);
-            }}
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 4,
-              border: `1.5px solid ${selected ? 'var(--color-accent)' : 'var(--color-border-strong)'}`,
-              background: selected ? 'var(--color-accent)' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: selected || hovered ? 1 : 0,
-              transition: 'opacity var(--transition-fast), background var(--transition-fast)',
-            }}
-          >
-            {selected && <Check size={11} strokeWidth={2.5} color="var(--color-accent-fg)" />}
-          </div>
-
-          <div style={{ flex: 1 }} />
-
-          {/* Star if starred */}
-          {file.starred && (
-            <Star size={13} fill="#f59e0b" color="#f59e0b" style={{ flexShrink: 0 }} />
-          )}
-
-          {/* 3-dot context menu trigger */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMenuClick?.(e, file);
-            }}
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 5,
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-bg-surface)',
-              color: 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: hovered ? 1 : 0,
-              transition: 'opacity var(--transition-fast)',
-            }}
-            title="More actions"
-          >
-            <MoreHorizontal size={12} />
-          </button>
-        </div>
-
-        {/* Thumbnail or Center Icon */}
         {hasThumbnail ? (
-          <div
-            style={{
-              width: '100%',
-              height: 80,
-              borderRadius: 6,
-              overflow: 'hidden',
-              background: 'var(--color-bg-elevated)',
-              border: '1px solid var(--color-border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <img
-              src={file.thumbnailLink}
-              alt={file.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onError={() => setImgError(true)}
-            />
-          </div>
+          <img
+            src={file.thumbnailLink}
+            alt=""
+            referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         ) : (
-          <div
-            style={{
-              height: isDir ? 44 : 52,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '0 4px',
-            }}
-          >
-            <div
-              style={{
-                width: isDir ? 34 : 36,
-                height: isDir ? 34 : 36,
-                borderRadius: 7,
-                background: isDir ? 'rgba(245, 158, 11, 0.12)' : 'var(--color-bg-overlay)',
-                border: isDir ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {isDir ? (
-                <Folder size={18} fill="#f59e0b" color="#f59e0b" />
-              ) : (
-                <FileIcon category={file.category} size={18} />
-              )}
-            </div>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: '0.8125rem',
-                  fontWeight: 500,
-                  color: 'var(--color-text-primary)',
-                  lineHeight: 1.3,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-                title={file.name}
-              >
-                {file.name}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.7rem',
-                  color: 'var(--color-text-muted)',
-                  marginTop: 2,
-                }}
-              >
-                {isDir ? 'Folder' : (file.category || 'File')}
-              </div>
-            </div>
-          </div>
+          <FileIcon category={file.category} size={32} />
         )}
-
-        {/* If thumbnail was shown above, show name here */}
-        {hasThumbnail && (
-          <div
-            style={{
-              fontSize: '0.8125rem',
-              fontWeight: 500,
-              color: 'var(--color-text-primary)',
-              lineHeight: 1.3,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-            title={file.name}
-          >
+      </div>
+      <span className="du-card-check" style={{ display: 'flex' }}>{checkbox}</span>
+      {file.starred && (
+        <Star size={14} fill="#f59e0b" color="#f59e0b" aria-label="Starred" style={{ position: 'absolute', top: 12, right: 12 }} />
+      )}
+      <div style={{ padding: '10px 6px 10px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <button type="button" title={file.name} style={{ ...nameStyle, display: 'block', maxWidth: '100%', padding: 0, border: 0, background: 'transparent', textAlign: 'left', cursor: 'pointer' }}>
             {file.name}
-          </div>
-        )}
-
-        {/* Bottom Footer: Size/Modified + Provider Icon */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: 4,
-            borderTop: '1px solid var(--color-border-subtle)',
-            fontSize: '0.7rem',
-            color: 'var(--color-text-muted)',
-          }}
-        >
-          <span>
-            {isDir
-              ? formatRelativeDate(file.modifiedTime)
-              : formatFileSize(file.size)}
-          </span>
-
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-            title={`${file.provider === 'dropbox' ? 'Dropbox' : 'Google Drive'} (${file.accountEmail || ''})`}
-          >
-            <CloudProviderIcon provider={file.provider || 'google_drive'} size={13} />
+          </button>
+          <div style={{ marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--color-text-secondary)', minWidth: 0 }} title={driveLabel}>
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, flexShrink: 0, background: getAccountColor(file) }} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {formatFileSize(file.size)} · {formatRelativeDate(file.modifiedTime)}
+            </span>
           </div>
         </div>
+        {menuButton}
       </div>
-    </motion.div>
+    </div>
   );
 };

@@ -1,10 +1,10 @@
-import { useSelector } from 'react-redux';
 import { formatFileSize } from '../../utils/formatters';
 import { getAccountColor } from '../../config/constants';
 import { getAccountId } from '../../utils/helpers';
+import { useAccountsWithStorage } from '../../hooks/useDrive';
 
 export const StorageBar = () => {
-  const { connectedAccounts } = useSelector(s => s.drive);
+  const connectedAccounts = useAccountsWithStorage();
   const accountsWithStorage = connectedAccounts.filter(a => a.storage);
   if (accountsWithStorage.length === 0) return null;
 
@@ -16,7 +16,7 @@ export const StorageBar = () => {
     id:      getAccountId(a),
     email:   a.email,
     percent: totalLimit > 0 ? ((a.storage?.used || 0) / totalLimit) * 100 : 0,
-    color:   getAccountColor(a.email),
+    color:   getAccountColor(a),
   }));
 
   return (

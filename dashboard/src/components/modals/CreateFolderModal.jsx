@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Button } from '../common/Button';
 import toast from 'react-hot-toast';
+import { useMutation } from '@tanstack/react-query';
 import { createFolder } from '../../api/googleDriveApi';
 import { createDropboxFolder, resolveDropboxPath, normalizeDropboxFile } from '../../api/dropboxApi';
 import { getAccountColor } from '../../config/constants';
@@ -30,9 +31,27 @@ export const CreateFolderModal = ({
   const [selectedAccountId, setSelectedAccountId] = useState(
     currentFolder ? getFileAccountId(currentFolder) : (connectedAccounts[0] ? getAccountId(connectedAccounts[0]) : '')
   );
-  const [loading, setLoading] = useState(false);
+  const { mutate: createFolderMutation, isPending: loading } = useMutation({
+    mutationFn: async ({ account, name }) => {
+      if ((account.provider || '').toLowerCase().includes('dropbox')) {
+        const parentPath = currentFolder?.pathLower || currentFolder?.id || 'root';
+        const targetPath = resolveDropboxPath(parentPath, name);
+        const dbxMeta = await createDropboxFolder(account.accessToken, targetPath);
+        return normalizeDropboxFile(dbxMeta, account.email);
+      }
+      const parentId = currentFolder?.id || 'root';
+      return createFolder(account.accessToken, name, parentId, account.email);
+    },
+    onSuccess: (created, { account, name }) => {
+      toast.success(`Folder "${name}" created`, { icon: '📁' });
+      onFolderCreated?.({ ...created, accountEmail: account.email, provider: account.provider });
+      setFolderName('');
+      onOpenChange(false);
+    },
+    onError: (err) => toast.error(`Failed to create folder: ${err.message}`),
+  });
 
-  const handleCreate = async (e) => {
+  const handleCreate = (e) => {
     e.preventDefault();
     const name = folderName.trim();
     if (!name) return;
@@ -43,30 +62,7 @@ export const CreateFolderModal = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      const isDbx = (account.provider || '').toLowerCase().includes('dropbox');
-      let created;
-
-      if (isDbx) {
-        const parentPath = currentFolder?.pathLower || currentFolder?.id || 'root';
-        const targetPath = resolveDropboxPath(parentPath, name);
-        const dbxMeta = await createDropboxFolder(account.accessToken, targetPath);
-        created = normalizeDropboxFile(dbxMeta, account.email);
-      } else {
-        const parentId = currentFolder?.id || 'root';
-        created = await createFolder(account.accessToken, name, parentId, account.email);
-      }
-
-      toast.success(`Folder "${name}" created`, { icon: '📁' });
-      onFolderCreated?.({ ...created, accountEmail: account.email, provider: account.provider });
-      setFolderName('');
-      onOpenChange(false);
-    } catch (err) {
-      toast.error(`Failed to create folder: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+    createFolderMutation({ account, name });
   };
 
   return (
@@ -134,7 +130,7 @@ export const CreateFolderModal = ({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
                         <Avatar
                           src={a.picture}
-                          sx={{ width: 24, height: 24, bgcolor: getAccountColor(a.email), fontSize: 10 }}
+                          sx={{ width: 24, height: 24, bgcolor: getAccountColor(a), fontSize: 10 }}
                         >
                           {!a.picture && getInitials(a.email)}
                         </Avatar>

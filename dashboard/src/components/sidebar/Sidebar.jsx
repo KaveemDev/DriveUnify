@@ -4,21 +4,22 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Folder, Clock, Star, Users, Trash2,
   Plus, Settings, HelpCircle, ChevronLeft, Sun, Moon,
-  Cloud, LogOut, Layers
+  Cloud, LogOut, Layers, ArrowLeftRight
 } from 'lucide-react';
 import { AccountItem } from './AccountItem';
 import { getAccountId } from '../../utils/helpers';
 import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../common/ProviderBadge';
 import { setSidebarOpen, setConnectModalOpen, setActiveNav } from '../../store/slices/uiSlice';
 import { setSelectedAccount, setCurrentFolder } from '../../store/slices/driveSlice';
-import { useDrive } from '../../hooks/useDrive';
+import { useDrive, useAccountsWithStorage } from '../../hooks/useDrive';
 import { useColorMode } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
 
 export const Sidebar = ({ onSelectView }) => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { connectedAccounts, selectedAccount } = useSelector((s) => s.drive);
+  const { selectedAccount } = useSelector((s) => s.drive);
+  const connectedAccounts = useAccountsWithStorage();
   const { activeNav } = useSelector((s) => s.ui);
   const { disconnectAccount, refreshAccount, reconnectAccount } = useDrive();
   const { mode, toggleColorMode } = useColorMode();
@@ -35,6 +36,7 @@ export const Sidebar = ({ onSelectView }) => {
     { id: 'shared', label: 'Shared', icon: Users, to: '/dashboard' },
     { id: 'trash', label: 'Trash', icon: Trash2, to: '/dashboard' },
     { id: 'unified', label: 'Unified Storage', icon: Layers, to: '/unified' },
+    { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight, to: '/transfer' },
   ];
 
   const handleNavClick = (itemId) => {
@@ -149,7 +151,7 @@ export const Sidebar = ({ onSelectView }) => {
             <Link
               key={item.id}
               to={item.to}
-              onClick={() => handleNavClick(item.id)}
+              onClick={() => item.to === '/dashboard' && handleNavClick(item.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

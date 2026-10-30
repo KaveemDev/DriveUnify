@@ -16,10 +16,10 @@ export const AnimatedButton = ({
   const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-ring outline-none";
   
   const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.4)]",
-    secondary: "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
-    outline: "bg-transparent text-slate-300 border border-slate-700 hover:border-slate-500 hover:text-white",
-    ghost: "bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/50",
+    primary: "bg-blue-600 text-white hover:bg-blue-500 shadow-sm hover:shadow-md",
+    secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:border-slate-700",
+    outline: "bg-transparent text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40",
+    ghost: "bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50",
   };
   
   const sizes = {
