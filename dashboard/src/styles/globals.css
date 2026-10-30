@@ -743,3 +743,8 @@ body {
   .du-transfer-track { left: 50%; right: auto; top: 0; bottom: 0; width: 2px; height: auto; background: linear-gradient(180deg, var(--from), var(--to)); }
   .du-transfer-track .du-transfer-dot { display: none; }
 }
+
+/* Phones: the details panel overlays the content instead of squeezing it */
+@media (max-width: 767px) {
+  .du-inspector { position: fixed !important; inset: 0 0 0 auto; width: min(100%, 360px) !important; z-index: 45 !important; box-shadow: var(--shadow-popup); }
+}

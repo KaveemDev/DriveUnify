@@ -51,6 +51,7 @@ export const FileDetailsPanel = ({
   return (
     <AnimatePresence>
       <motion.aside
+        className="du-inspector"
         aria-labelledby="details-heading"
         initial={{ x: 24, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}

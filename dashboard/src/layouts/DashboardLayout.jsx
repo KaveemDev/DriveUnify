@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
 import { Menu, WifiOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from '../components/sidebar/Sidebar';
@@ -11,33 +10,37 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 export const DashboardLayout = ({ children }) => {
   const dispatch = useDispatch();
-  const location = useLocation();
   const { sidebarOpen, connectModalOpen, offlineBanner } = useSelector((s) => s.ui);
 
   useOnlineStatus();
 
   // Responsive sidebar: open on desktop (>= 1024px), closed on mobile
   useEffect(() => {
+    // Only react when crossing the breakpoint, so a mobile keyboard resize doesn't close the drawer
+    let wasDesktop = null;
     const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        dispatch(setSidebarOpen(false));
-      } else {
-        dispatch(setSidebarOpen(true));
-      }
+      const isDesktop = window.innerWidth >= 1024;
+      if (isDesktop !== wasDesktop) dispatch(setSidebarOpen(isDesktop));
+      wasDesktop = isDesktop;
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [dispatch]);
 
-  const isDashboard = location.pathname === '/dashboard';
+  useEffect(() => {
+    if (!sidebarOpen || window.innerWidth >= 1024) return;
+    const onKey = (e) => e.key === 'Escape' && dispatch(setSidebarOpen(false));
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sidebarOpen, dispatch]);
 
   return (
     <div
       style={{
         display: 'flex',
-        height: '100vh',
-        width: '100vw',
+        height: '100dvh',
+        width: '100%',
         overflow: 'hidden',
         background: 'var(--color-bg-base)',
         color: 'var(--color-text-primary)',
@@ -112,6 +115,7 @@ export const DashboardLayout = ({ children }) => {
         <AnimatePresence>
           {offlineBanner && (
             <motion.div
+              role="status"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}

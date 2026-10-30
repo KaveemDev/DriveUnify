@@ -43,6 +43,7 @@ export const Sidebar = ({ onSelectView }) => {
     dispatch(setSelectedAccount(null));
     dispatch(setCurrentFolder(null));
     dispatch(setActiveNav(itemId));
+    if (window.innerWidth < 1024) dispatch(setSidebarOpen(false));
     onSelectView?.(itemId);
   };
 

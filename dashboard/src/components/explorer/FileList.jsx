@@ -3,49 +3,22 @@ import { useSelector, useDispatch } from 'react-redux';
 import { FileRow } from './FileRow';
 import { toggleFileSelection, selectAll, clearSelection } from '../../store/slices/driveSlice';
 import { downloadFile, findAccountForFile } from '../../utils/helpers';
-import { Cloud } from 'lucide-react';
+import { FilesEmptyState } from './FilesEmptyState';
 
 export const FileList = ({
   files,
   onFileClick,
   onContextMenu,
   onFileDetails,
+  loading,
+  filtered,
+  onClearFilters,
 }) => {
   const dispatch = useDispatch();
   const { selectedFiles, connectedAccounts } = useSelector((s) => s.drive);
   const { activeNav } = useSelector((s) => s.ui);
 
   const allSelected = files.length > 0 && files.every((f) => selectedFiles.includes(f.id));
-
-  const getEmptyState = () => {
-    switch (activeNav) {
-      case 'starred':
-        return {
-          title: 'No starred files',
-          desc: 'Star files and folders from your library to access them quickly here.',
-        };
-      case 'recent':
-        return {
-          title: 'No recent activity',
-          desc: 'Files you open, upload, or modify will appear here.',
-        };
-      case 'shared':
-        return {
-          title: 'No shared files',
-          desc: 'Items shared with your Google Drive account will be displayed here.',
-        };
-      case 'trash':
-        return {
-          title: 'Trash is empty',
-          desc: 'Items deleted from your Google Drive will be held here until permanently removed.',
-        };
-      default:
-        return {
-          title: 'No files found',
-          desc: 'Upload files or drag and drop to start organizing.',
-        };
-    }
-  };
 
   const handleToggleSelectAll = () => {
     if (allSelected) {
@@ -56,7 +29,6 @@ export const FileList = ({
   };
 
   const someSelected = !allSelected && files.some((f) => selectedFiles.includes(f.id));
-  const empty = getEmptyState();
 
   return (
     <div className="du-card" style={{ overflow: 'clip' }}>
@@ -81,21 +53,7 @@ export const FileList = ({
 
       <div className="du-table-body">
         {files.length === 0 ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: '64px 24px',
-              gap: 8,
-              textAlign: 'center',
-              color: 'var(--color-text-secondary)',
-            }}
-          >
-            <Cloud size={32} style={{ opacity: 0.4 }} aria-hidden="true" />
-            <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{empty.title}</div>
-            <div style={{ fontSize: '0.8125rem' }}>{empty.desc}</div>
-          </div>
+          <FilesEmptyState activeNav={activeNav} loading={loading} filtered={filtered} onClearFilters={onClearFilters} />
         ) : (
           files.map((file) => (
             <FileRow

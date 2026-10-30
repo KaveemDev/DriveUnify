@@ -37,8 +37,13 @@ export const DashboardHeader = ({
     const handleClickOutside = (e) => {
       if (newMenuRef.current && !newMenuRef.current.contains(e.target)) setNewMenuOpen(false);
     };
+    const handleEscape = (e) => e.key === 'Escape' && setNewMenuOpen(false);
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   const runMenuAction = (action) => {
@@ -105,7 +110,7 @@ export const DashboardHeader = ({
             fontFamily: 'inherit',
           }}
         >
-          ⌘K
+          {/mac|iphone|ipad/i.test(navigator.platform) ? '⌘K' : 'Ctrl K'}
         </kbd>
       </button>
 
@@ -115,6 +120,7 @@ export const DashboardHeader = ({
         <button
           onClick={onRefresh}
           disabled={loading}
+          aria-busy={loading}
           aria-label="Sync all drives"
           title="Sync all drives"
           className="du-icon-btn du-icon-btn-outline"

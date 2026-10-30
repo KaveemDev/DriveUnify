@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ArrowUp, ArrowDown, LayoutGrid, List, Trash2, X, Check } from 'lucide-react';
 import { FileBreadcrumb } from '../explorer/FileBreadcrumb';
 import { VIEW_MODES, SORT_OPTIONS } from '../../config/constants';
@@ -64,6 +64,12 @@ export const FileToolbar = ({
   onBatchDelete,
 }) => {
   const [sortOpen, setSortOpen] = useState(false);
+  useEffect(() => {
+    if (!sortOpen) return;
+    const onKey = (e) => e.key === 'Escape' && setSortOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [sortOpen]);
   const currentSort = SORT_OPTIONS.find((o) => o.value === sortBy) || SORT_OPTIONS[0];
 
   return (
@@ -106,6 +112,7 @@ export const FileToolbar = ({
               onClick={() => setSortOpen(!sortOpen)}
               aria-haspopup="menu"
               aria-expanded={sortOpen}
+              aria-label={`Sort by ${currentSort.label}, ${sortDir === 'asc' ? 'ascending' : 'descending'}`}
               style={{ color: 'var(--color-text-secondary)' }}
             >
               {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}

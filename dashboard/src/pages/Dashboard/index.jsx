@@ -107,6 +107,17 @@ const Dashboard = () => {
     [connectedAccounts]
   );
 
+  // A selection from another view/filter/folder must not survive into this one
+  useEffect(() => {
+    dispatch(clearSelection());
+  }, [dispatch, activeNav, activeFilter, inViewSearch, selectedAccount, currentFolder?.id]);
+
+  const isFiltered = activeFilter !== 'all' || inViewSearch.trim() !== '';
+  const clearFilters = () => {
+    setActiveFilter('all');
+    setInViewSearch('');
+  };
+
   // Sync URL ?view= with activeNav in Redux
   useEffect(() => {
     const viewParam = searchParams.get('view');
@@ -256,7 +267,7 @@ const Dashboard = () => {
 
   const confirmBatchDelete = async () => {
     setBatchDeleteConfirm(false);
-    const toDelete = files.filter((f) => selectedFiles.includes(f.id));
+    const toDelete = processedFiles.filter((f) => selectedFiles.includes(f.id));
     dispatch(clearSelection());
     for (const f of toDelete) {
       try {
@@ -523,7 +534,7 @@ const Dashboard = () => {
                 totalCount={processedFiles.length}
                 onSelectAll={() => dispatch(selectAll(processedFiles.map((f) => f.id)))}
                 onClearSelection={() => dispatch(clearSelection())}
-                onBatchDelete={() => setBatchDeleteConfirm(true)}
+                onBatchDelete={activeNav === 'trash' ? undefined : () => setBatchDeleteConfirm(true)}
               />
 
               {viewMode === VIEW_MODES.GRID ? (
@@ -532,6 +543,9 @@ const Dashboard = () => {
                   onFileClick={handleFileClick}
                   onContextMenu={handleContextMenu}
                   onMenuClick={(e, file) => handleContextMenu(e, file)}
+                  loading={loading}
+                  filtered={isFiltered}
+                  onClearFilters={clearFilters}
                 />
               ) : (
                 <FileList
@@ -539,6 +553,9 @@ const Dashboard = () => {
                   onFileClick={handleFileClick}
                   onContextMenu={handleContextMenu}
                   onFileDetails={(f) => setSelectedInspectorFile(f)}
+                  loading={loading}
+                  filtered={isFiltered}
+                  onClearFilters={clearFilters}
                 />
               )}
             </section>

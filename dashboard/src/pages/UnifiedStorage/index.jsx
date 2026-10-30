@@ -152,7 +152,7 @@ export default function UnifiedStorage() {
   }
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ padding: '32px 24px', maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'scroll' }}>
       <input ref={pickRef} type="file" hidden onChange={onPicked} />
 
       <header>
