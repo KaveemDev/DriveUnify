@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   Layers, UploadCloud, Pause, Play, X, Download, Trash2, ShieldCheck, Wrench,
-  RefreshCw, AlertTriangle, HardDrive, CheckCircle2, Clock,
+  RefreshCw, AlertTriangle, CheckCircle2, Clock,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
@@ -17,7 +17,7 @@ const INTEGRITY_WARNING =
   'DriveUnify detected a problem with one or more file chunks. The original file may be incomplete or corrupted. We will attempt to repair the affected data before marking the file ready for download.';
 
 const card = {
-  padding: 16, borderRadius: 10, border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)',
+  padding: 20, borderRadius: 16, border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)',
 };
 const muted = { fontSize: '0.75rem', color: 'var(--color-text-muted)' };
 const label = { fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text-primary)' };
@@ -53,13 +53,20 @@ const Pill = ({ tone, children }) => (
   </span>
 );
 
-const Stat = ({ icon: Icon, title, value, hint }) => (
-  <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, ...muted }}><Icon size={14} />{title}</div>
-    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{value}</div>
+const Stat = ({ icon: Icon, title, value, hint, tone }) => (
+  <div style={{ ...card, padding: 16, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, ...muted }}>
+      <Icon size={14} style={tone ? { color: TONES[tone].color } : undefined} />{title}
+    </div>
+    <div style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1, color: 'var(--color-text-primary)' }}>{value}</div>
     {hint && <div style={muted}>{hint}</div>}
   </div>
 );
+
+const HOW_CHIP = {
+  padding: '6px 10px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 600,
+  background: 'rgba(139,92,246,0.15)', color: '#a78bfa',
+};
 
 const Bar = ({ uploaded, verified, total }) => (
   <div aria-hidden style={{ position: 'relative', height: 6, borderRadius: 3, background: 'var(--color-bg-elevated)', overflow: 'hidden' }}>
@@ -145,75 +152,72 @@ export default function UnifiedStorage() {
   }
 
   return (
-    <div style={{ padding: '24px 16px', maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ padding: '32px 24px', maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
       <input ref={pickRef} type="file" hidden onChange={onPicked} />
 
       <header>
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
-          <Layers size={20} /> Unified Storage
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.75rem', letterSpacing: '-0.02em', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+          <Layers size={26} style={{ color: '#a78bfa' }} /> Unified Storage
         </h1>
-        <p style={{ ...muted, fontSize: '0.8125rem', marginTop: 6, maxWidth: 760, lineHeight: 1.5 }}>
+        <p style={{ ...muted, fontSize: '0.875rem', marginTop: 8, maxWidth: 760, lineHeight: 1.6 }}>
           Store one file across several connected drives. Files are split into {formatFileSize(DEFAULT_CHUNK_SIZE)} chunks, each kept once on
           one drive and verified with SHA-256. This is not a backup: if a drive loses a chunk, the file can only be repaired from the original.
         </p>
       </header>
 
       {/* ── Overview ── */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-        <Stat icon={HardDrive} title="Estimated free space" value={unlimited ? 'Unlimited*' : formatFileSize(totalUsable)} hint="Estimate from provider quotas; not guaranteed writable" />
-        <Stat icon={Clock} title="Reserved by uploads" value={formatFileSize(reserved)} />
-        <Stat icon={UploadCloud} title="Incomplete uploads" value={counts.incomplete} />
-        <Stat icon={CheckCircle2} title="Ready files" value={counts.ready} />
-        <Stat icon={AlertTriangle} title="Need repair" value={counts.degraded} />
-        <Stat icon={Trash2} title="Pending cleanup" value={us.jobs.length} hint={us.jobs.length ? 'Retried automatically while you use DriveUnify' : null} />
-      </section>
-
-      {/* ── Accounts ── */}
-      <section style={card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <span style={label}>Drives in the pool</span>
-          <Button size="xs" variant="ghost" icon={RefreshCw} onClick={us.refreshCapacity}>Refresh</Button>
+      <section style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{
+          ...card, flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center',
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(236,72,153,0.14))', border: '1px solid rgba(139,92,246,0.3)',
+        }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)' }}>Estimated free space</div>
+          <div style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, color: 'var(--color-text-primary)' }}>
+            {unlimited ? 'Unlimited*' : formatFileSize(totalUsable)}
+          </div>
+          <div style={muted}>Estimate from provider quotas; not guaranteed writable</div>
         </div>
-        {us.connectedAccounts.length === 0 && <div style={muted}>Connect a Google Drive or Dropbox account to start.</div>}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {us.connectedAccounts.map((a) => {
-            const cap = us.capacities.find((c) => c.email === a.email);
-            const status = a.needsReconnect ? 'Reconnect required' : !a.accessToken ? 'Connecting…' : cap?.error ? `Quota unavailable: ${cap.error}` : null;
-            return (
-              <label key={a.email} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8125rem', color: 'var(--color-text-secondary)', flexWrap: 'wrap' }}>
-                {manual && (
-                  <input
-                    type="checkbox"
-                    disabled={!cap || !!cap.error}
-                    checked={selected.includes(a.email)}
-                    onChange={(e) => { setPlan(null); setSelected((s) => (e.target.checked ? [...s, a.email] : s.filter((x) => x !== a.email))); }}
-                  />
-                )}
-                <ProviderIcon provider={a.provider} />
-                <span style={{ color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.email}</span>
-                <span style={{ marginLeft: 'auto', ...muted }}>
-                  {status || (cap ? (cap.limit === null ? 'Unlimited' : `${formatFileSize(cap.usable)} usable of ${formatFileSize(cap.limit)}`) : '…')}
-                </span>
-              </label>
-            );
-          })}
+        <div style={{ flex: '2 1 480px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <Stat icon={CheckCircle2} tone="ok" title="Ready files" value={counts.ready} />
+          <Stat icon={UploadCloud} title="Incomplete uploads" value={counts.incomplete} />
+          <Stat icon={Clock} title="Reserved by uploads" value={reserved ? formatFileSize(reserved) : 'None'} />
+          <Stat icon={AlertTriangle} tone={counts.degraded ? 'bad' : 'ok'} title="Need repair" value={counts.degraded} hint={counts.degraded ? null : 'All clear'} />
+          <Stat icon={Trash2} tone={us.jobs.length ? 'warn' : 'ok'} title="Pending cleanup" value={us.jobs.length} hint={us.jobs.length ? 'Retried automatically while you use DriveUnify' : 'All clear'} />
         </div>
       </section>
 
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
       {/* ── Upload ── */}
-      <section style={card}>
-        <div style={{ ...label, marginBottom: 10 }}>Upload a file</div>
+      <section style={{ ...card, flex: '2 1 480px', minWidth: 0 }}>
+        <div style={{ ...label, fontSize: '1rem', marginBottom: 14 }}>Upload a file</div>
         <div
           {...getRootProps()}
           style={{
-            border: `1.5px dashed ${isDragActive ? '#2563eb' : 'var(--color-border-strong, var(--color-border))'}`, borderRadius: 10,
+            border: `1.5px dashed ${isDragActive ? '#8b5cf6' : 'var(--color-border-strong, var(--color-border))'}`, borderRadius: 14,
+            background: isDragActive ? 'rgba(139,92,246,0.08)' : 'transparent', minHeight: 170,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
             padding: 24, textAlign: 'center', cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: '0.8125rem',
           }}
         >
           <input {...getInputProps()} aria-label="Choose a file for Unified Storage" />
-          <UploadCloud size={22} style={{ marginBottom: 6 }} />
-          <div>{file ? <><b>{file.name}</b> · {formatFileSize(file.size)}</> : 'Drop a file here, or click to choose'}</div>
+          <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(139,92,246,0.15)', color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <UploadCloud size={24} />
+          </span>
+          <div style={{ fontSize: '0.9375rem' }}>{file ? <><b>{file.name}</b> · {formatFileSize(file.size)}</> : 'Drop a file here, or click to choose'}</div>
+          {!file && <div style={muted}>Large files are fine. They are split automatically.</div>}
         </div>
+
+        {!file && (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ ...muted, fontWeight: 600, letterSpacing: '0.08em' }}>HOW IT IS STORED</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={HOW_CHIP}>Your file</span>→
+              <span style={HOW_CHIP}>{formatFileSize(DEFAULT_CHUNK_SIZE)} chunks</span>→
+              <span style={HOW_CHIP}>One drive each</span>→
+              <span style={HOW_CHIP}>SHA-256 checked</span>
+            </div>
+          </div>
+        )}
 
         {file && (
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -245,14 +249,53 @@ export default function UnifiedStorage() {
         )}
       </section>
 
+      {/* ── Accounts ── */}
+      <section style={{ ...card, flex: '1 1 320px', minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span style={{ ...label, fontSize: '1rem' }}>Drives in the pool</span>
+          <Button size="xs" variant="ghost" icon={RefreshCw} onClick={us.refreshCapacity}>Refresh</Button>
+        </div>
+        {us.connectedAccounts.length === 0 && <div style={muted}>Connect a Google Drive or Dropbox account to start.</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {us.connectedAccounts.map((a) => {
+            const cap = us.capacities.find((c) => c.email === a.email);
+            const status = a.needsReconnect ? 'Reconnect required' : !a.accessToken ? 'Connecting…' : cap?.error ? `Quota unavailable: ${cap.error}` : null;
+            return (
+              <label key={a.email} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8125rem', color: 'var(--color-text-secondary)', flexWrap: 'wrap', padding: 12, borderRadius: 12, border: '1px solid var(--color-border)', background: 'var(--color-bg-elevated)' }}>
+                {manual && (
+                  <input
+                    type="checkbox"
+                    disabled={!cap || !!cap.error}
+                    checked={selected.includes(a.email)}
+                    onChange={(e) => { setPlan(null); setSelected((s) => (e.target.checked ? [...s, a.email] : s.filter((x) => x !== a.email))); }}
+                  />
+                )}
+                <ProviderIcon provider={a.provider} />
+                <span style={{ color: 'var(--color-text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{a.email}</span>
+                {!status && cap && cap.limit !== null && (
+                  <span aria-hidden style={{ flexBasis: '100%', height: 6, borderRadius: 3, background: 'var(--color-bg-surface)', overflow: 'hidden' }}>
+                    <span style={{ display: 'block', height: '100%', width: `${Math.min(100, (cap.usable / cap.limit) * 100)}%`, background: a.provider === 'dropbox' ? '#8b5cf6' : '#ec4899' }} />
+                  </span>
+                )}
+                <span style={{ flexBasis: '100%', ...muted }}>
+                  {status || (cap ? (cap.limit === null ? 'Unlimited' : `${formatFileSize(cap.usable)} usable of ${formatFileSize(cap.limit)}`) : '…')}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </section>
+
+      </div>
+
       {/* ── Files ── */}
       <section style={card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <span style={label}>Files</span>
+          <span style={{ ...label, fontSize: '1rem' }}>Files in unified storage</span>
           {us.jobs.length > 0 && <Button size="xs" variant="outline" icon={RefreshCw} onClick={us.retryCleanup}>Retry cleanup ({us.jobs.length})</Button>}
         </div>
         {us.loading && <div style={muted}>Loading…</div>}
-        {!us.loading && us.files.length === 0 && <div style={muted}>No files yet.</div>}
+        {!us.loading && us.files.length === 0 && <div style={{ ...muted, padding: '12px 0' }}>No files yet. Upload one above and it will appear here.</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {us.files.map((f) => {
             const running = us.isRunning(f.id);
@@ -260,7 +303,7 @@ export default function UnifiedStorage() {
             const st = statusOf(f, running);
             const jobsForFile = us.jobs.filter((j) => j.fileId === f.id);
             return (
-              <div key={f.id} style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div key={f.id} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--color-bg-elevated)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ ...label, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{f.name}</span>
                   <Pill tone={st.tone}>{st.text}</Pill>
