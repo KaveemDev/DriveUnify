@@ -13,7 +13,6 @@
     }
   ],
   "firestore": {
-    "rules": "dashboard/firestore.rules",
-    "indexes": "client/firestore.indexes.json"
+    "rules": "dashboard/firestore.rules"
   }
 }
