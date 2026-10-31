@@ -11,7 +11,8 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Cloud, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { LogoMark } from '../../components/common/LogoMark';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -67,9 +68,7 @@ const OAuthCallback = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
       <div className="text-center space-y-4 p-8">
         {/* Logo */}
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center mx-auto mb-6 shadow-md">
-          <Cloud size={22} className="text-white" />
-        </div>
+        <LogoMark size={48} className="mx-auto mb-6" />
 
         {status === 'processing' && (
           <>

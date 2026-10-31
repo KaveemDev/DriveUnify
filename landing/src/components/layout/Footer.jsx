@@ -1,7 +1,8 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { Cloud, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import { LogoMark } from '@/components/ui/LogoMark';
 
 export const Footer = () => {
   return (
@@ -11,9 +12,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
-                <Cloud size={17} />
-              </div>
+              <LogoMark size={32} />
               <span className="font-bold text-lg text-white tracking-tight">DriveUnify</span>
             </Link>
             <p className="text-slate-400 text-sm max-w-sm mb-4 leading-relaxed">

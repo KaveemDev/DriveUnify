@@ -4,8 +4,9 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Folder, Clock, Star, Users, Trash2,
   Plus, Settings, HelpCircle, ChevronLeft, Sun, Moon,
-  Cloud, LogOut, Layers, ArrowLeftRight
+  LogOut, Layers, ArrowLeftRight
 } from 'lucide-react';
+import { LogoMark } from '../common/LogoMark';
 import { AccountItem } from './AccountItem';
 import { getAccountId } from '../../utils/helpers';
 import { GoogleDriveIcon, OneDriveIcon, DropboxIcon } from '../common/ProviderBadge';
@@ -83,21 +84,7 @@ export const Sidebar = ({ onSelectView }) => {
             color: 'inherit',
           }}
         >
-          <div
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 6,
-              background: 'var(--color-accent)',
-              color: 'var(--color-accent-fg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Cloud size={15} />
-          </div>
+          <LogoMark size={26} />
           <span style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--color-text-primary)' }}>
             DriveUnify
           </span>

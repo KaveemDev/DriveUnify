@@ -2,6 +2,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { ease } from '@/lib/motion';
 import { RevealHeading } from './shared';
+import { LogoMark } from '@/components/ui/LogoMark';
 
 export const DriveLogo = () => (
   <svg width="30" height="27" viewBox="0 0 87 78" aria-hidden="true"><path fill="#0066DA" d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 53H0c0 1.55.4 3.1 1.2 4.5z" /><path fill="#00AC47" d="M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9 9 0 0 0 0 53h27.5z" /><path fill="#EA4335" d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 11.5z" /><path fill="#00832D" d="M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" /><path fill="#2684FC" d="M59.8 53H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" /><path fill="#FFBA00" d="M73.4 26.5 60.7 4.5c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 53h27.45c0-1.55-.4-3.1-1.2-4.5z" /></svg>
@@ -71,8 +72,8 @@ export function Integrations() {
               );
             })}
           </motion.div>
-          <div className="absolute left-1/2 top-1/2 -ml-11 -mt-11 grid h-[88px] w-[88px] place-items-center rounded-[22px] bg-blue-500 shadow-[0_0_80px_rgba(59,130,246,0.45)]">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
+          <div className="absolute left-1/2 top-1/2 -ml-11 -mt-11 grid h-[88px] w-[88px] place-items-center rounded-[22px] border border-white/10 bg-slate-900 shadow-[0_0_80px_rgba(59,130,246,0.45)]">
+            <LogoMark size={56} />
           </div>
         </div>
       </div>

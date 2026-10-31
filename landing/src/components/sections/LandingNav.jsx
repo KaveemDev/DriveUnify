@@ -1,4 +1,5 @@
 'use client';
+import { LogoMark } from '@/components/ui/LogoMark';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -57,9 +58,7 @@ export function LandingNav({ links = LINKS }) {
             : 'max-w-[1184px] border border-transparent px-4 py-5 md:px-8'}`}
         >
           <Link href="/" className="flex items-center gap-2.5 text-base font-semibold tracking-[-0.02em] text-white">
-            <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-[7px] bg-blue-500">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
-            </span>
+            <LogoMark size={26} />
             DriveUnify
           </Link>
           <ul className="hidden gap-7 text-sm md:flex" onMouseLeave={() => setHovered(null)}>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cloud } from 'lucide-react';
+import { LogoMark } from '../../components/common/LogoMark';
 import { Box, Typography, Button, Alert, Paper, Link } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -65,9 +65,7 @@ const Login = () => {
       <Box sx={{ position: 'relative', width: '100%', maxWidth: 400, zIndex: 1 }}>
         <Paper elevation={24} sx={{ p: 4, borderRadius: 4, bgcolor: 'background.paper', backdropFilter: 'blur(20px)' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mb: 4 }}>
-            <Box sx={{ width: 64, height: 64, borderRadius: 3, background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(59, 130, 246, 0.4)' }}>
-              <Cloud size={32} color="#fff" />
-            </Box>
+            <LogoMark size={64} />
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h5" fontWeight="bold">DriveUnify</Typography>
               <Typography variant="body2" color="text.secondary" mt={0.5}>Manage all your Google Drives in one place</Typography>

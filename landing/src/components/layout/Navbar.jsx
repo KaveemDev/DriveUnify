@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Cloud, Menu, X, ArrowRight, LogOut, LayoutDashboard } from 'lucide-react';
+import { LogoMark } from '@/components/ui/LogoMark';
+import { Menu, X, ArrowRight, LogOut, LayoutDashboard } from 'lucide-react';
 import { auth, googleProvider, signInWithPopup, signOut } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
@@ -151,9 +152,7 @@ export const Navbar = () => {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_12px_rgba(59,130,246,0.4)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-shadow">
-              <Cloud size={17} />
-            </div>
+            <LogoMark size={32} className="flex-shrink-0" />
             <span className="font-bold text-lg tracking-tight text-white">DriveUnify</span>
           </Link>
 
