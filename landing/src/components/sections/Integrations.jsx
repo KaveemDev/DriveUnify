@@ -13,11 +13,24 @@ export const OneDriveLogo = () => (
   <svg width="30" height="20" viewBox="0 0 24 16" fill="none" stroke="#94a3b8" strokeWidth="1.6" aria-hidden="true"><path d="M6 15h13a4 4 0 0 0 .5-8A6 6 0 0 0 8 5.5 4.5 4.5 0 0 0 6 15z" /></svg>
 );
 
+export const BoxLogo = () => (
+  <svg width="34" height="18" viewBox="0 0 40 20" aria-hidden="true"><text x="20" y="16" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="19" fill="#0061D5">box</text></svg>
+);
+export const MegaLogo = () => (
+  <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#D9272E" /><path d="M6.5 16.5v-9l5.5 5.5 5.5-5.5v9" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinejoin="round" /></svg>
+);
+export const ICloudLogo = () => (
+  <svg width="32" height="22" viewBox="0 0 24 16" fill="#3693F3" aria-hidden="true"><path d="M6 15h13a4 4 0 0 0 .5-8A6 6 0 0 0 8 5.5 4.5 4.5 0 0 0 6 15z" /></svg>
+);
+
 const R = 170;
 const PROVIDERS = [
-  { name: 'Google Drive', Logo: DriveLogo, angle: -90, live: true },
-  { name: 'Dropbox', Logo: DropboxLogo, angle: 150, live: true },
-  { name: 'OneDrive', Logo: OneDriveLogo, angle: 30, live: false },
+  { name: 'Google Drive', Logo: DriveLogo, angle: -90, live: true, label: 'Live' },
+  { name: 'OneDrive', Logo: OneDriveLogo, angle: -30, live: false, label: 'Next up' },
+  { name: 'Box', Logo: BoxLogo, angle: 30, live: false, label: 'Planned' },
+  { name: 'MEGA', Logo: MegaLogo, angle: 90, live: false, label: 'Planned' },
+  { name: 'iCloud Drive', Logo: ICloudLogo, angle: 150, live: false, label: 'Planned' },
+  { name: 'Dropbox', Logo: DropboxLogo, angle: 210, live: true, label: 'Live' },
 ];
 
 export function Integrations() {
@@ -27,8 +40,8 @@ export function Integrations() {
       <div className="mx-auto grid max-w-[1120px] items-center gap-16 md:grid-cols-[5fr_7fr]">
         <div className="flex flex-col gap-4">
           <RevealHeading id="int-h" lines={['Works with the drives', 'you already pay for.']} />
-          <p className="text-[17px] leading-[1.55] text-slate-400">Google Drive and Dropbox today. OneDrive is next.</p>
-          <ul className="sr-only"><li>Google Drive: live</li><li>Dropbox: live</li><li>OneDrive: coming soon</li></ul>
+          <p className="text-[17px] leading-[1.55] text-slate-400">Google Drive and Dropbox today. OneDrive is next, with Box, MEGA and iCloud Drive on the roadmap.</p>
+          <ul className="sr-only">{PROVIDERS.map((p) => <li key={p.name}>{p.name}: {p.label}</li>)}</ul>
         </div>
         <div aria-hidden="true" className="relative mx-auto h-[420px] w-full max-w-[420px] scale-[0.8] md:scale-100">
           <svg className="absolute inset-0" viewBox="-210 -210 420 420">
@@ -52,7 +65,7 @@ export function Integrations() {
                   <motion.div animate={reduce ? undefined : { rotate: -360 }} transition={{ duration: 120, ease: 'linear', repeat: Infinity }}
                     className={`-ml-8 -mt-8 flex flex-col items-center gap-2 ${p.live ? '' : 'opacity-50'}`}>
                     <div className={`grid h-16 w-16 place-items-center rounded-2xl bg-slate-900 ${p.live ? 'border border-white/10' : 'border border-dashed border-white/20'}`}><p.Logo /></div>
-                    <span className={`whitespace-nowrap text-[11px] ${p.live ? 'text-green-400' : 'text-slate-300'}`}>{p.live ? 'Live' : 'Coming soon'}</span>
+                    <span className={`whitespace-nowrap text-[11px] ${p.live ? 'text-green-400' : 'text-slate-300'}`}>{p.label}</span>
                   </motion.div>
                 </div>
               );

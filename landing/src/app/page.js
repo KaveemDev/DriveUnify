@@ -5,6 +5,7 @@ import { Problem } from '@/components/sections/Problem';
 import { HowItWorks } from '@/components/sections/HowItWorks';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
 import { UnifiedStorage } from '@/components/sections/UnifiedStorage';
+import { SplitStorage } from '@/components/sections/SplitStorage';
 import { Speed } from '@/components/sections/Speed';
 import { Bento } from '@/components/sections/Bento';
 import { Integrations } from '@/components/sections/Integrations';
@@ -22,6 +23,7 @@ export default function LandingPage() {
         <HowItWorks />
         <FeatureShowcase />
         <UnifiedStorage />
+        <SplitStorage />
         <Speed />
         <Bento />
         <Integrations />

@@ -6,7 +6,7 @@ import { Check, Minus, Clock } from 'lucide-react';
 import { ease, springUI, clipReveal } from '@/lib/motion';
 import { RevealHeading } from '@/components/sections/shared';
 import { SpotCard } from '@/components/sections/PageShell';
-import { DriveLogo, DropboxLogo, OneDriveLogo } from '@/components/sections/Integrations';
+import { DriveLogo, DropboxLogo, OneDriveLogo, BoxLogo, MegaLogo, ICloudLogo } from '@/components/sections/Integrations';
 
 const CAPS = ['Browse folders', 'Search across accounts', 'Upload', 'Download & preview', 'Copy to another drive', 'Storage usage', 'Rename, delete, new folder', 'Star & share links'];
 
@@ -18,6 +18,12 @@ const PROVIDERS = [
     note: 'Browse and search your Dropbox next to your Drives, upload into it, and move files in or out with cross-drive copy.' },
   { id: 'onedrive', Logo: OneDriveLogo, name: 'OneDrive', color: '#94a3b8', status: 'Next up', caps: [0, 0, 0, 0, 0, 0, 0, 0],
     note: 'Personal OneDrive and Microsoft 365 accounts are the next provider we are building.' },
+  { id: 'box', Logo: BoxLogo, name: 'Box', color: '#0061D5', status: 'Planned', caps: [0, 0, 0, 0, 0, 0, 0, 0],
+    note: 'Box accounts are on the roadmap, so work files stored in Box can sit next to your Drives.' },
+  { id: 'mega', Logo: MegaLogo, name: 'MEGA', color: '#D9272E', status: 'Planned', caps: [0, 0, 0, 0, 0, 0, 0, 0],
+    note: 'MEGA support is planned, including its generous free storage in your combined pool.' },
+  { id: 'icloud', Logo: ICloudLogo, name: 'iCloud Drive', color: '#3693F3', status: 'Planned', caps: [0, 0, 0, 0, 0, 0, 0, 0],
+    note: 'iCloud Drive is planned, so Apple users can browse it alongside every other drive.' },
 ];
 
 export function ProviderMatrix() {
