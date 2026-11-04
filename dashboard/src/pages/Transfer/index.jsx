@@ -395,9 +395,14 @@ const Transfer = () => {
           const total = await countFilesInFolder(item.src, item.file.id).catch(() => 0);
           if (controller.signal.aborted) throw new DOMException('Transfer aborted', 'AbortError');
           patch(item.key, { status: 'running', total, filesDone: 0, progress: total ? 0 : null });
+          const counter = { done: 0, total, failed: [] };
           await transferFolder(item.src, item.dest, item.file, item.destFolder.id, ({ filesDone, currentFile }) => {
             patch(item.key, { filesDone, currentFile, progress: total ? (filesDone / total) * 100 : null });
-          }, { done: 0, total }, controller.signal);
+          }, counter, controller.signal);
+          if (counter.failed.length) {
+            const [first] = counter.failed;
+            throw new Error(`${counter.failed.length} of ${counter.done + counter.failed.length} files failed (e.g. "${first.name}": ${first.error})`);
+          }
         } else {
           patch(item.key, { status: 'running', progress: 0 });
           const result = await transferFile(item.src, item.dest, item.file, item.destFolder.id, (pct, meta) => {

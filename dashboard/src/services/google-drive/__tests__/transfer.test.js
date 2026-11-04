@@ -390,6 +390,26 @@ describe('Google Drive Cross-Account Transfer Service', () => {
       assert.equal(result.transferMode, 'stream');
     });
 
+    it('should finish a chunked Dropbox upload with the offset before the final chunk', async () => {
+      const MiB = 1024 * 1024;
+      const totalSize = 20 * MiB; // 8 + 8 + 4 MiB
+      const appendOffsets = [];
+      let finishOffset;
+
+      driveApiAdapter.downloadFileRange = async (_t, _id, start, end) => ({ size: end - start + 1 });
+      dropboxApiAdapter.initiateDropboxUploadSession = async () => 'sess-1';
+      dropboxApiAdapter.appendDropboxUploadChunk = async (_t, _s, _b, offset) => { appendOffsets.push(offset); };
+      dropboxApiAdapter.finishDropboxUploadSession = async (_t, _s, _b, offset) => {
+        finishOffset = offset;
+        return { id: 'id:big' };
+      };
+
+      await transferFile(srcAccount, dropboxAccount, { id: 'big', name: 'big.bin', size: String(totalSize) }, '');
+
+      assert.deepEqual(appendOffsets, [8 * MiB]);
+      assert.equal(finishOffset, 16 * MiB);
+    });
+
     it('should export a Google Sheet to .xlsx and upload it to Dropbox', async () => {
       driveApiAdapter.addPermission = async () => {
         throw new Error('Strategy A must be skipped for Dropbox');

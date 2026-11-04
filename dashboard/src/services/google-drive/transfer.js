@@ -392,7 +392,7 @@ async function _transferViaBoundedStream(
               destToken,
               sessionId,
               chunkBlob,
-              totalSize,
+              offset, // cursor offset = bytes already uploaded, before this chunk
               targetPath,
               signal
             );
@@ -607,8 +607,9 @@ export const transferFolder = async (
   // 1. Create matching folder on destination
   if (destIsDropbox) {
     const targetPath = resolveDropboxPath(destParentId, folder.name);
-    newFolder = await dropboxApiAdapter.createDropboxFolder(destAccount.accessToken, targetPath);
-    newFolderId = targetPath;
+    // autorename so copying into a folder that already has this name makes "Name (1)" instead of failing
+    newFolder = await dropboxApiAdapter.createDropboxFolder(destAccount.accessToken, targetPath, signal, true);
+    newFolderId = newFolder?.path_display || targetPath;
   } else {
     newFolder = await driveApiAdapter.createFolder(
       destAccount.accessToken,
@@ -648,7 +649,9 @@ export const transferFolder = async (
       counter.done += 1;
       onProgress?.({ filesDone: counter.done, total: counter.total, currentFile: file.name });
     } catch (err) {
+      if (signal?.aborted) throw err;
       console.warn(`[DriveUnify] Failed to transfer "${file.name}":`, err.message);
+      (counter.failed ||= []).push({ name: file.name, error: err.message });
     }
   }
 

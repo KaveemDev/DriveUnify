@@ -52,7 +52,7 @@ export const uploadDropboxFile = async (accessToken, file, options = {}) => {
         accessToken,
         sessionId,
         chunk,
-        totalSize,
+        offset, // cursor offset = bytes already uploaded, before this chunk
         targetPath,
         signal
       );

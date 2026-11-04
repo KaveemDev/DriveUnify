@@ -13,6 +13,10 @@ import { getMimeTypeCategory } from '../config/constants.js';
 export const DROPBOX_API_BASE = 'https://api.dropboxapi.com/2';
 export const DROPBOX_CONTENT_BASE = 'https://content.dropboxapi.com/2';
 
+// HTTP headers must be ASCII; Dropbox wants non-ASCII chars (e.g. "résumé.pdf") escaped as \uXXXX
+export const dropboxArg = (obj) =>
+  JSON.stringify(obj).replace(/[\u007f-\uffff]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+
 // ── Extension to MIME Mapping ──────────────────────────────────
 const EXT_TO_MIME = {
   pdf: 'application/pdf',
@@ -166,7 +170,8 @@ export const getDropboxSpaceUsage = async (accessToken, signal = null) => {
 // ── List Files & Folders ──────────────────────────────────────
 
 export const listDropboxFiles = async (accessToken, path = '', options = {}) => {
-  const folderPath = path === 'root' || !path ? '' : (path.startsWith('/') ? path : `/${path}`);
+  // "id:..." and "/path" are both valid Dropbox paths; only bare names need a leading slash
+  const folderPath = path === 'root' || !path ? '' : (/^(\/|id:|ns:|rev:)/.test(path) ? path : `/${path}`);
   const allEntries = [];
 
   const initialRes = await dropboxRpc('/files/list_folder', accessToken, {
@@ -216,7 +221,7 @@ export const downloadDropboxFileRange = async (accessToken, pathOrId, start, end
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Dropbox-API-Arg': JSON.stringify({ path: pathOrId }),
+      'Dropbox-API-Arg': dropboxArg({ path: pathOrId }),
       Range: `bytes=${start}-${end}`,
     },
     signal,
@@ -247,7 +252,7 @@ export const uploadDropboxFileDirect = async (accessToken, blob, targetPath, sig
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Dropbox-API-Arg': JSON.stringify({
+      'Dropbox-API-Arg': dropboxArg({
         path: cleanPath,
         mode: 'add',
         autorename: true,
@@ -277,7 +282,7 @@ export const initiateDropboxUploadSession = async (accessToken, firstChunkBlob =
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Dropbox-API-Arg': JSON.stringify({ close: false }),
+      'Dropbox-API-Arg': dropboxArg({ close: false }),
       'Content-Type': 'application/octet-stream',
     },
     body: firstChunkBlob,
@@ -304,7 +309,7 @@ export const appendDropboxUploadChunk = async (accessToken, sessionId, chunkBlob
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Dropbox-API-Arg': JSON.stringify({
+      'Dropbox-API-Arg': dropboxArg({
         cursor: {
           session_id: sessionId,
           offset,
@@ -341,7 +346,7 @@ export const finishDropboxUploadSession = async (
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Dropbox-API-Arg': JSON.stringify({
+      'Dropbox-API-Arg': dropboxArg({
         cursor: {
           session_id: sessionId,
           offset,
@@ -370,9 +375,9 @@ export const finishDropboxUploadSession = async (
 
 // ── File Management: Folder Create, Delete, Move ──────────────
 
-export const createDropboxFolder = async (accessToken, path, signal = null) => {
+export const createDropboxFolder = async (accessToken, path, signal = null, autorename = false) => {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const data = await dropboxRpc('/files/create_folder_v2', accessToken, { path: cleanPath, autorename: false }, signal);
+  const data = await dropboxRpc('/files/create_folder_v2', accessToken, { path: cleanPath, autorename }, signal);
   return data?.metadata || data;
 };
 
